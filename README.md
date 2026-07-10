@@ -4,20 +4,7 @@ A themeable, git-aware [Nushell](https://www.nushell.sh) prompt with multiple
 color themes and switchable layout styles — including a neon **cyberpunk** one.
 Works on **macOS** and **Linux**.
 
-```text
-# a few of the 11 prompt styles (colors follow the active theme)
-
-full       sorin@host in ~/dev/app on  main ⇡2 +1 !3 ✔
-compact    …/dev/app on  main ⇡2 +1 !3
-lambda     λ ~/dev/app on  main ✔
-bracket    [sorin@host] [~/dev/app] [main]
-
-boxed      ╭─ sorin@host in ~/dev/app │ main ●
-           ╰─❯
-
-cyberpunk  ╭─⚡─❮sorin@host❯─❮~/dev/app❯ ─▓ main
-           ╰─▶▶▶
-```
+![nushell-prompt demo](docs/welcome.gif)
 
 ## Features
 
@@ -95,7 +82,13 @@ prompt-style          # change ONLY the prompt style
 prompt-style capsule
 ```
 
+### Themes
+
+![themes gallery](docs/themes.gif)
+
 ### Looks (theme + style presets)
+
+![looks demo](docs/demo.gif)
 
 | Look               | Theme                | Style     |
 |--------------------|----------------------|-----------|
@@ -111,6 +104,8 @@ prompt-style capsule
 | `nord-lambda`      | nord                 | lambda    |
 
 ### Styles
+
+![prompt styles](docs/styles.gif)
 
 | Style       | Look                                                        |
 |-------------|-------------------------------------------------------------|
@@ -150,3 +145,17 @@ theme's `palette` record, so new themes restyle the prompt automatically.
 ## License
 
 MIT
+
+## Demos
+
+The GIFs are recorded with [VHS](https://github.com/charmbracelet/vhs) from the
+tapes in [`tapes/`](tapes). Regenerate them with:
+
+```sh
+vhs tapes/welcome.tape
+vhs tapes/demo.tape
+vhs tapes/styles.tape
+vhs tapes/themes.tape
+```
+
+(Requires a Nerd Font; the tapes use `FiraCode Nerd Font Mono`.)

@@ -471,6 +471,7 @@ $env.config.table.mode = "rounded"
 $env.config.table.index_mode = "auto"
 $env.config.footer_mode = 25
 $env.config.render_right_prompt_on_last_line = true
+$env.config.show_banner = false
 
 # File that stores the currently-selected theme name.
 def theme-state-path [] { $nu.default-config-dir | path join "current-theme.txt" }
@@ -756,6 +757,19 @@ def git-segment [--counts] {
     $" ($base)($status_seg)"
 }
 
+# Username / hostname that don't break the prompt in minimal environments
+# (e.g. ttyd/VHS where `whoami` may fail).
+def prompt-user [] {
+    let u = ($env.USER? | default ($env.USERNAME? | default ""))
+    if ($u | is-not-empty) { $u } else {
+        let w = (do -i { whoami } | complete | get stdout | str trim)
+        if ($w | is-not-empty) { $w } else { "user" }
+    }
+}
+def prompt-host [] {
+    try { sys host | get hostname } catch { ($env.HOSTNAME? | default "host") }
+}
+
 def create_left_prompt [] {
     let p = $env.THEME_PALETTE
     let style = ($env.PROMPT_STYLE? | default "full")
@@ -785,7 +799,7 @@ def create_left_prompt [] {
         "bracket" => {
             let g = (git-info)
             let git_txt = if $g.present { $" (ansi {fg: $p.git attr: b})[(git-plain $g)](ansi reset)" } else { "" }
-            let uh = $"(ansi {fg: $p.user attr: b})[(whoami)@(sys host | get hostname)](ansi reset)"
+            let uh = $"(ansi {fg: $p.user attr: b})[(prompt-user)@(prompt-host)](ansi reset)"
             let dir = $"(ansi {fg: $p.path attr: b})[($full_dir)](ansi reset)"
             $"($uh) ($dir)($git_txt)"
         }
@@ -809,7 +823,7 @@ def create_left_prompt [] {
                 let mark = if $g.clean { $"(ansi {fg: $p.ok})●(ansi reset)" } else { $"(ansi {fg: $p.modified})●(ansi reset)" }
                 $" (ansi {fg: $p.sep})│ (ansi {fg: $p.git attr: b})(git-plain $g)(ansi reset) ($mark)"
             } else { "" }
-            let uh = $"(ansi {fg: $p.user attr: b})(whoami)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(sys host | get hostname)(ansi reset)"
+            let uh = $"(ansi {fg: $p.user attr: b})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(prompt-host)(ansi reset)"
             let l1 = $"(ansi {fg: $p.sep})╭─ ($uh) (ansi {fg: $p.sep})in (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
             let l2 = $"(ansi {fg: $p.sep})╰─(ansi reset)"
             $"($l1)\n($l2)"
@@ -845,14 +859,14 @@ def create_left_prompt [] {
                 $" (ansi {fg: $p.sep})─(ansi {fg: $p.git attr: b})▓ (git-plain $g)(ansi reset)"
             } else { "" }
             let bolt = $"(ansi {fg: $p.modified attr: b})⚡(ansi reset)"
-            let uh = $"(ansi {fg: $p.user attr: b})❮(whoami)@(sys host | get hostname)❯"
+            let uh = $"(ansi {fg: $p.user attr: b})❮(prompt-user)@(prompt-host)❯"
             let dir = $"(ansi {fg: $p.path attr: b})❮($full_dir)❯"
             let l1 = $"(ansi {fg: $p.sep})╭─($bolt)(ansi {fg: $p.sep})─($uh)(ansi {fg: $p.sep})─($dir)(ansi reset)($git_txt)"
             let l2 = $"(ansi {fg: $p.sep})╰─(ansi reset)"
             $"($l1)\n($l2)"
         }
         _ => {
-            let user_host = $"(ansi {fg: $p.user})(whoami)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(sys host | get hostname)(ansi reset)"
+            let user_host = $"(ansi {fg: $p.user})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(prompt-host)(ansi reset)"
             $"($user_host) (ansi {fg: $p.sep})in (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)(git-segment --counts)"
         }
     }
