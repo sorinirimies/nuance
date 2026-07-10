@@ -1,5 +1,5 @@
 # nushell-prompt.nu — themeable, git-aware Nushell prompt
-# https://github.com/YOURNAME/nushell-prompt
+# https://github.com/sorinirimies/my_nushell_theming
 # Single self-contained file. Drop into your Nushell autoload dir.
 
 # ── color themes ─────────────────────────────────────────────

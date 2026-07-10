@@ -33,8 +33,8 @@ Works on **macOS** and **Linux**.
 ## Install
 
 ```sh
-git clone https://github.com/YOURNAME/nushell-prompt
-cd nushell-prompt
+git clone https://github.com/sorinirimies/my_nushell_theming
+cd my_nushell_theming
 ./install.sh            # symlink (repo stays the source of truth)
 # or:  ./install.sh --copy
 # or:  nu install.nu
