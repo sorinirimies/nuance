@@ -1,5 +1,11 @@
 # nushell-prompt
 
+![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
+![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
+![themes](https://img.shields.io/badge/themes-15-cba6f7)
+![styles](https://img.shields.io/badge/prompt%20styles-11-89b4fa)
+![license](https://img.shields.io/badge/license-MIT-green)
+
 A themeable, git-aware [Nushell](https://www.nushell.sh) prompt with multiple
 color themes and switchable layout styles — including a neon **cyberpunk** one.
 Works on **macOS** and **Linux**.
