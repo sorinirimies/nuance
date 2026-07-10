@@ -4,7 +4,20 @@ A themeable, git-aware [Nushell](https://www.nushell.sh) prompt with multiple
 color themes and switchable layout styles — including a neon **cyberpunk** one.
 Works on **macOS** and **Linux**.
 
-![styles](docs/preview.txt)
+```text
+# a few of the 11 prompt styles (colors follow the active theme)
+
+full       sorin@host in ~/dev/app on  main ⇡2 +1 !3 ✔
+compact    …/dev/app on  main ⇡2 +1 !3
+lambda     λ ~/dev/app on  main ✔
+bracket    [sorin@host] [~/dev/app] [main]
+
+boxed      ╭─ sorin@host in ~/dev/app │ main ●
+           ╰─❯
+
+cyberpunk  ╭─⚡─❮sorin@host❯─❮~/dev/app❯ ─▓ main
+           ╰─▶▶▶
+```
 
 ## Features
 
