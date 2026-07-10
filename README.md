@@ -8,17 +8,19 @@ Works on **macOS** and **Linux**.
 
 ## Features
 
-- **8 color themes**: `gruvbox`, `catppuccin-mocha`, `catppuccin-macchiato`,
-  `catppuccin-frappe`, `catppuccin-latte`, `tokyo-night`, `nord`, and a neon
-  **`cyberpunk`**. Themes recolor syntax highlighting, tables **and** the prompt.
+- **15 color themes**: `gruvbox`, `catppuccin-mocha`, `catppuccin-macchiato`,
+  `catppuccin-frappe`, `catppuccin-latte`, `tokyo-night`, `nord`, `dracula`,
+  `rose-pine`, `everforest`, `kanagawa`, `onedark`, `solarized`,
+  `solarized-light`, and a neon **`cyberpunk`**. Themes recolor syntax
+  highlighting, tables **and** the prompt.
 - **Looks** — curated theme + prompt-style combos applied in one step
   (e.g. `cyberpunk`, `synthwave`, `tokyo-powerline`, `mocha-pure`).
 - **Ghostty auto-follow** (optional): by default the theme follows your Ghostty
   config (`theme = …`), matched automatically. Pick a theme manually with
   `theme <name>` to **pin** it (survives new shells); `theme-sync` re-enables
   auto-follow.
-- **8 prompt styles**: `full`, `compact`, `minimal`, `lambda`, `pure`,
-  `powerline`, `capsule`, `cyberpunk`.
+- **11 prompt styles**: `full`, `compact`, `minimal`, `lambda`, `pure`,
+  `bracket`, `powerline`, `slant`, `capsule`, `boxed`, `cyberpunk`.
 - **oh-my-zsh style git info**: branch, `⇡`ahead `⇣`behind `=`conflict
   `+`staged `!`modified `?`untracked `*`stash, `✔` clean.
 - **Command duration** (for commands > 2s) and an **exit-status-aware** prompt
@@ -104,8 +106,11 @@ prompt-style capsule
 | `minimal`   | `dirname on  branch`                                       |
 | `lambda`    | `λ ~/path on  branch +git`                                 |
 | `pure`      | two-line, [pure](https://github.com/sindresorhus/pure)-like |
+| `bracket`   | ASCII `[user@host] [path] [git]` (no Nerd Font needed)       |
 | `powerline` | Nerd-Font segments with `` separators                     |
+| `slant`     | Nerd-Font slanted segment separators                        |
 | `capsule`   | Nerd-Font rounded "pill" segments                           |
+| `boxed`     | two-line box-drawing with a `●` clean/dirty marker          |
 | `cyberpunk` | two-line neon box-drawing with `⚡` and `▶▶▶`                |
 
 ### Toggles

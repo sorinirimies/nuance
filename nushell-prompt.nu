@@ -304,6 +304,41 @@ const NORD = {
     yellow: "#ebcb8b", green: "#a3be8c", cyan: "#88c0d0", blue: "#81a1c1"
     magenta: "#b48ead", purple: "#5e81ac", bg: "#2e3440"
 }
+const DRACULA = {
+    fg: "#f8f8f2", gray: "#6272a4", red: "#ff5555", orange: "#ffb86c"
+    yellow: "#f1fa8c", green: "#50fa7b", cyan: "#8be9fd", blue: "#bd93f9"
+    magenta: "#ff79c6", purple: "#bd93f9", bg: "#282a36"
+}
+const ROSE_PINE = {
+    fg: "#e0def4", gray: "#6e6a86", red: "#eb6f92", orange: "#ebbcba"
+    yellow: "#f6c177", green: "#9ccfd8", cyan: "#9ccfd8", blue: "#31748f"
+    magenta: "#c4a7e7", purple: "#c4a7e7", bg: "#191724"
+}
+const EVERFOREST = {
+    fg: "#d3c6aa", gray: "#859289", red: "#e67e80", orange: "#e69875"
+    yellow: "#dbbc7f", green: "#a7c080", cyan: "#83c092", blue: "#7fbbb3"
+    magenta: "#d699b6", purple: "#d699b6", bg: "#2d353b"
+}
+const KANAGAWA = {
+    fg: "#dcd7ba", gray: "#727169", red: "#ff5d62", orange: "#ffa066"
+    yellow: "#e6c384", green: "#98bb6c", cyan: "#7fb4ca", blue: "#7e9cd8"
+    magenta: "#957fb8", purple: "#957fb8", bg: "#1f1f28"
+}
+const ONEDARK = {
+    fg: "#abb2bf", gray: "#5c6370", red: "#e06c75", orange: "#d19a66"
+    yellow: "#e5c07b", green: "#98c379", cyan: "#56b6c2", blue: "#61afef"
+    magenta: "#c678dd", purple: "#c678dd", bg: "#282c34"
+}
+const SOLARIZED = {
+    fg: "#839496", gray: "#586e75", red: "#dc322f", orange: "#cb4b16"
+    yellow: "#b58900", green: "#859900", cyan: "#2aa198", blue: "#268bd2"
+    magenta: "#d33682", purple: "#6c71c4", bg: "#002b36"
+}
+const SOLARIZED_LIGHT = {
+    fg: "#657b83", gray: "#93a1a1", red: "#dc322f", orange: "#cb4b16"
+    yellow: "#b58900", green: "#859900", cyan: "#2aa198", blue: "#268bd2"
+    magenta: "#d33682", purple: "#6c71c4", bg: "#fdf6e3"
+}
 
 # Generic color_config from a simple palette (fg/gray/red/orange/yellow/
 # green/cyan/blue/magenta/bg). Reused by tokyo-night and nord.
@@ -382,7 +417,7 @@ def basic-prompt-palette [c: record] {
 
 # ── Public API ────────────────────────────────────────────────
 def theme-list [] {
-    ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "cyberpunk"]
+    ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "everforest" "kanagawa" "onedark" "solarized" "solarized-light" "cyberpunk"]
 }
 
 def theme-get [name: string] {
@@ -403,6 +438,13 @@ def theme-get [name: string] {
         }
         "tokyo-night" => { color_config: (basic-color-config $TOKYO) palette: (basic-prompt-palette $TOKYO) }
         "nord"        => { color_config: (basic-color-config $NORD)  palette: (basic-prompt-palette $NORD) }
+        "dracula"     => { color_config: (basic-color-config $DRACULA)     palette: (basic-prompt-palette $DRACULA) }
+        "rose-pine"   => { color_config: (basic-color-config $ROSE_PINE)   palette: (basic-prompt-palette $ROSE_PINE) }
+        "everforest"  => { color_config: (basic-color-config $EVERFOREST)  palette: (basic-prompt-palette $EVERFOREST) }
+        "kanagawa"    => { color_config: (basic-color-config $KANAGAWA)    palette: (basic-prompt-palette $KANAGAWA) }
+        "onedark"     => { color_config: (basic-color-config $ONEDARK)     palette: (basic-prompt-palette $ONEDARK) }
+        "solarized"       => { color_config: (basic-color-config $SOLARIZED)       palette: (basic-prompt-palette $SOLARIZED) }
+        "solarized-light" => { color_config: (basic-color-config $SOLARIZED_LIGHT) palette: (basic-prompt-palette $SOLARIZED_LIGHT) }
         _ => {
             color_config: (gruvbox-color-config)
             palette: {
@@ -480,6 +522,12 @@ def presets [] {
         { name: "tokyo-powerline",  theme: "tokyo-night",           style: "powerline" }
         { name: "tokyo-capsule",    theme: "tokyo-night",           style: "capsule" }
         { name: "nord-lambda",      theme: "nord",                  style: "lambda" }
+        { name: "dracula-slant",    theme: "dracula",               style: "slant" }
+        { name: "rose-pine-pure",   theme: "rose-pine",             style: "pure" }
+        { name: "everforest-boxed", theme: "everforest",            style: "boxed" }
+        { name: "kanagawa-capsule", theme: "kanagawa",              style: "capsule" }
+        { name: "onedark-bracket",  theme: "onedark",               style: "bracket" }
+        { name: "solarized-full",   theme: "solarized",             style: "full" }
     ]
 }
 
@@ -544,6 +592,15 @@ def ghostty-theme-name [] {
     } else if ($low | str contains "macchiato") { "catppuccin-macchiato"
     } else if ($low | str contains "frappe") { "catppuccin-frappe"
     } else if ($low | str contains "latte") { "catppuccin-latte"
+    } else if ($low | str contains "tokyo") { "tokyo-night"
+    } else if ($low | str contains "nord") { "nord"
+    } else if ($low | str contains "dracula") { "dracula"
+    } else if (($low | str contains "rose") or ($low | str contains "ros\u{e9}")) { "rose-pine"
+    } else if ($low | str contains "everforest") { "everforest"
+    } else if ($low | str contains "kanagawa") { "kanagawa"
+    } else if (($low | str contains "one") and ($low | str contains "dark")) { "onedark"
+    } else if (($low | str contains "solarized") and ($low | str contains "light")) { "solarized-light"
+    } else if ($low | str contains "solarized") { "solarized"
     } else { null }
 }
 
@@ -580,7 +637,7 @@ theme-apply $start_theme
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
-def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "powerline" "capsule" "cyberpunk"] }
+def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "powerline" "slant" "capsule" "boxed" "cyberpunk"] }
 
 # Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
 $env.PROMPT_NERD = true
@@ -724,6 +781,38 @@ def create_left_prompt [] {
                 $" (ansi {fg: $p.sep})($g.head)($dirty)(ansi reset)"
             } else { "" }
             $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)\n"
+        }
+        "bracket" => {
+            let g = (git-info)
+            let git_txt = if $g.present { $" (ansi {fg: $p.git attr: b})[(git-plain $g)](ansi reset)" } else { "" }
+            let uh = $"(ansi {fg: $p.user attr: b})[(whoami)@(sys host | get hostname)](ansi reset)"
+            let dir = $"(ansi {fg: $p.path attr: b})[($full_dir)](ansi reset)"
+            $"($uh) ($dir)($git_txt)"
+        }
+        "slant" => {
+            let sep = (char --unicode e0b8)
+            let ink = $p.ink
+            let a = $p.path
+            let seg_a = $"(ansi {bg: $a fg: $ink attr: b}) ($full_dir) "
+            let g = (git-info)
+            if $g.present {
+                let b = $p.git
+                let seg_b = $"(ansi {fg: $a bg: $b})($sep)(ansi {bg: $b fg: $ink attr: b}) (git-plain $g) "
+                $"($seg_a)($seg_b)(ansi reset)(ansi {fg: $b})($sep)(ansi reset) "
+            } else {
+                $"($seg_a)(ansi reset)(ansi {fg: $a})($sep)(ansi reset) "
+            }
+        }
+        "boxed" => {
+            let g = (git-info)
+            let git_txt = if $g.present {
+                let mark = if $g.clean { $"(ansi {fg: $p.ok})●(ansi reset)" } else { $"(ansi {fg: $p.modified})●(ansi reset)" }
+                $" (ansi {fg: $p.sep})│ (ansi {fg: $p.git attr: b})(git-plain $g)(ansi reset) ($mark)"
+            } else { "" }
+            let uh = $"(ansi {fg: $p.user attr: b})(whoami)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(sys host | get hostname)(ansi reset)"
+            let l1 = $"(ansi {fg: $p.sep})╭─ ($uh) (ansi {fg: $p.sep})in (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
+            let l2 = $"(ansi {fg: $p.sep})╰─(ansi reset)"
+            $"($l1)\n($l2)"
         }
         "capsule" => {
             let lc = (char --unicode e0b6)
