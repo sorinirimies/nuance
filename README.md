@@ -77,6 +77,8 @@ prompt-style cyberpunk   # two-line neon layout with ⚡ and ▶▶▶
 
 ## Usage
 
+![interactive picker](docs/picker.gif)
+
 ```nu
 look                  # pick a full LOOK: theme + prompt style, in one step
 look cyberpunk        # apply a named look (pins theme + style, overrides Ghostty)
@@ -94,6 +96,11 @@ prompt-style capsule
 ### Themes
 
 ![themes gallery](docs/themes.gif)
+
+Light themes (`github-light`, `catppuccin-latte`, `rose-pine-dawn`,
+`solarized-light`) shine on a light terminal background:
+
+![light themes](docs/light.gif)
 
 ### Looks (theme + style presets)
 
