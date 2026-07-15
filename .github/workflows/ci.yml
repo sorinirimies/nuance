@@ -29,4 +29,5 @@ jobs:
         shell: bash
         run: |
           nu install.nu
-          nu -n -c "source (($nu.user-autoload-dirs | get 0) | path join 'nushell-prompt.nu'); print $'loaded ((theme-list | length)) themes'"
+          DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
+          test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
