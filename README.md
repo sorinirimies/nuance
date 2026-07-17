@@ -3,7 +3,7 @@
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
 ![themes](https://img.shields.io/badge/themes-26-cba6f7)
-![styles](https://img.shields.io/badge/prompt%20styles-16-89b4fa)
+![styles](https://img.shields.io/badge/prompt%20styles-21-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 
@@ -202,6 +202,11 @@ Game-inspired styles — try `look super-mario`, `look arcade`, or `look 8bit`:
 | `arcade`    | retro all-caps `▶ 1UP` score line                          |
 | `8bit`      | pixel `░▒▓` gradient separators                              |
 | `cyberpunk` | two-line neon box-drawing with `⚡` and `▶▶▶`                |
+| `robbyrussell` | oh-my-zsh classic — `➜  path git:(branch) ✗`              |
+| `ys`        | two-line with hash prefix, `user@host in path on ⎇ branch●` |
+| `avit`      | clean `path  git:(branch) ✗` (yellow/cyan)                  |
+| `bira`      | two-line box-drawing with `user@host path git:(branch)`      |
+| `af-magic`  | horizontal divider, `user path  git:(branch) ✗`              |
 
 ### Toggles
 

@@ -602,6 +602,11 @@ def presets [] {
         { name: "github-arrow",     theme: "github-dark",           style: "arrow" }
         { name: "oxocarbon-rainbow",theme: "oxocarbon",             style: "rainbow" }
         { name: "rose-moon-boxed",  theme: "rose-pine-moon",        style: "boxed" }
+        { name: "robbyrussell",     theme: "onedark",               style: "robbyrussell" }
+        { name: "ys",               theme: "night-owl",             style: "ys" }
+        { name: "avit",             theme: "tokyo-night",           style: "avit" }
+        { name: "bira",             theme: "nord",                  style: "bira" }
+        { name: "af-magic",         theme: "dracula",               style: "af-magic" }
         { name: "super-mario",      theme: "super-mario",           style: "mario" }
         { name: "arcade",           theme: "super-mario",           style: "arcade" }
         { name: "8bit",             theme: "gruvbox",               style: "8bit" }
@@ -760,7 +765,7 @@ theme-apply $start_theme
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
-def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
+def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "robbyrussell" "ys" "avit" "bira" "af-magic" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
 
 # Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
 $env.PROMPT_NERD = true
@@ -826,6 +831,13 @@ def git-plain [g: record] {
     if $g.untracked > 0 { $t = $t + $" ?($g.untracked)" }
     if $g.stash    > 0 { $t = $t + $" *($g.stash)" }
     $t
+}
+
+# oh-my-zsh style git segment:  git:(branch) ✗
+def git-omz [g: record] {
+    let p = $env.THEME_PALETTE
+    let dirty = if $g.clean { "" } else { $" (ansi {fg: $p.err attr: b})✗(ansi reset)" }
+    $"(ansi {fg: $p.git})git:\((ansi {fg: $p.behind attr: b})($g.head)(ansi {fg: $p.git})\)(ansi reset)($dirty)"
 }
 
 # Rich git segment: branch/commit + divergence + working-tree status.
@@ -973,6 +985,46 @@ def create_left_prompt [] {
                 $"($s1)($t12)($s2)(ansi reset)(ansi {fg: $p.path})($a)(ansi reset) "
             }
         }
+        "robbyrussell" => {
+            # oh-my-zsh default:  ➜  dir git:(branch) ✗
+            let g = (git-info)
+            let okc = (if (($env.LAST_EXIT_CODE? | default 0) == 0) { $p.ok } else { $p.err })
+            let arrow = $"(ansi {fg: $okc attr: b})➜(ansi reset)"
+            let dir = $"(ansi {fg: $p.path attr: b})($full_dir | path basename)(ansi reset)"
+            let git_txt = if $g.present { $" (git-omz $g)" } else { "" }
+            $"($arrow)  ($dir)($git_txt)"
+        }
+        "ys" => {
+            # informative dev one-liner:  # user @ host in ~/dir on ⎇ branch●
+            let g = (git-info)
+            let git_txt = if $g.present {
+                let dirty = if $g.clean { "" } else { $"(ansi {fg: $p.err})●(ansi reset)" }
+                $" (ansi {fg: $p.sep})on(ansi reset) (ansi {fg: $p.git attr: b})⎇ ($g.head)(ansi reset)($dirty)"
+            } else { "" }
+            $"(ansi {fg: $p.git attr: b})#(ansi reset) (ansi {fg: $p.user attr: b})(prompt-user)(ansi reset) (ansi {fg: $p.sep})@(ansi reset) (ansi {fg: $p.host attr: b})(prompt-host)(ansi reset) (ansi {fg: $p.sep})in(ansi reset) (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
+        }
+        "avit" => {
+            # clean two-line; time shows on the right prompt
+            let g = (git-info)
+            let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
+            $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)\n"
+        }
+        "bira" => {
+            # two-line box:  ╭─user@host ~/dir git:(branch)  /  ╰─➤
+            let g = (git-info)
+            let uh = $"(ansi {fg: $p.user attr: b})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host attr: b})(prompt-host)(ansi reset)"
+            let git_txt = if $g.present { $" (git-omz $g)" } else { "" }
+            let l1 = $"(ansi {fg: $p.sep})╭─(ansi reset)($uh) (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
+            $"($l1)\n(ansi {fg: $p.sep})╰─(ansi reset)"
+        }
+        "af-magic" => {
+            # a full-width rule, then user ~/dir git:(branch)
+            let cols = (try { (term size).columns } catch { 80 })
+            let bar = ("" | fill --width $cols --character "─")
+            let g = (git-info)
+            let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
+            $"(ansi {fg: $p.sep})($bar)(ansi reset)\n(ansi {fg: $p.git attr: b})(prompt-user)(ansi reset) (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
+        }
         "mario" => {
             # Two-line overworld: ▣ ?-block · ◆ hero · ⚑ flag · ◉ coins · ▲▼ pipes
             # · ✖ conflicts · ⬢ stash · ★ when clean, on a ▄ brick ground.
@@ -1076,6 +1128,11 @@ def prompt-indicator [] {
         "mario" => "▶"
         "arcade" => "▮▮"
         "8bit" => "█"
+        "ys" => "$"
+        "avit" => "➜"
+        "bira" => "➤"
+        "af-magic" => "❯"
+        "robbyrussell" => ""
         _ => "❯"
     }
     let color = if $ok {
