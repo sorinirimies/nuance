@@ -607,6 +607,7 @@ def presets [] {
         { name: "avit",             theme: "tokyo-night",           style: "avit" }
         { name: "bira",             theme: "nord",                  style: "bira" }
         { name: "af-magic",         theme: "dracula",               style: "af-magic" }
+        { name: "cloud",            theme: "catppuccin-frappe",      style: "cloud" }
         { name: "super-mario",      theme: "super-mario",           style: "mario" }
         { name: "arcade",           theme: "super-mario",           style: "arcade" }
         { name: "8bit",             theme: "gruvbox",               style: "8bit" }
@@ -665,6 +666,23 @@ def style-preview [] {
         print ""
     }
     $env.PROMPT_STYLE = $saved
+}
+
+# Update nuance in place. If installed as a symlink to a git checkout, this
+# pulls the latest and reloads; otherwise it points you at the reinstall.
+def nuance-update [] {
+    let link = ($nu.user-autoload-dirs | get 0 | path join "nushell-prompt.nu")
+    if not ($link | path exists) { print $"(ansi red)nuance is not installed(ansi reset) at ($link)"; return }
+    let real = ($link | path expand)          # resolves the symlink
+    let repo = ($real | path dirname)
+    if (($repo | path join ".git") | path exists) {
+        print $"(ansi green)updating(ansi reset) ($repo) …"
+        ^git -C $repo pull --ff-only
+        print $"(ansi green_bold)✓(ansi reset) updated — run (ansi attr_bold)exec nu(ansi reset) to reload."
+    } else {
+        print $"(ansi yellow)copy install detected(ansi reset) \(($repo)) — re-run the installer to update:"
+        print "  curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash"
+    }
 }
 
 # Read Ghostty's active theme and map it to a nushell theme name.
@@ -765,7 +783,7 @@ theme-apply $start_theme
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
-def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "robbyrussell" "ys" "avit" "bira" "af-magic" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
+def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "robbyrussell" "ys" "avit" "bira" "af-magic" "cloud" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
 
 # Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
 $env.PROMPT_NERD = true
@@ -1025,6 +1043,12 @@ def create_left_prompt [] {
             let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
             $"(ansi {fg: $p.sep})($bar)(ansi reset)\n(ansi {fg: $p.git attr: b})(prompt-user)(ansi reset) (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
         }
+        "cloud" => {
+            # oh-my-zsh cloud:  ☁  ~/dir git:(branch)
+            let g = (git-info)
+            let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
+            $"(ansi {fg: $p.ahead attr: b})☁(ansi reset)  (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
+        }
         "mario" => {
             # Two-line overworld: ▣ ?-block · ◆ hero · ⚑ flag · ◉ coins · ▲▼ pipes
             # · ✖ conflicts · ⬢ stash · ★ when clean, on a ▄ brick ground.
@@ -1132,6 +1156,7 @@ def prompt-indicator [] {
         "avit" => "➜"
         "bira" => "➤"
         "af-magic" => "❯"
+        "cloud" => ""
         "robbyrussell" => ""
         _ => "❯"
     }

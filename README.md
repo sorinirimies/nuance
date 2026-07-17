@@ -3,14 +3,14 @@
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
 ![themes](https://img.shields.io/badge/themes-26-cba6f7)
-![styles](https://img.shields.io/badge/prompt%20styles-21-89b4fa)
+![styles](https://img.shields.io/badge/prompt%20styles-22-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 
 **nuance** *(a portmanteau of **nu** + **nuance** — the subtle differences
 between colors)* is a themeable, git-aware prompt for
 [Nushell](https://www.nushell.sh), shipped as a single drop-in file. Switch
-between **26 color themes** and **21 prompt styles**, combine them into named
+between **26 color themes** and **22 prompt styles**, combine them into named
 **looks**, and optionally let the whole shell **follow your terminal's theme**
 automatically. Works on **macOS** and **Linux**.
 
@@ -52,6 +52,17 @@ Then open a new shell (or `exec nu`). **Update** with `git pull`; **remove**
 with `nu uninstall.nu`. A [Nerd Font](https://www.nerdfonts.com/) is
 recommended for the glyph-based styles (or set `$env.PROMPT_NERD = false`).
 
+### Updating
+
+If you cloned/symlinked, just pull — or run the built-in command:
+
+```nu
+nuance-update      # git pull the checkout, then: exec nu
+```
+
+Manually: `cd` into the repo, `git pull`, then open a new shell. (Copy-based or
+`bootstrap` installs: just re-run the bootstrap one-liner.)
+
 ## What is it?
 
 `nuance` is a self-contained Nushell script that replaces the default prompt
@@ -89,10 +100,10 @@ no external dependencies.
   config (`theme = …`), matched automatically. Pick a theme manually with
   `theme <name>` to **pin** it (survives new shells); `theme-sync` re-enables
   auto-follow.
-- **21 prompt styles**: `full`, `compact`, `minimal`, `lambda`, `pure`,
+- **22 prompt styles**: `full`, `compact`, `minimal`, `lambda`, `pure`,
   `bracket`, `arrow`, `powerline`, `slant`, `capsule`, `rainbow`, `boxed`,
   `cyberpunk`, game-inspired `mario`/`arcade`/`8bit`, and oh-my-zsh classics
-  `robbyrussell`/`ys`/`avit`/`bira`/`af-magic`.
+  `robbyrussell`/`ys`/`avit`/`bira`/`af-magic`/`cloud`.
 - **oh-my-zsh style git info**: branch, `⇡`ahead `⇣`behind `=`conflict
   `+`staged `!`modified `?`untracked `*`stash, `✔` clean.
 - **Command duration** (for commands > 2s) and an **exit-status-aware** prompt
@@ -132,6 +143,7 @@ theme-preview         # color swatch of every theme
 prompt-style          # change ONLY the prompt style
 prompt-style capsule
 style-preview         # render every style once, on the current theme
+nuance-update         # git pull the checkout + reload hint
 ```
 
 ### Themes
@@ -197,6 +209,7 @@ Game-inspired styles — try `look super-mario`, `look arcade`, or `look 8bit`:
 | `avit`      | oh-my-zsh `avit` — clean two-line + `git:(branch)`          |
 | `bira`      | oh-my-zsh `bira` — `╭─user@host ~/dir` / `╰─➤`               |
 | `af-magic`  | oh-my-zsh `af-magic` — full-width rule + info line          |
+| `cloud`     | oh-my-zsh `cloud` — `☁  ~/dir git:(branch)`                  |
 | `bracket`   | ASCII `[user@host] [path] [git]` (no Nerd Font needed)       |
 | `arrow`     | `user » path » git` — no Nerd Font needed                    |
 | `powerline` | Nerd-Font segments with `` separators                     |
