@@ -208,11 +208,6 @@ Game-inspired styles — try `look super-mario`, `look arcade`, or `look 8bit`:
 | `arcade`    | retro all-caps `▶ 1UP` score line                          |
 | `8bit`      | pixel `░▒▓` gradient separators                              |
 | `cyberpunk` | two-line neon box-drawing with `⚡` and `▶▶▶`                |
-| `robbyrussell` | oh-my-zsh classic — `➜  path git:(branch) ✗`              |
-| `ys`        | two-line with hash prefix, `user@host in path on ⎇ branch●` |
-| `avit`      | clean `path  git:(branch) ✗` (yellow/cyan)                  |
-| `bira`      | two-line box-drawing with `user@host path git:(branch)`      |
-| `af-magic`  | horizontal divider, `user path  git:(branch) ✗`              |
 
 ### Toggles
 
@@ -233,7 +228,7 @@ A test suite (`nu test.nu`) validates that every theme, style and look is
 well-formed and the prompt renders; it runs in CI on both Ubuntu and macOS.
 
 ```sh
-nu test.nu   # ✓ all checks passed — 26 themes, 16 styles, 25 looks
+nu test.nu   # ✓ all checks passed — 26 themes, 21 styles, 30 looks
 ```
 
 ## How it works
