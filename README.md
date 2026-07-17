@@ -16,6 +16,42 @@ automatically. Works on **macOS** and **Linux**.
 
 ![nuance demo](docs/welcome.gif)
 
+## Installation
+
+**No Nushell yet?** One command installs [Nushell](https://www.nushell.sh)
+*and* sets up nuance — macOS, Linux and WSL:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
+```
+
+<sub>…or with wget:</sub>
+
+```sh
+wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
+```
+
+The bootstrap installs Nushell via your package manager (Homebrew / apt /
+pacman / dnf / zypper / cargo) or a prebuilt binary, then wires up the prompt.
+
+**Already have Nushell?** Clone and run the pure-Nushell installer:
+
+```sh
+git clone https://github.com/sorinirimies/nuance
+cd nuance
+nu install.nu          # symlink (repo stays the source of truth) — or --copy
+```
+
+…or without cloning:
+
+```sh
+nu -c 'http get https://raw.githubusercontent.com/sorinirimies/nuance/main/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu'
+```
+
+Then open a new shell (or `exec nu`). **Update** with `git pull`; **remove**
+with `nu uninstall.nu`. A [Nerd Font](https://www.nerdfonts.com/) is
+recommended for the glyph-based styles (or set `$env.PROMPT_NERD = false`).
+
 ## What is it?
 
 `nuance` is a self-contained Nushell script that replaces the default prompt
@@ -69,30 +105,6 @@ no external dependencies.
 - A [Nerd Font](https://www.nerdfonts.com/) for the branch glyph and the
   `powerline` style. Not required otherwise — run `$env.PROMPT_NERD = false`
   for plain ASCII.
-
-## Install
-
-Requires [Nushell](https://www.nushell.sh) — the installer is pure Nushell,
-no bash needed.
-
-```sh
-git clone https://github.com/sorinirimies/nuance
-cd nuance
-nu install.nu            # symlink (repo stays the source of truth)
-# or:  nu install.nu --copy
-```
-
-One-liner (no clone needed):
-
-```sh
-nu -c 'http get https://raw.githubusercontent.com/sorinirimies/nuance/main/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu'
-```
-
-Open a new shell (or `exec nu`). That's it.
-
-To update: `git pull` (if you symlinked, changes apply on next shell).
-
-To remove: `nu uninstall.nu`.
 
 ## Full cyberpunk mode
 
