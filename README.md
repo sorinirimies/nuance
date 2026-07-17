@@ -198,7 +198,7 @@ Game-inspired styles — try `look super-mario`, `look arcade`, or `look 8bit`:
 | `capsule`   | Nerd-Font rounded "pill" segments                           |
 | `rainbow`   | Nerd-Font powerline, each segment its own color             |
 | `boxed`     | two-line box-drawing with a `●` clean/dirty marker          |
-| `mario`     | 🍄 game vibe — `◆` hero, `⚑` flag, `◉` coins (changes)         |
+| `mario`     | two-line 🍄 overworld — `▣`?-block, `◆` hero, `⚑` flag, `◉` coins, `▄` ground |
 | `arcade`    | retro all-caps `▶ 1UP` score line                          |
 | `8bit`      | pixel `░▒▓` gradient separators                              |
 | `cyberpunk` | two-line neon box-drawing with `⚡` and `▶▶▶`                |

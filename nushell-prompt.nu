@@ -391,9 +391,9 @@ const ZENBURN = {
 }
 # Super Mario — vivid red / coin-gold / luigi-green / sky-blue on night bg.
 const SUPER_MARIO = {
-    fg: "#f8f8f2", gray: "#8a7f9a", red: "#e52521", orange: "#e39c4b"
-    yellow: "#fbd000", green: "#43b047", cyan: "#49b6d8", blue: "#049cd8"
-    magenta: "#d472d4", purple: "#7c5cbf", bg: "#12102a"
+    fg: "#fdfdf5", gray: "#8a7f9a", red: "#ff3b30", orange: "#ff9c1a"
+    yellow: "#ffd21e", green: "#3fca3f", cyan: "#49c6e8", blue: "#1aa5e6"
+    magenta: "#ff77d4", purple: "#8a6be0", bg: "#0f0b24"
 }
 
 # Generic color_config from a simple palette (fg/gray/red/orange/yellow/
@@ -974,17 +974,28 @@ def create_left_prompt [] {
             }
         }
         "mario" => {
-            # ◆ hero · ⚑ flag(branch) · ◉ coins(changes) / ★ when clean
+            # Two-line overworld: ▣ ?-block · ◆ hero · ⚑ flag · ◉ coins · ▲▼ pipes
+            # · ✖ conflicts · ⬢ stash · ★ when clean, on a ▄ brick ground.
             let g = (git-info)
-            let hero = $"(ansi {fg: $p.err attr: b})◆(ansi reset)"
-            let dir = $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)"
+            let block = $"(ansi {fg: $p.modified attr: b})▣(ansi reset)"
+            let hero  = $"(ansi {fg: $p.err attr: b})◆(ansi reset)"
+            let dir   = $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)"
             let git_txt = if $g.present {
-                let flag = $" (ansi {fg: $p.ok attr: b})⚑ ($g.head)(ansi reset)"
+                mut segs = [$"(ansi {fg: $p.ok attr: b})⚑ ($g.head)(ansi reset)"]
                 let n = ($g.staged + $g.modified + $g.untracked)
-                let coins = if $n > 0 { $" (ansi {fg: $p.modified attr: b})◉×($n)(ansi reset)" } else { $" (ansi {fg: $p.modified})★(ansi reset)" }
-                $"($flag)($coins)"
+                if $n > 0 {
+                    $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})◉×($n)(ansi reset)")
+                } else {
+                    $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})★(ansi reset)")
+                }
+                if $g.ahead    > 0 { $segs = ($segs | append $"(ansi {fg: $p.ok})▲($g.ahead)(ansi reset)") }
+                if $g.behind   > 0 { $segs = ($segs | append $"(ansi {fg: $p.behind})▼($g.behind)(ansi reset)") }
+                if $g.conflict > 0 { $segs = ($segs | append $"(ansi {fg: $p.err attr: b})✖($g.conflict)(ansi reset)") }
+                if $g.stash    > 0 { $segs = ($segs | append $"(ansi {fg: $p.stash})⬢($g.stash)(ansi reset)") }
+                $"  ($segs | str join '  ')"
             } else { "" }
-            $"($hero) ($dir)($git_txt)"
+            let ground = $"(ansi {fg: $p.host})▄▄▄(ansi reset)"
+            $"($block) ($hero) ($dir)($git_txt)\n($ground)"
         }
         "arcade" => {
             # retro all-caps score/1UP vibe
@@ -1068,7 +1079,10 @@ def prompt-indicator [] {
         _ => "❯"
     }
     let color = if $ok {
-        if $style in ["cyberpunk" "pure"] { $p.git } else if $style in ["mario" "arcade" "8bit"] { $p.modified } else { $p.ok }
+        if $style in ["cyberpunk" "pure"] { $p.git
+        } else if $style == "mario" { $p.ok
+        } else if $style in ["arcade" "8bit"] { $p.modified
+        } else { $p.ok }
     } else { $p.err }
     $"(ansi {fg: $color attr: b})($glyph) (ansi reset)"
 }
