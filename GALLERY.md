@@ -1,0 +1,147 @@
+# nuance — gallery
+
+The full showcase: every **theme**, **style** and **look**.
+Back to the [main README](README.md).
+
+---
+
+## Themes (26)
+
+Every theme's palette at a glance (`theme-preview`):
+
+![theme swatches](docs/gallery-themes.gif)
+
+A selection with recolored syntax + tables:
+
+![themes](docs/themes.gif)
+
+More of the newer themes (nord, rosé pine, everforest, kanagawa, ayu, onedark,
+solarized, super-mario):
+
+![more themes](docs/themes-more.gif)
+
+Light themes on a light terminal background:
+
+![light themes](docs/light.gif)
+
+**Dark:** `gruvbox` · `catppuccin-mocha` · `catppuccin-macchiato` ·
+`catppuccin-frappe` · `tokyo-night` · `nord` · `dracula` · `rose-pine` ·
+`rose-pine-moon` · `everforest` · `kanagawa` · `onedark` · `monokai` ·
+`ayu-dark` · `ayu-mirage` · `night-owl` · `github-dark` · `oxocarbon` ·
+`zenburn` · `solarized` · `super-mario` · `cyberpunk` (neon)
+
+**Light:** `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
+`solarized-light`
+
+```nu
+theme            # interactive picker (then choose a style)
+theme dracula    # set + pin one
+theme-preview    # swatch of all 26
+```
+
+---
+
+## Prompt styles (22)
+
+Every style rendered once (`style-preview`):
+
+![all styles](docs/gallery-styles.gif)
+
+Cycling a few live:
+
+![styles](docs/styles.gif)
+
+| Style          | Description                                                     |
+|----------------|----------------------------------------------------------------|
+| `full`         | `user@host in ~/path on  branch +git` (default)              |
+| `compact`      | `…/last2/dirs on  branch +git`                               |
+| `minimal`      | `dirname on  branch`                                         |
+| `lambda`       | `λ ~/path on  branch +git`                                   |
+| `pure`         | two-line, [pure](https://github.com/sindresorhus/pure)-like    |
+| `bracket`      | ASCII `[user@host] [path] [git]` — no Nerd Font needed         |
+| `arrow`        | `user » path » git` — no Nerd Font needed                      |
+| `robbyrussell` | oh-my-zsh default — `➜  dir git:(branch) ✗`                    |
+| `ys`           | oh-my-zsh `ys` — `# user @ host in ~/dir on ⎇ branch●`         |
+| `avit`         | oh-my-zsh `avit` — clean two-line + `git:(branch)`             |
+| `bira`         | oh-my-zsh `bira` — `╭─user@host ~/dir` / `╰─➤`                  |
+| `af-magic`     | oh-my-zsh `af-magic` — full-width rule + info line             |
+| `cloud`        | oh-my-zsh `cloud` — `☁  ~/dir git:(branch)`                     |
+| `powerline`    | Nerd-Font segments with `` separators                        |
+| `slant`        | Nerd-Font slanted segment separators                          |
+| `capsule`      | Nerd-Font rounded "pill" segments                             |
+| `rainbow`      | Nerd-Font powerline, each segment its own color               |
+| `boxed`        | two-line box-drawing with a `●` clean/dirty marker            |
+| `mario`        | two-line 🍄 overworld — `▣`?-block, `◆` hero, `⚑` flag, `◉` coins, `▄` ground |
+| `arcade`       | retro all-caps `▶ 1UP` score line                             |
+| `8bit`         | pixel `░▒▓` gradient separators                                |
+| `cyberpunk`    | two-line neon box-drawing with `⚡` and `▶▶▶`                   |
+
+Game-inspired styles on the Super Mario theme:
+
+![game styles](docs/games.gif)
+
+```nu
+prompt-style           # interactive picker
+prompt-style robbyrussell
+style-preview          # render all 22
+```
+
+---
+
+## Looks (31)
+
+A **look** applies a theme **and** a style in one step (and pins it).
+
+![looks](docs/demo.gif)
+
+| Look                | Theme                  | Style          |
+|---------------------|------------------------|----------------|
+| `cyberpunk`         | cyberpunk              | cyberpunk      |
+| `synthwave`         | cyberpunk              | capsule        |
+| `gruvbox`           | gruvbox                | full           |
+| `gruvbox-minimal`   | gruvbox                | minimal        |
+| `mocha-pure`        | catppuccin-mocha       | pure           |
+| `macchiato-lambda`  | catppuccin-macchiato   | lambda         |
+| `latte-compact`     | catppuccin-latte       | compact        |
+| `tokyo-powerline`   | tokyo-night            | powerline      |
+| `tokyo-capsule`     | tokyo-night            | capsule        |
+| `nord-lambda`       | nord                   | lambda         |
+| `dracula-slant`     | dracula                | slant          |
+| `rose-pine-pure`    | rose-pine              | pure           |
+| `everforest-boxed`  | everforest             | boxed          |
+| `kanagawa-capsule`  | kanagawa               | capsule        |
+| `onedark-bracket`   | onedark                | bracket        |
+| `solarized-full`    | solarized              | full           |
+| `monokai-rainbow`   | monokai                | rainbow        |
+| `ayu-arrow`         | ayu-dark               | arrow          |
+| `night-owl-pure`    | night-owl              | pure           |
+| `github-arrow`      | github-dark            | arrow          |
+| `oxocarbon-rainbow` | oxocarbon              | rainbow        |
+| `rose-moon-boxed`   | rose-pine-moon         | boxed          |
+| `robbyrussell`      | onedark                | robbyrussell   |
+| `ys`                | night-owl              | ys             |
+| `avit`              | tokyo-night            | avit           |
+| `bira`              | nord                   | bira           |
+| `af-magic`          | dracula                | af-magic       |
+| `cloud`             | catppuccin-frappe      | cloud          |
+| `super-mario`       | super-mario            | mario          |
+| `arcade`            | super-mario            | arcade         |
+| `8bit`              | gruvbox                | 8bit           |
+
+```nu
+look            # interactive picker
+look ys
+looks           # list them all
+```
+
+---
+
+## Interactive pickers & Ghostty sync
+
+Fuzzy-pick a theme (then a style), or a full look:
+
+![picker](docs/picker.gif)
+
+Pin a theme to override Ghostty; `theme-sync` re-follows the terminal's theme:
+
+![theme-sync](docs/sync.gif)
