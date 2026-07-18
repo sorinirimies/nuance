@@ -1,18 +1,17 @@
 # nuance — gallery
 
-The full showcase: every **theme**, **style** and **look**.
-Back to the [main README](README.md).
+Every **theme**, **style** and **look** at a glance.
+Usage & commands are in the [main README](README.md#theming--styling).
 
 - [Themes (26)](#themes-26)
 - [Prompt styles (22)](#prompt-styles-22)
 - [Looks (31)](#looks-31)
-- [Pickers & Ghostty sync](#interactive-pickers--ghostty-sync)
 
 ---
 
 ## Themes (26)
 
-Every theme's palette at a glance (`theme-preview`):
+Every theme's palette at a glance:
 
 ![theme swatches](docs/gallery-themes.gif)
 
@@ -38,17 +37,11 @@ Light themes on a light terminal background:
 **Light:** `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
 `solarized-light`
 
-```nu
-theme            # interactive picker (then choose a style)
-theme dracula    # set + pin one
-theme-preview    # swatch of all 26
-```
-
 ---
 
 ## Prompt styles (22)
 
-Every style rendered once (`style-preview`):
+Every style rendered once:
 
 ![all styles](docs/gallery-styles.png)
 
@@ -85,17 +78,11 @@ Game-inspired styles on the Super Mario theme:
 
 ![game styles](docs/games.gif)
 
-```nu
-prompt-style           # interactive picker
-prompt-style robbyrussell
-style-preview          # render all 22
-```
-
 ---
 
 ## Looks (31)
 
-A **look** applies a theme **and** a style in one step (and pins it).
+A **look** is a curated theme + style pairing.
 
 ![looks](docs/demo.gif)
 
@@ -132,21 +119,3 @@ A **look** applies a theme **and** a style in one step (and pins it).
 | `super-mario`       | super-mario            | mario          |
 | `arcade`            | super-mario            | arcade         |
 | `8bit`              | gruvbox                | 8bit           |
-
-```nu
-look            # interactive picker
-look ys
-looks           # list them all
-```
-
----
-
-## Interactive pickers & Ghostty sync
-
-Fuzzy-pick a theme (then a style), or a full look:
-
-![picker](docs/picker.gif)
-
-Pin a theme to override Ghostty; `theme-sync` re-follows the terminal's theme:
-
-![theme-sync](docs/sync.gif)

@@ -45,7 +45,7 @@ nu install.nu          # symlink (repo stays the source of truth) — or --copy
 Then open a new shell (or `exec nu`). A [Nerd Font](https://www.nerdfonts.com/)
 is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
 
-## Usage
+## Theming & styling
 
 ```nu
 look            # pick a full LOOK (theme + style) — pins it, overrides Ghostty
@@ -54,24 +54,31 @@ looks           # list looks
 
 theme           # pick a theme, then a style (interactive)
 theme dracula   # set + pin a theme only
-theme-preview   # color swatch of all 26 themes
+theme-list      # list all 26 themes
+theme-preview   # color swatch of every theme
 theme-sync      # re-follow Ghostty's theme
 
-prompt-style capsule   # change only the layout
+prompt-style           # pick a layout (interactive)
+prompt-style capsule   # …or set one by name
 style-preview          # render all 22 styles
 
 nuance-update          # git pull the checkout, then: exec nu
 ```
 
+Pick interactively — `theme`/`prompt-style`/`look` open a fuzzy picker:
+
+![interactive picker](docs/picker.gif)
+
 - **Themes** recolor syntax highlighting, tables **and** the prompt.
 - **Styles** are prompt *layouts* (minimal, powerline, two-line, oh-my-zsh
   classics like `robbyrussell`/`ys`, game-inspired `mario`/`8bit`, neon
   `cyberpunk`, …), independent of the colors.
+- A **look** pins a theme + style together and overrides Ghostty auto-follow.
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
   and an exit-status-aware indicator.
 
-Full showcase with previews of everything: **[GALLERY.md](GALLERY.md)**.
+See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
 ## Ghostty auto-follow
 
