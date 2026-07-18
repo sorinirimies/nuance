@@ -1,4 +1,7 @@
 # Gallery: every prompt style rendered once (on tokyo-night).
+# NOTE: this static sheet is committed as docs/gallery-styles.png (smaller than
+# the GIF). After running: ffmpeg -y -sseof -0.2 -i docs/gallery-styles.gif \
+#   -frames:v 1 docs/gallery-styles.png  &&  rm docs/gallery-styles.gif
 Output docs/gallery-styles.gif
 
 Set Shell "nu"

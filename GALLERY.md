@@ -3,6 +3,11 @@
 The full showcase: every **theme**, **style** and **look**.
 Back to the [main README](README.md).
 
+- [Themes (26)](#themes-26)
+- [Prompt styles (22)](#prompt-styles-22)
+- [Looks (31)](#looks-31)
+- [Pickers & Ghostty sync](#interactive-pickers--ghostty-sync)
+
 ---
 
 ## Themes (26)
@@ -45,7 +50,7 @@ theme-preview    # swatch of all 26
 
 Every style rendered once (`style-preview`):
 
-![all styles](docs/gallery-styles.gif)
+![all styles](docs/gallery-styles.png)
 
 Cycling a few live:
 
