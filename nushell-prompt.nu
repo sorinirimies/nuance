@@ -706,8 +706,7 @@ def --env "nuance theme" [name?: string] {
     if ($name | is-not-empty) { theme $name; return }
     let items = (theme-list | each {|t|
         let p = (theme-get $t).palette
-        let sw = ([$p.err $p.host $p.modified $p.ok $p.ahead $p.path $p.git $p.user] | each {|c| $"(ansi {fg: $c})██(ansi reset)" } | str join "")
-        $"($t | fill --alignment left --width 22) ($sw)"
+        $"($t | fill --alignment left --width 20) (ansi {fg: $p.path})███(ansi {fg: $p.git})███(ansi reset)"
     })
     let choice = ($items | input list "select a theme  (↑↓, enter)")
     if ($choice | is-empty) { return }

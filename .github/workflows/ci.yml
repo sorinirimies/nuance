@@ -22,9 +22,22 @@ jobs:
         with:
           version: ${{ matrix.nu }}
 
-      - name: Run tests
+      - name: Install bats
+        shell: bash
+        run: |
+          if [ "$(uname)" = "Darwin" ]; then
+            brew install bats-core
+          else
+            sudo apt-get update && sudo apt-get install -y bats
+          fi
+
+      - name: Run nushell tests
         shell: bash
         run: nu test.nu
+
+      - name: Run bash tests
+        shell: bash
+        run: bats test.bats
 
       - name: Verify install (symlink into autoload)
         shell: bash
@@ -32,3 +45,11 @@ jobs:
           nu install.nu
           DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
           test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
+
+      - name: Install bats
+        shell: bash
+        run: npm install -g bats
+
+      - name: Run CLI tests (bats)
+        shell: bash
+        run: bats test.bats
