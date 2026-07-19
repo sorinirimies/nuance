@@ -61,7 +61,9 @@ Short forms (same effect): `theme [name]` · `prompt-style [name]` ·
 work from a normal shell via the `nuance` CLI — selections apply to your next
 Nushell (`exec nu`).
 
-Running `theme`/`prompt-style`/`look` with **no name** opens a fuzzy picker:
+Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
+`prompt-style`) with **no name** opens an interactive selector — arrow keys
+↑↓ to browse (themes show a color chip), Enter to apply:
 
 ![interactive picker](docs/picker.gif)
 
@@ -101,11 +103,13 @@ shell). Copy/bootstrap installs: re-run the bootstrap one-liner.
 One pure-Nushell file, no OS-specific dependencies. Paths resolve via Nushell
 built-ins; the Ghostty config is found at `~/.config/ghostty/config` or the
 macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
-`gsettings`. A test suite runs in CI on **Ubuntu + macOS** across Nushell
-**0.111** and **0.114**:
+`gsettings`. Two test suites run in CI on **Ubuntu + macOS** across Nushell
+**0.111** and **0.114** — `nu test.nu` (themes/styles/looks/helpers) and
+`bats test.bats` (the POSIX `nuance` CLI):
 
 ```sh
-nu test.nu   # ✓ all checks passed — 26 themes, 22 styles, 31 looks
+nu test.nu       # ✓ all checks passed — 26 themes, 22 styles, 31 looks
+bats test.bats   # ✓ 8 CLI tests
 ```
 
 ## How it works
@@ -126,8 +130,8 @@ from the theme's `palette`, so it restyles automatically.
 ## Contributing / demos
 
 GIFs are recorded with [VHS](https://github.com/charmbracelet/vhs) from the
-tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape`. Run `nu test.nu`
-before opening a PR.
+tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape`. Run `nu test.nu` and
+`bats test.bats` before opening a PR.
 
 ## License
 
