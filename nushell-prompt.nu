@@ -686,14 +686,34 @@ def "nuance update" [] {
     }
 }
 
-def nuance [] {
+def nuance [] { nuance help }
+
+def "nuance help" [] {
     print $"(ansi green_bold)nuance(ansi reset) — themeable, git-aware Nushell prompt"
     print ""
-    print "  nuance update           pull the latest, then: exec nu"
-    print "  theme [name]            switch/pin a color theme  (theme-preview)"
-    print "  prompt-style [name]     switch the prompt layout   (style-preview)"
-    print "  look [name]             apply a theme + style preset (looks)"
-    print "  theme-sync              re-follow the Ghostty terminal theme"
+    print "  nuance theme [name]          show all themes, or set + pin one"
+    print "  nuance prompt-style [name]   show all styles, or set one"
+    print "  nuance look [name]           list looks, or apply one (theme + style)"
+    print "  nuance update                pull the latest, then: exec nu"
+    print "  nuance help                  this help"
+    print ""
+    print "Shortcuts:  theme · prompt-style · look · theme-sync"
+    print "Previews:   theme-preview · style-preview"
+}
+
+# `nuance theme` — no name shows every theme; a name sets + pins it.
+def --env "nuance theme" [name?: string] {
+    if ($name | is-empty) { theme-preview } else { theme $name }
+}
+
+# `nuance prompt-style` — no name shows every style; a name sets it.
+def --env "nuance prompt-style" [name?: string] {
+    if ($name | is-empty) { style-preview } else { prompt-style $name }
+}
+
+# `nuance look` — no name lists looks; a name applies one.
+def --env "nuance look" [name?: string] {
+    if ($name | is-empty) { looks } else { look $name }
 }
 
 # Read Ghostty's active theme and map it to a nushell theme name.

@@ -48,24 +48,20 @@ is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
 ## Theming & styling
 
 ```nu
-look            # pick a full LOOK (theme + style) — pins it, overrides Ghostty
-look ys         # …or apply one by name
-looks           # list looks
-
-theme           # pick a theme, then a style (interactive)
-theme dracula   # set + pin a theme only
-theme-list      # list all 26 themes
-theme-preview   # color swatch of every theme
-theme-sync      # re-follow Ghostty's theme
-
-prompt-style           # pick a layout (interactive)
-prompt-style capsule   # …or set one by name
-style-preview          # render all 22 styles
-
+nuance                 # help — list every command
+nuance theme           # show ALL themes (swatches); add a name to set + pin one
+nuance theme dracula   # …e.g. set + pin dracula
+nuance prompt-style    # show ALL styles; add a name to set one
+nuance look            # list looks; add a name to apply one (theme + style)
 nuance update          # git pull the checkout, then: exec nu
 ```
 
-Pick interactively — `theme`/`prompt-style`/`look` open a fuzzy picker:
+Short forms (same effect): `theme [name]` · `prompt-style [name]` ·
+`look [name]` · `theme-sync` · `theme-preview` · `style-preview`. These also
+work from a normal shell via the `nuance` CLI — selections apply to your next
+Nushell (`exec nu`).
+
+Running `theme`/`prompt-style`/`look` with **no name** opens a fuzzy picker:
 
 ![interactive picker](docs/picker.gif)
 
