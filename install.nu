@@ -19,7 +19,9 @@ def resolve-source []: nothing -> string {
     let cache = ($env.XDG_CACHE_HOME? | default ($env.HOME | path join ".cache") | path join "nuance")
     print $"(ansi cyan)fetching(ansi reset) ($REPO_URL) ..."
     rm -rf $cache
-    ^git clone --depth 1 $REPO_URL $cache
+    # Skip LFS media (the demo GIFs) — install only needs the code, and this
+    # turns a ~1.5 min clone into ~1 s.
+    with-env { GIT_LFS_SKIP_SMUDGE: "1" } { ^git clone --depth 1 $REPO_URL $cache }
     $cache | path join $FILE
 }
 

@@ -37,7 +37,8 @@ pacman / dnf / zypper / cargo) or a prebuilt binary, then wires up the prompt.
 **Already have Nushell?**
 
 ```sh
-git clone https://github.com/sorinirimies/nuance
+# GIT_LFS_SKIP_SMUDGE=1 skips the demo GIFs (LFS) — a ~1s clone instead of ~1min
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/sorinirimies/nuance
 cd nuance
 nu install.nu          # symlink (repo stays the source of truth) — or --copy
 ```
