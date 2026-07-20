@@ -50,10 +50,11 @@ is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
 
 ```nu
 nuance                 # help — list every command
-nuance theme           # show ALL themes (swatches); add a name to set + pin one
+nuance theme           # ↑↓ selector (top entry: ↻ sync with terminal), or set + pin a name
 nuance theme dracula   # …e.g. set + pin dracula
-nuance prompt-style    # show ALL styles; add a name to set one
+nuance prompt-style    # ↑↓ selector, or set a name
 nuance look            # list looks; add a name to apply one (theme + style)
+nuance sync            # follow the terminal's theme (auto-follow)
 nuance update          # git pull the checkout, then: exec nu
 ```
 
@@ -83,7 +84,8 @@ See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
 By default the theme follows your [Ghostty](https://ghostty.org) config
 (`theme = …`). Pick a theme/look manually to **pin** it (survives new shells);
-`theme-sync` re-enables auto-follow.
+**`nuance sync`** (or the ↻ *sync with terminal* entry in `nuance theme`)
+re-enables auto-follow.
 
 ![theme-sync](docs/sync.gif)
 

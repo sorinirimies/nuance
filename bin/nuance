@@ -39,9 +39,10 @@ usage() {
   cat <<'EOF'
 nuance — themeable, git-aware Nushell prompt
 
-  nuance theme [name]          show all themes, or set + pin one
-  nuance prompt-style [name]   show all styles, or set one
+  nuance theme [name]          selector (incl. sync with terminal), or set one
+  nuance prompt-style [name]   selector, or set one
   nuance look [name]           list looks, or apply one (theme + style)
+  nuance sync                  follow the terminal's theme (auto-follow)
   nuance update                pull the latest, then: exec nu
   nuance help                  this help
 
@@ -65,6 +66,7 @@ case "${1:-help}" in
   theme)         shift; run_nu "nuance theme ${*:-}" ;;
   prompt-style)  shift; run_nu "nuance prompt-style ${*:-}" ;;
   look)          shift; run_nu "nuance look ${*:-}" ;;
+  sync)          run_nu "nuance sync theme" ;;
   update)        cmd_update ;;
   help|-h|--help) usage ;;
   *) usage; exit 1 ;;

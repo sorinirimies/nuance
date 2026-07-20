@@ -691,25 +691,28 @@ def nuance [] { nuance help }
 def "nuance help" [] {
     print $"(ansi green_bold)nuance(ansi reset) — themeable, git-aware Nushell prompt"
     print ""
-    print "  nuance theme [name]          show all themes, or set + pin one"
-    print "  nuance prompt-style [name]   show all styles, or set one"
+    print "  nuance theme [name]          selector (incl. ↻ sync with terminal), or set one"
+    print "  nuance prompt-style [name]   selector, or set one"
     print "  nuance look [name]           list looks, or apply one (theme + style)"
+    print "  nuance sync                  follow the terminal's theme (auto-follow)"
     print "  nuance update                pull the latest, then: exec nu"
     print "  nuance help                  this help"
     print ""
-    print "Shortcuts:  theme · prompt-style · look · theme-sync"
-    print "Previews:   theme-preview · style-preview"
+    print "Shortcuts:  theme · prompt-style · look · theme-preview · style-preview"
 }
 
 # `nuance theme` — no name opens a swatch selector; a name sets + pins it.
 def --env "nuance theme" [name?: string] {
     if ($name | is-not-empty) { theme $name; return }
-    let items = (theme-list | each {|t|
+    let sicon = (if ($env.PROMPT_NERD? | default true) { (char --unicode f021) } else { (char --unicode 27f3) })
+    let sync = $"(ansi {fg: $env.THEME_PALETTE.ahead attr: b})($sicon)  sync with terminal(ansi reset)"
+    let items = ([$sync] ++ (theme-list | each {|t|
         let p = (theme-get $t).palette
         $"($t | fill --alignment left --width 20) (ansi {fg: $p.path})███(ansi {fg: $p.git})███(ansi reset)"
-    })
+    }))
     let choice = ($items | input list "select a theme  (↑↓, enter)")
     if ($choice | is-empty) { return }
+    if (($choice | ansi strip) | str contains "sync with terminal") { nuance sync theme; return }
     theme ($choice | ansi strip | str trim | split row " " | first)
 }
 
@@ -797,16 +800,21 @@ def ghostty-theme-name [] {
 }
 
 # Re-adopt Ghostty's current theme in this session.
-def --env theme-sync [] {
+# Follow the terminal: adopt Ghostty's current theme (auto-follow on).
+def --env "nuance sync theme" [] {
     let g = (ghostty-theme-name)
     if ($g | is-empty) {
-        print $"(ansi yellow)could not detect a matching Ghostty theme(ansi reset)"
+        print $"(ansi yellow)could not detect a matching terminal theme(ansi reset)"
         return
     }
     theme-apply $g
     "auto" | save -f (theme-state-path)
-    print $"(ansi green_bold)✓(ansi reset) synced to Ghostty theme (ansi attr_bold)($g)(ansi reset) (ansi grey)\(auto-follow on\)(ansi reset)"
+    print $"(ansi green_bold)✓(ansi reset) following the terminal — (ansi attr_bold)($g)(ansi reset) (ansi grey)\(auto-follow on\)(ansi reset)"
 }
+
+# Shortcuts / back-compat aliases.
+def --env "nuance sync" [] { nuance sync theme }
+def --env theme-sync [] { nuance sync theme }
 
 # Startup theme selection:
 #   • a pinned theme (a saved theme name) wins — keeps e.g. cyberpunk
