@@ -20,22 +20,45 @@ styles**, combine them into named **looks**, and optionally let the shell
 
 ## Installation
 
-**No Nushell yet?** One command installs Nushell *and* nuance:
+Two ways to get `nuance`:
+
+**Have Rust/Cargo?**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
+cargo install nuance-cli
+nuance theme            # first run vendors the prompt into Nushell's autoload dir
+```
+
+**No cargo?** Grab the prebuilt binary — no package managers, nothing to
+compile:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.sh | bash
 ```
 
 …or with `wget`:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
+wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.sh | bash
 ```
 
-The bootstrap installs Nushell via your package manager (Homebrew / apt /
-pacman / dnf / zypper / cargo) or a prebuilt binary, then wires up the prompt.
+Either way you get a `nuance` binary usable from any shell. Running any
+subcommand (`theme`, `prompt-style`, `look`, …) the first time vendors the
+prompt into Nushell's autoload dir — no clone, no separate installer script.
+If Nushell itself isn't installed yet, `nuance` offers to `cargo install nu`
+for you (if you have cargo) or points you at https://www.nushell.sh (if you
+don't — a one-time manual step). It ships its own `ratatui` picker with an
+instant live preview per candidate:
 
-**Already have Nushell?**
+![nuance-cli picker](docs/cli.gif)
+
+See the crate's docs on [crates.io](https://crates.io/crates/nuance-cli) for
+details.
+
+**Hacking on the prompt itself / don't want the Rust binary?** Clone the repo
+and symlink `nushell-prompt.nu` straight into Nushell's autoload dir — the
+repo stays the source of truth, and `nu scripts/install.nu` / `nuance update`
+(git pull) both work against it:
 
 ```sh
 # GIT_LFS_SKIP_SMUDGE=1 skips the demo GIFs (LFS) — a ~1s clone instead of ~1min
@@ -43,24 +66,6 @@ GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/sorinirimies/nuance
 cd nuance
 nu scripts/install.nu   # symlink (repo stays the source of truth) — or --copy
 ```
-
-**Have Rust/Cargo instead?** Skip cloning entirely:
-
-```sh
-cargo install nuance-cli
-nuance theme            # first run vendors the prompt into Nushell's autoload dir
-```
-
-`cargo install nuance-cli` gives you a `nuance` binary usable from any shell.
-Running any subcommand (`theme`, `prompt-style`, `look`, …) the first time
-auto-installs the prompt into Nushell — no `scripts/install.nu`, no clone
-needed. It ships its own `ratatui` picker with an instant live preview per
-candidate:
-
-![nuance-cli picker](docs/cli.gif)
-
-See [`README` section above](#installation) and the crate's docs on
-[crates.io](https://crates.io/crates/nuance-cli) for details.
 
 Then open a new shell (or `exec nu`). A [Nerd Font](https://www.nerdfonts.com/)
 is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
@@ -118,7 +123,8 @@ nuance update      # pulls the checkout; then run: exec nu
 ```
 
 Or `cd` into the repo and `git pull` (symlink installs apply on the next
-shell). Copy/bootstrap installs: re-run the bootstrap one-liner.
+shell). Prebuilt-binary installs (`scripts/install.sh`): re-run it to fetch
+the latest release.
 
 ## Cross-platform & tested
 
@@ -158,7 +164,7 @@ opening a PR.
 
 Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the
 `nuance-cli` crate: `clap` + `ratatui`, self-contained — vendors the prompt
-script via `include_str!`) + `scripts/` (`bootstrap.sh`/`install.nu`/
+script via `include_str!`) + `scripts/` (`install.sh`/`install.nu`/
 `uninstall.nu`, for installs without Rust/Cargo) + `tapes/`, `docs/`
 (VHS-recorded GIFs/screenshots), `test.nu`, `tests/` (Rust integration
 tests).
