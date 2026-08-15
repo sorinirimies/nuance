@@ -59,6 +59,88 @@ All notable changes to this project are documented here — generated with
 - Beef up Super Mario: more vivid theme palette + richer two-line mario style (?-block, hero, flag, coins, pipes, conflicts, stash, brick ground)
 - Refresh demo GIF to feature the oh-my-zsh styles (robbyrussell, ys, cloud) + super-mario
 - Speed up install: skip LFS media (demo GIFs) when cloning — ~1s instead of ~1.5min; README uses GIT_LFS_SKIP_SMUDGE
+- Group install/CLI scripts under scripts/ (bootstrap.sh, install.nu, uninstall.nu, nuance POSIX CLI)
+
+- bootstrap.sh -> scripts/bootstrap.sh, install.nu -> scripts/install.nu,
+  uninstall.nu -> scripts/uninstall.nu, bin/nuance -> scripts/nuance (bin/
+  dropped).
+- install.nu: resolve repo root as one level above the script (was: same
+  dir); cli_src now scripts/nuance instead of bin/nuance.
+- Updated all references: README, CI (ci.yml), test.bats, cli/tests/cli.rs
+  comment, nushell-prompt.nu's printed bootstrap URL, and the scripts'
+  own self-referential comments/URLs.
+- Verified: nu test.nu, bats test.bats, cargo test (cli/) all pass; manual
+  install/uninstall smoke test against a throwaway HOME confirms symlinks
+  resolve correctly from the new scripts/ location.
+- Promote nuance-cli to repo root (src/, Cargo.toml); drop redundant bash CLI + bats
+
+Consolidate on a single, fully self-contained Rust app instead of a nested
+cli/ crate + a parallel POSIX-shell reimplementation:
+
+- cli/{src,tests,Cargo.toml,Cargo.lock,rustfmt.toml} -> repo root {src/,
+  tests/,Cargo.toml,Cargo.lock,rustfmt.toml}. include_str! path for
+  nushell-prompt.nu fixed (one dir shallower). Cargo.toml now uses an
+  explicit include=[] so  only ships what the binary needs
+  (src/, tests/, the vendored .nu file, README, LICENSE) — not docs/tapes/
+  scripts/ etc.
+- Removed scripts/nuance (POSIX bash CLI) and test.bats: fully redundant
+  with the Rust  binary (39 passing unit+integration tests already
+  cover the same behavior, more thoroughly). cargo install nuance-cli is
+  now the one and only any-shell CLI.
+- scripts/install.nu no longer symlinks a bash CLI into ~/.local/bin;
+  scripts/uninstall.nu keeps that cleanup path for old installs (no-op
+  otherwise). scripts/bootstrap.sh: if Rust's package manager
+
+Usage: cargo [+toolchain] [OPTIONS] [COMMAND]
+       cargo [+toolchain] [OPTIONS] -Zscript <MANIFEST_RS> [ARGS]...
+
+Options:
+  -V, --version                  Print version info and exit
+      --list                     List installed commands
+      --explain <CODE>           Provide a detailed explanation of a rustc error message
+  -v, --verbose...               Use verbose output (-vv very verbose/build.rs output)
+  -q, --quiet                    Do not print cargo log messages
+      --color <WHEN>             Coloring [possible values: auto, always, never]
+  -C <DIRECTORY>                 Change to DIRECTORY before doing anything (nightly-only)
+      --locked                   Assert that `Cargo.lock` will remain unchanged
+      --offline                  Run without accessing the network
+      --frozen                   Equivalent to specifying both --locked and --offline
+      --config <KEY=VALUE|PATH>  Override a configuration value
+  -Z <FLAG>                      Unstable (nightly-only) flags to Cargo, see 'cargo -Z help' for
+                                 details
+  -h, --help                     Print help
+
+Commands:
+    build, b    Compile the current package
+    check, c    Analyze the current package and report errors, but don't build object files
+    clean       Remove the target directory
+    doc, d      Build this package's and its dependencies' documentation
+    new         Create a new cargo package
+    init        Create a new cargo package in an existing directory
+    add         Add dependencies to a manifest file
+    remove      Remove dependencies from a manifest file
+    run, r      Run a binary or example of the local package
+    test, t     Run the tests
+    bench       Run the benchmarks
+    update      Update dependencies listed in Cargo.lock
+    search      Search registry for crates
+    publish     Package and upload this package to the registry
+    install     Install a Rust binary
+    uninstall   Uninstall a Rust binary
+    ...         See all commands with --list
+
+See 'cargo help <command>' for more information on a specific command. is already on PATH, prefer
+   (self-contained: vendors the prompt, installs
+   itself if missing) over the package-manager dance.
+- CI: dropped the bats job/steps; cli job no longer needs
+  working-directory: cli (crate is now at repo root, so does Swatinem
+  rust-cache's workspaces:). Renamed release-cli.yml -> release.yml,
+  tag pattern cli-v* -> v*.
+- README: updated all paths/wording (cross-platform & tested section,
+  updating section, contributing/demos with project layout, install-free
+  cargo path).
+- Verified: cargo build/test/fmt/clippy clean from root; nu test.nu passes;
+  manual install/uninstall smoke test against a throwaway HOME.
 
 ### 🚜 Refactor
 
