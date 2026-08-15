@@ -551,11 +551,32 @@ def --env theme-apply [name: string] {
     $env.THEME_NAME = $name
 }
 
-# Switch theme. With no argument, opens an interactive fuzzy picker.
-# The choice is applied live and persisted for future sessions.
+# Render one theme name into a labelled preview line: "name  →  <live prompt>".
+# Renders using the CURRENT prompt style so only theme colors change.
+def --env theme-label [name: string] {
+    let saved = $env.THEME_PALETTE?
+    $env.THEME_PALETTE = (theme-get $name).palette
+    let rendered = (create_left_prompt)
+    $env.THEME_PALETTE = $saved
+    let w = (theme-list | each { str length } | math max)
+    $"($name | fill --alignment left --width $w)  →  ($rendered)"
+}
+
+def --env theme-picker-items [] {
+    theme-list | each {|n| { label: (theme-label $n), key: $n } }
+}
+
+# Switch theme. With no argument, opens an interactive fuzzy picker (each
+# candidate shows a live-rendered preview of the current prompt in that
+# theme's colors). The choice is applied live and persisted for future
+# sessions.
 def --env theme [name?: string] {
     let choice = if ($name | is-empty) {
-        theme-list | input list --fuzzy $"theme  \(current: ($env.THEME_NAME? | default 'gruvbox')\)"
+        let items = (theme-picker-items)
+        let pick = ($items | get label | input list --fuzzy $"theme  \(current: ($env.THEME_NAME? | default 'gruvbox')\)")
+        if ($pick | is-empty) { "" } else {
+            ($items | where label == $pick | get 0?).key? | default ""
+        }
     } else { $name }
     if ($choice | is-empty) { return }
     if ($choice not-in (theme-list)) {
@@ -568,7 +589,9 @@ def --env theme [name?: string] {
     print $"(ansi green_bold)✓(ansi reset) theme set to (ansi attr_bold)($choice)(ansi reset) (ansi grey)\(pinned\)(ansi reset)"
     # When picked interactively, also choose a matching prompt style.
     if ($name | is-empty) {
-        let s = (prompt-styles | input list --fuzzy $"prompt style for ($choice)  \(esc to keep ($env.PROMPT_STYLE? | default 'full')\)")
+        let s_items = (style-picker-items)
+        let s_pick = ($s_items | get label | input list --fuzzy $"prompt style for ($choice)  \(esc to keep ($env.PROMPT_STYLE? | default 'full')\)")
+        let s = if ($s_pick | is-empty) { "" } else { ($s_items | where label == $s_pick | get 0?).key? | default "" }
         if ($s | is-not-empty) {
             $env.PROMPT_STYLE = $s
             $s | save -f (prompt-style-path)
@@ -622,12 +645,33 @@ def --env apply-look [theme_name: string, style_name: string] {
     $style_name | save -f (prompt-style-path)
 }
 
+# Render one look's preview: applies its theme+style to the *current*
+# session only for the duration of the render, then restores. Used by both
+# the Nushell fuzzy picker and the Rust/ratatui TUI (via `... | to json`).
+def --env look-label [theme_name: string, style_name: string] {
+    let saved_p = $env.THEME_PALETTE?
+    let saved_s = $env.PROMPT_STYLE?
+    $env.THEME_PALETTE = (theme-get $theme_name).palette
+    $env.PROMPT_STYLE = $style_name
+    let rendered = (create_left_prompt)
+    $env.THEME_PALETTE = $saved_p
+    $env.PROMPT_STYLE = $saved_s
+    $rendered
+}
+
+def --env look-picker-items [] {
+    let ps = (presets)
+    let w = ($ps | get name | each { str length } | math max)
+    $ps | each {|r| { label: $"($r.name | fill --alignment left --width $w)  →  (look-label $r.theme $r.style)", key: $r.name } }
+}
+
 # Pick a full look (theme + prompt style). No arg = interactive picker.
 def --env look [name?: string] {
     let ps = (presets)
     let choice = if ($name | is-empty) {
-        $ps | each {|r| $"($r.name)  —  ($r.theme) + ($r.style)" } | input list --fuzzy "look  (theme + prompt style)"
-        | split row "  —  " | get 0? | default ""
+        let items = (look-picker-items)
+        let pick = ($items | get label | input list --fuzzy "look  (theme + prompt style)")
+        if ($pick | is-empty) { "" } else { ($items | where label == $pick | get 0?).key? | default "" }
     } else { $name }
     if ($choice | is-empty) { return }
     let row = ($ps | where name == $choice | get 0?)
@@ -706,21 +750,22 @@ def --env "nuance theme" [name?: string] {
     if ($name | is-not-empty) { theme $name; return }
     let sicon = (if ($env.PROMPT_NERD? | default true) { (char --unicode f021) } else { (char --unicode 27f3) })
     let sync = $"(ansi {fg: $env.THEME_PALETTE.ahead attr: b})($sicon)  sync with terminal(ansi reset)"
-    let items = ([$sync] ++ (theme-list | each {|t|
-        let p = (theme-get $t).palette
-        $"($t | fill --alignment left --width 20) (ansi {fg: $p.path})███(ansi {fg: $p.git})███(ansi reset)"
-    }))
+    let items = ([$sync] ++ (theme-list | each { theme-label $in }))
     let choice = ($items | input list "select a theme  (↑↓, enter)")
     if ($choice | is-empty) { return }
     if (($choice | ansi strip) | str contains "sync with terminal") { nuance sync theme; return }
-    theme ($choice | ansi strip | str trim | split row " " | first)
+    theme ($choice | ansi strip | str trim | split row "  →  " | first | str trim)
 }
 
 # `nuance prompt-style` — no name opens a selector; a name sets it.
 def --env "nuance prompt-style" [name?: string] {
     if ($name | is-not-empty) { prompt-style $name; return }
-    let choice = (prompt-styles | input list "select a prompt style  (↑↓, enter)")
-    if ($choice | is-not-empty) { prompt-style $choice }
+    let items = (style-picker-items)
+    let pick = ($items | get label | input list "select a prompt style  (↑↓, enter)")
+    if ($pick | is-not-empty) {
+        let choice = ($items | where label == $pick | get 0?).key? | default ""
+        if ($choice | is-not-empty) { prompt-style $choice }
+    }
 }
 
 # `nuance look` — no name opens a selector; a name applies one.
@@ -839,6 +884,13 @@ theme-apply $start_theme
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
 def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "robbyrussell" "ys" "avit" "bira" "af-magic" "cloud" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
 
+# `to json` does not escape raw control bytes (e.g. the ESC in ANSI color
+# codes) — it just embeds them verbatim, which produces invalid JSON. This
+# swaps ESC for a reversible plain-text marker before serializing (used by
+# the Rust/ratatui frontend; not needed for Nushell's own `input list`,
+# which wants the real ESC byte).
+def escape-esc [s: string] { $s | str replace --all (char --unicode "1b") '\u001b' }
+
 # Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
 $env.PROMPT_NERD = true
 
@@ -846,10 +898,31 @@ $env.PROMPT_NERD = true
 let saved_style = (try { open (prompt-style-path) | str trim } catch { "full" })
 $env.PROMPT_STYLE = (if ($saved_style in (prompt-styles)) { $saved_style } else { "full" })
 
-# Switch prompt layout. No arg = interactive picker. Persisted.
+# Render one style name into a labelled preview line: "name  →  <live prompt>".
+# Used to make pickers show the actual rendered prompt next to each choice.
+def --env style-label [s: string] {
+    let saved = $env.PROMPT_STYLE
+    $env.PROMPT_STYLE = $s
+    let rendered = (create_left_prompt)
+    $env.PROMPT_STYLE = $saved
+    let w = (prompt-styles | each { str length } | math max)
+    $"($s | fill --alignment left --width $w)  →  ($rendered)"
+}
+
+# Build the labelled candidate list once, and a lookup back to plain names.
+def --env style-picker-items [] {
+    prompt-styles | each {|s| { label: (style-label $s), key: $s } }
+}
+
+# Switch prompt layout. No arg = interactive picker (shows a live-rendered
+# preview of each style next to its name). Persisted.
 def --env prompt-style [name?: string] {
     let choice = if ($name | is-empty) {
-        prompt-styles | input list --fuzzy $"prompt style  \(current: ($env.PROMPT_STYLE)\)"
+        let items = (style-picker-items)
+        let pick = ($items | get label | input list --fuzzy $"prompt style  \(current: ($env.PROMPT_STYLE)\)")
+        if ($pick | is-empty) { "" } else {
+            ($items | where label == $pick | get 0?).key? | default ""
+        }
     } else { $name }
     if ($choice | is-empty) { return }
     if ($choice not-in (prompt-styles)) {

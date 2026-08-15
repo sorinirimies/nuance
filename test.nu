@@ -62,8 +62,49 @@ if ((git-omz $gclean | ansi strip) | str contains "✗") { $errors = ($errors | 
 
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
-for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme"] {
+for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme"] {
     if ($c not-in $cmds) { $errors = ($errors | append $"command not defined: ($c)") }
+}
+
+# ── style/theme picker labels: one per candidate, each carries its own name
+# and a non-empty rendered preview (the "preview while picking" feature) ──
+let s_items = (style-picker-items)
+if (($s_items | length) != (prompt-styles | length)) {
+    $errors = ($errors | append "style-picker-items: count mismatch with prompt-styles")
+}
+for row in $s_items {
+    if (($row.label | ansi strip) !~ $row.key) {
+        $errors = ($errors | append $"style-picker-items: label for '($row.key)' doesn't mention its name")
+    }
+    if (($row.label | str contains "→") == false) {
+        $errors = ($errors | append $"style-picker-items: label for '($row.key)' missing preview arrow")
+    }
+}
+
+let t_items = (theme-picker-items)
+if (($t_items | length) != (theme-list | length)) {
+    $errors = ($errors | append "theme-picker-items: count mismatch with theme-list")
+}
+for row in $t_items {
+    if (($row.label | ansi strip) !~ $row.key) {
+        $errors = ($errors | append $"theme-picker-items: label for '($row.key)' doesn't mention its name")
+    }
+    if (($row.label | str contains "→") == false) {
+        $errors = ($errors | append $"theme-picker-items: label for '($row.key)' missing preview arrow")
+    }
+}
+
+let l_items = (look-picker-items)
+if (($l_items | length) != (presets | length)) {
+    $errors = ($errors | append "look-picker-items: count mismatch with presets")
+}
+for row in $l_items {
+    if (($row.label | ansi strip) !~ $row.key) {
+        $errors = ($errors | append $"look-picker-items: label for '($row.key)' doesn't mention its name")
+    }
+    if (($row.label | str contains "→") == false) {
+        $errors = ($errors | append $"look-picker-items: label for '($row.key)' missing preview arrow")
+    }
 }
 
 # ── ghostty keyword mapping ──

@@ -6,6 +6,7 @@
 ![styles](https://img.shields.io/badge/prompt%20styles-22-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
+![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
@@ -42,6 +43,22 @@ GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/sorinirimies/nuance
 cd nuance
 nu install.nu          # symlink (repo stays the source of truth) — or --copy
 ```
+
+**Have Rust/Cargo instead?** Skip cloning entirely:
+
+```sh
+cargo install nuance-cli
+nuance theme            # first run vendors the prompt into Nushell's autoload dir
+```
+
+`cargo install nuance-cli` gives you a `nuance` binary usable from any shell.
+Running any subcommand (`theme`, `prompt-style`, `look`, …) the first time
+auto-installs the prompt into Nushell — no `install.nu`, no clone needed. It
+ships its own `ratatui` picker with an instant live preview per candidate:
+
+![nuance-cli picker](docs/cli.gif)
+
+See [`cli/README.md`](cli/README.md) for details.
 
 Then open a new shell (or `exec nu`). A [Nerd Font](https://www.nerdfonts.com/)
 is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
@@ -133,8 +150,14 @@ from the theme's `palette`, so it restyles automatically.
 ## Contributing / demos
 
 GIFs are recorded with [VHS](https://github.com/charmbracelet/vhs) from the
-tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape`. Run `nu test.nu` and
-`bats test.bats` before opening a PR.
+tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape` (or `tapes/cli.tape`
+for the `nuance-cli` picker). Run `nu test.nu`, `bats test.bats`, and
+`cargo test --manifest-path cli/Cargo.toml` before opening a PR.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) (generated with
+[git-cliff](https://git-cliff.org) — config: [cliff.toml](cliff.toml)).
 
 ## License
 
