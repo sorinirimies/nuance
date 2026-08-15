@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: test (${{ matrix.os }}, nu ${{ matrix.nu }})
+  nushell:
+    name: nushell (${{ matrix.os }}, nu ${{ matrix.nu }})
     strategy:
       fail-fast: false
       matrix:
@@ -22,15 +22,6 @@ jobs:
         with:
           version: ${{ matrix.nu }}
 
-      - name: Install bats
-        shell: bash
-        run: |
-          if [ "$(uname)" = "Darwin" ]; then
-            brew install bats-core
-          else
-            sudo apt-get update && sudo apt-get install -y bats
-          fi
-
       - name: Nushell suite
         shell: bash
         run: nu test.nu
@@ -41,10 +32,6 @@ jobs:
           nu scripts/install.nu
           DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
           test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
-
-      - name: CLI suite (bats)
-        shell: bash
-        run: bats test.bats
 
   cli:
     name: nuance-cli (${{ matrix.os }})
@@ -63,28 +50,22 @@ jobs:
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: cli
 
       - name: Check formatting
-        working-directory: cli
         run: cargo fmt -- --check
 
       - name: Clippy
-        working-directory: cli
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Build
-        working-directory: cli
         run: cargo build --locked
 
-      - name: Install Nushell (needed by nuance-cli's own tests)
+      - name: Install Nushell (needed by nuance's own tests)
         uses: hustcer/setup-nu@v3
         with:
           version: "0.114.1"
 
       - name: Unit + integration tests
-        working-directory: cli
         run: cargo test --locked
 
       - name: Smoke test (install + set theme/style/look via cargo-built CLI)
@@ -92,7 +73,7 @@ jobs:
         run: |
           export HOME="$RUNNER_TEMP/nuance-cli-home"
           mkdir -p "$HOME"
-          BIN=cli/target/debug/nuance
+          BIN=target/debug/nuance
           "$BIN" help | grep -q 'nuance theme'
           "$BIN" theme gruvbox | grep -q gruvbox
           "$BIN" prompt-style powerline | grep -q powerline

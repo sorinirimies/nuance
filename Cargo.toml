@@ -9,7 +9,11 @@ description = "Install-free CLI + ratatui TUI for nuance — the themeable, git-
 categories  = ["command-line-utilities"]
 keywords    = ["nushell", "prompt", "theme", "cli", "shell"]
 readme      = "README.md"
-exclude     = ["target/"]
+# The crate now lives at the repo root (alongside the Nushell script it
+# vendors) instead of a nested cli/ dir — only ship what the binary actually
+# needs on crates.io, not the whole repo (docs/, tapes/, scripts/, tests
+# fixtures, etc).
+include     = ["src/**", "tests/**", "Cargo.toml", "nushell-prompt.nu", "README.md", "LICENSE"]
 
 [[bin]]
 name = "nuance"

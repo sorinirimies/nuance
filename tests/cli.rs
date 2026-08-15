@@ -1,5 +1,6 @@
-//! Integration tests for the `nuance` CLI — mirrors the assertions in
-//! `../../test.bats` (the POSIX `scripts/nuance` script) so the two stay in sync.
+//! Integration tests for the `nuance` CLI — covers the same behavior the
+//! old POSIX `scripts/nuance` shell CLI + `test.bats` used to check, now that
+//! this Rust binary is the only any-shell CLI (see the repo README).
 
 use std::path::Path;
 use std::process::{Command, Output};

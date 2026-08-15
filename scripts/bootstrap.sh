@@ -68,6 +68,18 @@ ensure_nu() {
 
 main() {
   have curl || have wget || die "need curl or wget"
+
+  # Already have cargo? `cargo install nuance` is the fully self-contained
+  # path — it vendors the prompt script itself, installs `nu` for you if
+  # needed, and gives a `nuance` CLI usable from any shell. Skip the
+  # package-manager dance entirely.
+  if have cargo; then
+    info "cargo found — installing nuance-cli (self-contained: vendors the prompt, installs nu if missing)…"
+    cargo install nuance-cli --locked
+    printf '\033[1;32m✓ done.\033[0m Open a new shell (or run: exec nu). Try: nuance theme\n'
+    exit 0
+  fi
+
   ensure_nu
   info "Setting up nuance…"
   nu -c "http get ${REPO_RAW}/scripts/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu"

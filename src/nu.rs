@@ -12,7 +12,7 @@ use serde::Deserialize;
 /// The nushell-prompt.nu source, vendored at compile time from the repo root.
 /// This is what makes `cargo install nuance-cli` self-contained: no clone,
 /// no `install.nu`, no network fetch at install- or run-time.
-const NUSHELL_PROMPT: &str = include_str!("../../nushell-prompt.nu");
+const NUSHELL_PROMPT: &str = include_str!("../nushell-prompt.nu");
 const FILE: &str = "nushell-prompt.nu";
 
 /// A single entry in an interactive picker: a stable key (theme/style/look

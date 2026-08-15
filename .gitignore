@@ -1,4 +1,4 @@
 *.bak
 .DS_Store
 docs/gallery-styles.gif
-cli/target/
+target/

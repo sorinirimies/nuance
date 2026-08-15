@@ -59,7 +59,8 @@ candidate:
 
 ![nuance-cli picker](docs/cli.gif)
 
-See [`cli/README.md`](cli/README.md) for details.
+See [`README` section above](#installation) and the crate's docs on
+[crates.io](https://crates.io/crates/nuance-cli) for details.
 
 Then open a new shell (or `exec nu`). A [Nerd Font](https://www.nerdfonts.com/)
 is recommended for the glyph styles (or set `$env.PROMPT_NERD = false`).
@@ -78,8 +79,8 @@ nuance update          # git pull the checkout, then: exec nu
 
 Short forms (same effect): `theme [name]` · `prompt-style [name]` ·
 `look [name]` · `theme-sync` · `theme-preview` · `style-preview`. These also
-work from a normal shell via the `nuance` CLI — selections apply to your next
-Nushell (`exec nu`).
+work from a normal shell via the `nuance` CLI (`cargo install nuance-cli`) —
+selections apply to your next Nushell (`exec nu`).
 
 Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 `prompt-style`) with **no name** opens an interactive selector — arrow keys
@@ -110,7 +111,7 @@ re-enables auto-follow.
 ## Updating
 
 Run **`nuance update`** — it works both inside Nushell (built-in command) and
-in any normal shell (a `nuance` CLI is installed to `~/.local/bin`):
+in any normal shell if you have the `nuance` CLI (`cargo install nuance-cli`):
 
 ```sh
 nuance update      # pulls the checkout; then run: exec nu
@@ -124,13 +125,13 @@ shell). Copy/bootstrap installs: re-run the bootstrap one-liner.
 One pure-Nushell file, no OS-specific dependencies. Paths resolve via Nushell
 built-ins; the Ghostty config is found at `~/.config/ghostty/config` or the
 macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
-`gsettings`. Two test suites run in CI on **Ubuntu + macOS** across Nushell
-**0.111** and **0.114** — `nu test.nu` (themes/styles/looks/helpers) and
-`bats test.bats` (the POSIX `nuance` CLI):
+`gsettings`. Two suites run in CI on **Ubuntu + macOS** — `nu test.nu`
+(themes/styles/looks/helpers, across Nushell **0.111** and **0.114**) and
+`cargo test` (the `nuance` CLI/TUI, 39 unit + integration tests):
 
 ```sh
 nu test.nu       # ✓ all checks passed — 26 themes, 22 styles, 31 looks
-bats test.bats   # ✓ 8 CLI tests
+cargo test       # ✓ 39 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
 ## How it works
@@ -152,8 +153,15 @@ from the theme's `palette`, so it restyles automatically.
 
 GIFs are recorded with [VHS](https://github.com/charmbracelet/vhs) from the
 tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape` (or `tapes/cli.tape`
-for the `nuance-cli` picker). Run `nu test.nu`, `bats test.bats`, and
-`cargo test --manifest-path cli/Cargo.toml` before opening a PR.
+for the `nuance-cli` picker). Run `nu test.nu` and `cargo test` before
+opening a PR.
+
+Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the
+`nuance-cli` crate: `clap` + `ratatui`, self-contained — vendors the prompt
+script via `include_str!`) + `scripts/` (`bootstrap.sh`/`install.nu`/
+`uninstall.nu`, for installs without Rust/Cargo) + `tapes/`, `docs/`
+(VHS-recorded GIFs/screenshots), `test.nu`, `tests/` (Rust integration
+tests).
 
 ## Changelog
 

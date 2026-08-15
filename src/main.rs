@@ -32,7 +32,8 @@ fn main() -> ExitCode {
     let raw: Vec<String> = std::env::args().collect();
 
     // Fast-path "help" / no-args to keep exact historical output + exit
-    // codes (also covered by `test.bats` parity tests for the old bash CLI).
+    // codes (previously covered by `test.bats` parity tests for the old
+    // bash CLI, now covered by tests/cli.rs).
     if raw.len() <= 1 || raw[1] == "help" {
         print!("{}", cli::usage());
         return ExitCode::SUCCESS;
