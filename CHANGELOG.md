@@ -166,6 +166,23 @@ asked for:
 
 Verified: cargo build/test/fmt/clippy clean, nu test.nu passes, bash -n +
 shellcheck on the new script.
+- Regenerate CHANGELOG
+- Drop scripts/install.sh (bash) -- repo is Nushell-only scripts now
+
+Only two install paths left, neither needs bash:
+- cargo install nuance-cli (self-contained Rust binary)
+- clone + nu scripts/install.nu (pure Nushell, for people who already have
+  Nushell and want the repo as the source of truth)
+
+Prebuilt binaries (from release.ymls binaries job) are still built and
+attached to GitHub Releases, just no longer fetched via a curl|bash
+installer -- download+extract manually if you want one without cargo.
+
+scripts/ now contains only install.nu and uninstall.nu. Updated README
+(installation, updating, project-layout sections) and the
+nushell-prompt.nus copy-install update hint accordingly.
+
+Verified: cargo build/test/fmt/clippy clean, nu test.nu passes.
 
 ### 🚜 Refactor
 
