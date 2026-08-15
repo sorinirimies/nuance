@@ -20,7 +20,8 @@ styles**, combine them into named **looks**, and optionally let the shell
 
 ## Installation
 
-Two ways to get `nuance`:
+Two ways to get `nuance` — no bash scripts involved either way, just
+`cargo` or plain Nushell:
 
 **Have Rust/Cargo?**
 
@@ -29,34 +30,22 @@ cargo install nuance-cli
 nuance theme            # first run vendors the prompt into Nushell's autoload dir
 ```
 
-**No cargo?** Grab the prebuilt binary — no package managers, nothing to
-compile:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.sh | bash
-```
-
-…or with `wget`:
-
-```sh
-wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.sh | bash
-```
-
-Either way you get a `nuance` binary usable from any shell. Running any
+This gives you a `nuance` binary usable from any shell. Running any
 subcommand (`theme`, `prompt-style`, `look`, …) the first time vendors the
 prompt into Nushell's autoload dir — no clone, no separate installer script.
 If Nushell itself isn't installed yet, `nuance` offers to `cargo install nu`
-for you (if you have cargo) or points you at https://www.nushell.sh (if you
-don't — a one-time manual step). It ships its own `ratatui` picker with an
-instant live preview per candidate:
+for you. It ships its own `ratatui` picker with an instant live preview per
+candidate:
 
 ![nuance-cli picker](docs/cli.gif)
 
 See the crate's docs on [crates.io](https://crates.io/crates/nuance-cli) for
-details.
+details. No cargo? Prebuilt binaries are attached to every
+[release](https://github.com/sorinirimies/nuance/releases) — download the
+tarball for your OS/arch, extract `nuance`, put it on your `PATH`.
 
-**Hacking on the prompt itself / don't want the Rust binary?** Clone the repo
-and symlink `nushell-prompt.nu` straight into Nushell's autoload dir — the
+**Already have Nushell?** Clone the repo and symlink `nushell-prompt.nu`
+straight into Nushell's autoload dir with the pure-Nushell installer — the
 repo stays the source of truth, and `nu scripts/install.nu` / `nuance update`
 (git pull) both work against it:
 
@@ -123,8 +112,8 @@ nuance update      # pulls the checkout; then run: exec nu
 ```
 
 Or `cd` into the repo and `git pull` (symlink installs apply on the next
-shell). Prebuilt-binary installs (`scripts/install.sh`): re-run it to fetch
-the latest release.
+shell). Prebuilt-binary installs: download the newer release tarball and
+replace the binary on your `PATH`.
 
 ## Cross-platform & tested
 
@@ -164,7 +153,7 @@ opening a PR.
 
 Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the
 `nuance-cli` crate: `clap` + `ratatui`, self-contained — vendors the prompt
-script via `include_str!`) + `scripts/` (`install.sh`/`install.nu`/
+script via `include_str!`) + `scripts/` (pure Nushell: `install.nu`/
 `uninstall.nu`, for installs without Rust/Cargo) + `tapes/`, `docs/`
 (VHS-recorded GIFs/screenshots), `test.nu`, `tests/` (Rust integration
 tests).

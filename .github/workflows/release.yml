@@ -38,8 +38,9 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
         run: cargo publish
 
-  # Prebuilt binaries for the no-cargo curl/wget install path (scripts/install.sh).
-  # Uploads e.g. nuance-cli-x86_64-unknown-linux-gnu.tar.gz to the GitHub Release.
+  # Prebuilt binaries for people without cargo: attached to the GitHub
+  # Release so they can be downloaded manually (Releases page) instead of
+  # compiling. e.g. nuance-cli-x86_64-unknown-linux-gnu.tar.gz
   binaries:
     name: build binary (${{ matrix.target }})
     strategy:
