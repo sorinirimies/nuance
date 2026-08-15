@@ -141,6 +141,31 @@ See 'cargo help <command>' for more information on a specific command. is alread
   cargo path).
 - Verified: cargo build/test/fmt/clippy clean from root; nu test.nu passes;
   manual install/uninstall smoke test against a throwaway HOME.
+- Regenerate CHANGELOG
+- Drop bootstrap.sh; two install paths only: cargo install nuance-cli, or scripts/install.sh (prebuilt binary)
+
+bootstrap.sh did too much: detect OS, try 5 different package managers to
+install Nushell, only then set up the prompt. Replaced with exactly what was
+asked for:
+
+- cargo install nuance-cli (self-contained: vendors the prompt, offers
+  cargo install nu itself if nu is missing).
+- scripts/install.sh: curl/wget one-liner, no package-manager dance at all
+  -- just downloads the prebuilt nuance-cli-<target>.tar.gz release asset
+  for the current OS/arch off GitHub Releases, extracts nuance into
+  ~/.local/bin. If Nushell itself is missing, running any nuance subcommand
+  offers cargo install nu (if cargo is present) or points at
+  nushell.sh (one-time manual step) -- same as the cargo path.
+- release.yml: new binaries job (matrix: linux x86_64/aarch64-gnu, macos
+  x86_64/aarch64) using taiki-e/upload-rust-binary-action to attach
+  nuance-cli-<target>.tar.gz to the GitHub Release alongside the existing
+  crates.io publish, so install.sh has something to fetch on tag pushes.
+- README/nushell-prompt.nu: updated install section + printed update-hint
+  URL; scripts/install.nu (git-clone/symlink path, for hacking on the
+  prompt itself) is untouched -- unrelated to bootstrap.
+
+Verified: cargo build/test/fmt/clippy clean, nu test.nu passes, bash -n +
+shellcheck on the new script.
 
 ### 🚜 Refactor
 
