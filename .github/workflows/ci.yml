@@ -38,7 +38,7 @@ jobs:
       - name: Verify install (symlink into autoload)
         shell: bash
         run: |
-          nu install.nu
+          nu scripts/install.nu
           DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
           test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
 

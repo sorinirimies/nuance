@@ -1,5 +1,5 @@
 //! Integration tests for the `nuance` CLI — mirrors the assertions in
-//! `../../test.bats` (the POSIX `bin/nuance` script) so the two stay in sync.
+//! `../../test.bats` (the POSIX `scripts/nuance` script) so the two stay in sync.
 
 use std::path::Path;
 use std::process::{Command, Output};

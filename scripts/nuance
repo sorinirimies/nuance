@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# nuance — CLI usable from any shell (bash/zsh/fish/…).
+# scripts/nuance — CLI usable from any shell (bash/zsh/fish/…).
 #   nuance theme [name]          show all themes, or set + pin one
 #   nuance prompt-style [name]   show all styles, or set one
 #   nuance look [name]           list looks, or apply one
@@ -58,7 +58,7 @@ cmd_update() {
     printf '\033[1;32m✓\033[0m updated — open a new shell (or run: exec nu)\n'
   else
     warn "no git checkout found (copy/bootstrap install) — re-run the bootstrap:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash"
+    echo "  curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash"
   fi
 }
 

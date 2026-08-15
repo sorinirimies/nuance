@@ -1,12 +1,12 @@
 #!/usr/bin/env bats
-# test.bats — tests for the `nuance` POSIX CLI (bin/nuance) and, as a gate,
+# test.bats — tests for the `nuance` POSIX CLI (scripts/nuance) and, as a gate,
 # the Nushell suite (test.nu). Run:  bats test.bats
 
 setup_file() {
-    export CLI="$BATS_TEST_DIRNAME/bin/nuance"
+    export CLI="$BATS_TEST_DIRNAME/scripts/nuance"
     if command -v nu >/dev/null 2>&1; then
         # make sure the autoload symlink exists so `theme`/`prompt-style` resolve
-        nu "$BATS_TEST_DIRNAME/install.nu" >/dev/null 2>&1 || true
+        nu "$BATS_TEST_DIRNAME/scripts/install.nu" >/dev/null 2>&1 || true
         CFG="$(nu -n -c '$nu.default-config-dir' 2>/dev/null || true)"
         export CFG
         [ -f "$CFG/current-theme.txt" ] && cp "$CFG/current-theme.txt" "$BATS_FILE_TMPDIR/theme.bak" || true

@@ -726,7 +726,7 @@ def "nuance update" [] {
         print $"(ansi green_bold)✓(ansi reset) updated — run (ansi attr_bold)exec nu(ansi reset) to reload."
     } else {
         print $"(ansi yellow)copy install detected(ansi reset) \(($repo)) — re-run the installer to update:"
-        print "  curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash"
+        print "  curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash"
     }
 }
 

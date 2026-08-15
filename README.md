@@ -23,13 +23,13 @@ styles**, combine them into named **looks**, and optionally let the shell
 **No Nushell yet?** One command installs Nushell *and* nuance:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
 ```
 
 …or with `wget`:
 
 ```sh
-wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
+wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
 ```
 
 The bootstrap installs Nushell via your package manager (Homebrew / apt /
@@ -41,7 +41,7 @@ pacman / dnf / zypper / cargo) or a prebuilt binary, then wires up the prompt.
 # GIT_LFS_SKIP_SMUDGE=1 skips the demo GIFs (LFS) — a ~1s clone instead of ~1min
 GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/sorinirimies/nuance
 cd nuance
-nu install.nu          # symlink (repo stays the source of truth) — or --copy
+nu scripts/install.nu   # symlink (repo stays the source of truth) — or --copy
 ```
 
 **Have Rust/Cargo instead?** Skip cloning entirely:
@@ -53,8 +53,9 @@ nuance theme            # first run vendors the prompt into Nushell's autoload d
 
 `cargo install nuance-cli` gives you a `nuance` binary usable from any shell.
 Running any subcommand (`theme`, `prompt-style`, `look`, …) the first time
-auto-installs the prompt into Nushell — no `install.nu`, no clone needed. It
-ships its own `ratatui` picker with an instant live preview per candidate:
+auto-installs the prompt into Nushell — no `scripts/install.nu`, no clone
+needed. It ships its own `ratatui` picker with an instant live preview per
+candidate:
 
 ![nuance-cli picker](docs/cli.gif)
 
@@ -134,7 +135,7 @@ bats test.bats   # ✓ 8 CLI tests
 
 ## How it works
 
-`install.nu` places `nushell-prompt.nu` in your Nushell autoload dir
+`scripts/install.nu` places `nushell-prompt.nu` in your Nushell autoload dir
 (`~/Library/Application Support/nushell/autoload` on macOS,
 `~/.config/nushell/autoload` on Linux) — it loads automatically without
 touching your `config.nu`, and nothing runs but a prompt. Selections persist in

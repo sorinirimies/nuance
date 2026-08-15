@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# uninstall.nu — remove the prompt+theme from your autoload dir.
+# scripts/uninstall.nu — remove the prompt+theme from your autoload dir.
 def main [] {
     let dest = ($nu.user-autoload-dirs | get 0)
     let d = ($dest | path join "nushell-prompt.nu")

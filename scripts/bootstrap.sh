@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# bootstrap.sh — install Nushell (if missing) + set up nuance, in one go.
+# scripts/bootstrap.sh — install Nushell (if missing) + set up nuance, in one go.
 #
-#   curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
-#   wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
+#   wget -qO- https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/bootstrap.sh | bash
 #
 # Works on macOS and Linux (incl. WSL). Safe to re-run.
 set -euo pipefail
@@ -70,7 +70,7 @@ main() {
   have curl || have wget || die "need curl or wget"
   ensure_nu
   info "Setting up nuance…"
-  nu -c "http get ${REPO_RAW}/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu"
+  nu -c "http get ${REPO_RAW}/scripts/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu"
   printf '\033[1;32m✓ done.\033[0m Open a new shell (or run: exec nu)\n'
 }
 

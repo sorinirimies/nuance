@@ -1,32 +1,35 @@
 #!/usr/bin/env nu
-# install.nu — cross-platform deploy for nuance.
+# scripts/install.nu — cross-platform deploy for nuance.
 # Pure Nushell; works anywhere Nushell runs (macOS / Linux / Windows / WSL).
 #
 # From a clone:
-#   nu install.nu            # symlink (repo stays the source of truth)
-#   nu install.nu --copy     # copy instead of symlinking
+#   nu scripts/install.nu            # symlink (repo stays the source of truth)
+#   nu scripts/install.nu --copy     # copy instead of symlinking
 #
 # One-liner (no clone needed):
-#   nu -c 'http get https://raw.githubusercontent.com/sorinirimies/nuance/main/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu'
+#   nu -c 'http get https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu'
 
 const REPO_URL = "https://github.com/sorinirimies/nuance.git"
 const FILE = "nushell-prompt.nu"
 
-# Find the source file next to this script, or clone the repo if run standalone.
-def resolve-source []: nothing -> string {
-    let here = ($env.FILE_PWD | path join $FILE)
-    if ($here | path exists) { return $here }
+# Find the repo root: this script lives in scripts/, the prompt file lives
+# one level up. If that's missing (e.g. run standalone, fetched via the
+# one-liner into /tmp), clone the repo instead.
+def resolve-root []: nothing -> string {
+    let here = ($env.FILE_PWD | path dirname)
+    if (($here | path join $FILE) | path exists) { return $here }
     let cache = ($env.XDG_CACHE_HOME? | default ($env.HOME | path join ".cache") | path join "nuance")
     print $"(ansi cyan)fetching(ansi reset) ($REPO_URL) ..."
     rm -rf $cache
     # Skip LFS media (the demo GIFs) — install only needs the code, and this
     # turns a ~1.5 min clone into ~1 s.
     with-env { GIT_LFS_SKIP_SMUDGE: "1" } { ^git clone --depth 1 $REPO_URL $cache }
-    $cache | path join $FILE
+    $cache
 }
 
 def main [--copy] {
-    let src = (resolve-source)
+    let root = (resolve-root)
+    let src = ($root | path join $FILE)
     let dest = ($nu.user-autoload-dirs | get 0)
     let target = ($dest | path join $FILE)
 
@@ -43,7 +46,7 @@ def main [--copy] {
     }
 
     # Install the `nuance` CLI so `nuance update` works from any shell too.
-    let cli_src = ($src | path dirname | path join "bin" "nuance")
+    let cli_src = ($root | path join "scripts" "nuance")
     if ($cli_src | path exists) {
         let bindir = ($env.HOME | path join ".local" "bin")
         mkdir $bindir

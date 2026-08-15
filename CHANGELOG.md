@@ -28,6 +28,23 @@ All notable changes to this project are documented here — generated with
 - Add interactive up/down theme & style selectors; add bats tests for CLI
 - Add up/down interactive theme/style selector (nuance theme/prompt-style, no arg); add bats CLI test suite (test.bats) + wire into CI
 - Add 'sync with terminal' entry to the theme selector; rename theme-sync -> 'nuance sync theme' (+ 'nuance sync' shortcut, theme-sync alias, bash CLI sync)
+- Add self-contained nuance-cli Rust crate (cargo install nuance-cli); update README/CI/tests + git-cliff CHANGELOG
+
+- cli/: clap + ratatui CLI/TUI, vendors nushell-prompt.nu via include_str! at
+  compile time — no clone, no install.nu, works from any shell. Auto-offers
+  'cargo install nu' if nu is missing. theme/prompt-style/look pickers fetch
+  every candidate's live-rendered preview once, then redraw instantly on
+  arrow-key movement (no per-keystroke nu calls).
+- CI: new 'cli' job (fmt, clippy, build, test, smoke test) on ubuntu+macos;
+  new release-cli.yml publishes nuance-cli to crates.io on cli-v* tags.
+- nushell-prompt.nu/test.nu: theme/prompt-style/look pickers now render a
+  live preview per candidate (theme-label/style-label/look-label +
+  *-picker-items), shared by both the Nushell 'input list' picker and the
+  Rust ratatui picker (via 'to json').
+- README: cargo-install path, cli.gif demo, changelog + cli test mentions.
+- tapes/cli.tape + docs/cli.gif: new VHS demo of the nuance-cli picker.
+- cliff.toml + CHANGELOG.md: git-cliff config (custom commit_parsers since
+  history predates conventional commits) + generated changelog.
 
 ### 🐛 Bug Fixes
 
