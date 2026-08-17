@@ -17,10 +17,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Nushell
-        uses: hustcer/setup-nu@v3
-        with:
-          version: ${{ matrix.nu }}
+      - name: Install Nushell ${{ matrix.nu }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          arch="$(uname -m)"; case "$arch" in x86_64|amd64) arch=x86_64 ;; arm64|aarch64) arch=aarch64 ;; esac
+          case "$(uname -s)" in Linux) plat=unknown-linux-gnu ;; Darwin) plat=apple-darwin ;; *) echo "unsupported OS"; exit 1 ;; esac
+          target="${arch}-${plat}"
+          ver="${{ matrix.nu }}"
+          url="https://github.com/nushell/nushell/releases/download/${ver}/nu-${ver}-${target}.tar.gz"
+          echo "fetching $url"
+          curl -fsSL "$url" -o /tmp/nu.tar.gz
+          mkdir -p /tmp/nu-extract
+          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
+          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
+          mkdir -p "$HOME/.local/bin"
+          cp "$bin" "$HOME/.local/bin/nu"
+          chmod +x "$HOME/.local/bin/nu"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/nu" --version
 
       - name: Nushell suite
         shell: bash
@@ -61,9 +76,24 @@ jobs:
         run: cargo build --locked
 
       - name: Install Nushell (needed by nuance's own tests)
-        uses: hustcer/setup-nu@v3
-        with:
-          version: "0.114.1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          arch="$(uname -m)"; case "$arch" in x86_64|amd64) arch=x86_64 ;; arm64|aarch64) arch=aarch64 ;; esac
+          case "$(uname -s)" in Linux) plat=unknown-linux-gnu ;; Darwin) plat=apple-darwin ;; *) echo "unsupported OS"; exit 1 ;; esac
+          target="${arch}-${plat}"
+          ver="0.114.1"
+          url="https://github.com/nushell/nushell/releases/download/${ver}/nu-${ver}-${target}.tar.gz"
+          echo "fetching $url"
+          curl -fsSL "$url" -o /tmp/nu.tar.gz
+          mkdir -p /tmp/nu-extract
+          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
+          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
+          mkdir -p "$HOME/.local/bin"
+          cp "$bin" "$HOME/.local/bin/nu"
+          chmod +x "$HOME/.local/bin/nu"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/nu" --version
 
       - name: Unit + integration tests
         run: cargo test --locked
