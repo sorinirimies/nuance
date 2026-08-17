@@ -183,6 +183,7 @@ scripts/ now contains only install.nu and uninstall.nu. Updated README
 nushell-prompt.nus copy-install update hint accordingly.
 
 Verified: cargo build/test/fmt/clippy clean, nu test.nu passes.
+- Regenerate CHANGELOG
 
 ### 🚜 Refactor
 
@@ -202,3 +203,24 @@ Verified: cargo build/test/fmt/clippy clean, nu test.nu passes.
 
 - CI: fix install-verify step (source needs a const path); check symlink instead
 - CI: dedupe bats steps (single brew/apt install + one bats run)
+- CI: replace hustcer/setup-nu action with a manual curl+tar install
+
+The marketplace action likely fails on Gitea Actions runners (self-hosted
+act_runner) because it trusts the runs-on: label (macos-latest) rather than
+the container's actual OS -- if Gitea maps every label to a Linux
+container (no real macOS runners available self-hosted), the action would
+try to run a macOS nu binary in a Linux container and fail immediately
+(exitcode 1, matching the reported failure).
+
+Replaced with a small inline script (both the nushell and cli jobs) that:
+- detects the real OS/arch via uname -s / uname -m at runtime, not the
+  job's runs-on: label
+- downloads nu-<version>-<target>.tar.gz directly from nushell/nushell's
+  GitHub releases
+- installs it to ~/.local/bin and adds that to $GITHUB_PATH (also honored
+  by Gitea Actions)
+
+Verified the exact release URLs resolve (200) for 0.111.0 and 0.114.1 on
+x86_64-unknown-linux-gnu, aarch64-apple-darwin, x86_64-apple-darwin, and
+that extraction + `nu --version` works end-to-end locally. No third-party
+action dependency left for Nushell installation.
