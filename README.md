@@ -151,6 +151,11 @@ tapes in [`tapes/`](tapes) — e.g. `vhs tapes/demo.tape` (or `tapes/cli.tape`
 for the `nuance-cli` picker). Run `nu test.nu` and `cargo test` before
 opening a PR.
 
+There's also a [`justfile`](justfile) (`cargo install just`) wrapping the
+common tasks — `just --list` to see them all: `just check-all` (fmt +
+clippy + both test suites), `just changelog`, `just tape welcome`,
+`just release 0.2.0`.
+
 Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the
 `nuance-cli` crate: `clap` + `ratatui`, self-contained — vendors the prompt
 script via `include_str!`) + `scripts/` (pure Nushell: `install.nu`/
