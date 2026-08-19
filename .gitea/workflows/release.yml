@@ -45,7 +45,11 @@ jobs:
         run: |
           tar -C target/release -czvf nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz nuance
 
+      # `id: create_release` is required -- without it the next step's
+      # `steps.create_release.outputs.upload_url` reference is always empty
+      # and the asset upload silently has nowhere to go.
       - name: Create Gitea Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -65,12 +69,23 @@ jobs:
           asset_name: nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz
           asset_content_type: application/gzip
 
+      # `secrets` isn't allowed directly in a step-level `if:` condition, so
+      # check presence in a run step first and branch on its output instead.
+      - name: Check for CRATES_IO_TOKEN
+        id: check_token
+        run: |
+          if [ -n "${{ secrets.CRATES_IO_TOKEN }}" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to crates.io
-        if: env.CRATES_IO_TOKEN != ''
+        if: steps.check_token.outputs.has_token == 'true'
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-        run: cargo publish --token $CRATES_IO_TOKEN
+        run: cargo publish --token "$CRATES_IO_TOKEN"
 
       - name: Skip crates.io publish
-        if: env.CRATES_IO_TOKEN == ''
+        if: steps.check_token.outputs.has_token != 'true'
         run: echo "CRATES_IO_TOKEN not set — add it as a Gitea repo secret to enable auto-publish."

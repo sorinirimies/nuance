@@ -38,11 +38,29 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
         run: cargo publish
 
+  # Create the GitHub Release for this tag first — upload-rust-binary-action
+  # (below) attaches assets to an *existing* release and doesn't create one
+  # itself; without this job it just polls "release not found" until it
+  # times out.
+  create-release:
+    name: create GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release (or no-op if it already exists)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --generate-notes
+
   # Prebuilt binaries for people without cargo: attached to the GitHub
   # Release so they can be downloaded manually (Releases page) instead of
   # compiling. e.g. nuance-cli-x86_64-unknown-linux-gnu.tar.gz
   binaries:
     name: build binary (${{ matrix.target }})
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
