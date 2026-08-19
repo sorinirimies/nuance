@@ -20,8 +20,8 @@ styles**, combine them into named **looks**, and optionally let the shell
 
 ## Installation
 
-Two ways to get `nuance` — no bash scripts involved either way, just
-`cargo` or plain Nushell:
+Three ways to get `nuance` — no bash scripts checked into this repo either
+way, just `cargo`, plain Nushell, or a curl/wget one-liner:
 
 **Have Rust/Cargo?**
 
@@ -44,10 +44,26 @@ details. No cargo? Prebuilt binaries are attached to every
 [release](https://github.com/sorinirimies/nuance/releases) — download the
 tarball for your OS/arch, extract `nuance`, put it on your `PATH`.
 
-**Already have Nushell?** Clone the repo and symlink `nushell-prompt.nu`
-straight into Nushell's autoload dir with the pure-Nushell installer — the
-repo stays the source of truth, and `nu scripts/install.nu` / `nuance update`
-(git pull) both work against it:
+**Already have Nushell?** No clone needed — curl or wget the pure-Nushell
+installer and run it directly (downloads to a real file first, so it runs
+as a proper script rather than inline code — no bash involved, just `nu`
+itself executing a `.nu` file):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu -o /tmp/nuance-install.nu && nu /tmp/nuance-install.nu
+```
+
+…or with `wget`:
+
+```sh
+wget -qO /tmp/nuance-install.nu https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu && nu /tmp/nuance-install.nu
+```
+
+This clones the repo into a cache dir (skipping the demo GIFs over LFS) and
+symlinks `nushell-prompt.nu` into Nushell's autoload dir — the same thing
+`scripts/install.nu` does from a real clone. Prefer to clone yourself so the
+repo stays the source of truth (and `nuance update` / `git pull` work
+against it directly)?
 
 ```sh
 # GIT_LFS_SKIP_SMUDGE=1 skips the demo GIFs (LFS) — a ~1s clone instead of ~1min

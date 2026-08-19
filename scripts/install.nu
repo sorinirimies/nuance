@@ -6,7 +6,11 @@
 #   nu scripts/install.nu            # symlink (repo stays the source of truth)
 #   nu scripts/install.nu --copy     # copy instead of symlinking
 #
-# One-liner (no clone needed):
+# One-liners (no clone needed — downloads to a real temp file first, then
+# runs it as a script, so $env.FILE_PWD resolves and the git-clone fallback
+# below works correctly):
+#   curl -fsSL https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu -o /tmp/nuance-install.nu && nu /tmp/nuance-install.nu
+#   wget -qO /tmp/nuance-install.nu https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu && nu /tmp/nuance-install.nu
 #   nu -c 'http get https://raw.githubusercontent.com/sorinirimies/nuance/main/scripts/install.nu | save -f /tmp/nuance-install.nu; nu /tmp/nuance-install.nu'
 
 const REPO_URL = "https://github.com/sorinirimies/nuance.git"
@@ -16,8 +20,8 @@ const FILE = "nushell-prompt.nu"
 # one level up. If that's missing (e.g. run standalone, fetched via the
 # one-liner into /tmp), clone the repo instead.
 def resolve-root []: nothing -> string {
-    let here = ($env.FILE_PWD | path dirname)
-    if (($here | path join $FILE) | path exists) { return $here }
+    let here = ($env.FILE_PWD? | default "" | path dirname)
+    if (($here | is-not-empty) and (($here | path join $FILE) | path exists)) { return $here }
     let cache = ($env.XDG_CACHE_HOME? | default ($env.HOME | path join ".cache") | path join "nuance")
     print $"(ansi cyan)fetching(ansi reset) ($REPO_URL) ..."
     rm -rf $cache
