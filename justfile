@@ -136,17 +136,17 @@ release version: (bump version)
 # Full automated release to Gitea (nexus-lab instance, SSH) only.
 release-gitea-nexus-lab version: (bump version)
     @echo "Pushing branch and tag to Gitea (nexus-lab)…"
-    git push gitea-nexus-lab main
-    git push gitea-nexus-lab v{{version}}
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab v{{version}}
     @echo "✅ Release v{{version}} pushed to Gitea (nexus-lab)."
 
 # Full automated release to GitHub and Gitea.
 release-all version: (bump version)
     @echo "Pushing branch and tag to GitHub and Gitea…"
     git push origin main
-    git push gitea-nexus-lab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
     git push origin v{{version}}
-    git push gitea-nexus-lab v{{version}}
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab v{{version}}
     @echo "✅ Release v{{version}} pushed to all remotes."
 
 # ── Git remotes & pushing ──────────────────────────────────────────────────────
