@@ -127,19 +127,19 @@ release version: (bump version)
     @echo "✅ Release v{{version}} pushed — GitHub Actions (release.yml) will build + publish to crates.io."
 
 # Full automated release to Gitea (nexus-lab instance, SSH) only.
-release-gitea version: (bump version)
+release-gitea-nexus-lab version: (bump version)
     @echo "Pushing branch and tag to Gitea (nexus-lab)…"
-    git push gitea-ssh main
-    git push gitea-ssh v{{version}}
+    git push gitea-nexus-lab main
+    git push gitea-nexus-lab v{{version}}
     @echo "✅ Release v{{version}} pushed to Gitea (nexus-lab)."
 
 # Full automated release to GitHub and Gitea.
 release-all version: (bump version)
     @echo "Pushing branch and tag to GitHub and Gitea…"
     git push origin main
-    git push gitea-ssh main
+    git push gitea-nexus-lab main
     git push origin v{{version}}
-    git push gitea-ssh v{{version}}
+    git push gitea-nexus-lab v{{version}}
     @echo "✅ Release v{{version}} pushed to all remotes."
 
 # ── Git remotes & pushing ──────────────────────────────────────────────────────
@@ -152,20 +152,20 @@ remotes:
 push:
     git push origin main
 
-# Push the current branch to Gitea (http remote)
-push-gitea:
-    git push gitea main
+# Push the current branch to Gitea (nexus-lab instance, http remote)
+push-gitea-nexus-lab-http:
+    git push gitea-nexus-lab-http main
 
-# Push to Gitea over SSH; skips LFS (its LFS endpoint redirects to a dead host)
-push-gitea-ssh:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-ssh main
+# Push to Gitea (nexus-lab, SSH); skips LFS (its endpoint redirects to a dead host)
+push-gitea-nexus-lab:
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
 
 # Push the current branch to all remotes (continues on failure)
 push-all:
     #!/usr/bin/env sh
     failed=""
     git push origin main                              || failed="$failed origin"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-ssh main        || failed="$failed gitea-ssh"
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push to:$failed"
     else
@@ -176,9 +176,9 @@ push-all:
 pull:
     git pull origin main
 
-# Pull the current branch from Gitea (SSH remote)
-pull-gitea-ssh:
-    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-ssh main
+# Pull the current branch from Gitea (nexus-lab instance, SSH)
+pull-gitea-nexus-lab:
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-nexus-lab main
 
 # Push all tags to GitHub
 push-tags:
@@ -188,19 +188,19 @@ push-tags:
 push-tags-all:
     #!/usr/bin/env sh
     failed=""
-    git push origin --tags                            || failed="$failed origin"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-ssh --tags      || failed="$failed gitea-ssh"
+    git push origin --tags                             || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab --tags || failed="$failed gitea-nexus-lab"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push tags to:$failed"
     else
         echo "✅ Tags pushed to all remotes!"
     fi
 
-# Force-sync Gitea (SSH remote) with GitHub
-sync-gitea:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-ssh main --force
-    GIT_LFS_SKIP_PUSH=1 git push gitea-ssh --tags --force
-    @echo "✅ Gitea synced!"
+# Force-sync Gitea (nexus-lab instance, SSH) with GitHub
+sync-gitea-nexus-lab:
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main --force
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab --tags --force
+    @echo "✅ Gitea (nexus-lab) synced!"
 
 # ── Demos (VHS tapes → docs/*.gif) ────────────────────────────────────────────
 
