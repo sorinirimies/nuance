@@ -110,12 +110,19 @@ version:
 bump version: check-all
     #!/usr/bin/env sh
     set -e
+    if git rev-parse "v{{version}}" >/dev/null 2>&1; then
+        echo "❌ tag v{{version}} already exists."; exit 1
+    fi
     sed -i.bak 's/^version *= *".*"/version     = "{{version}}"/' Cargo.toml && rm -f Cargo.toml.bak
     cargo check --locked >/dev/null 2>&1 || cargo check
     git add Cargo.toml Cargo.lock
-    git commit -m "chore: bump version to {{version}}"
+    if git diff --cached --quiet; then
+        echo "ℹ️  Already at version {{version}} — nothing to bump, just tagging."
+    else
+        git commit -m "chore: bump version to {{version}}"
+    fi
     git tag "v{{version}}"
-    echo "✅ Bumped to {{version}} and tagged v{{version}} (not pushed yet — see: just release {{version}})"
+    echo "✅ At {{version}}, tagged v{{version}} (not pushed yet — see: just release {{version}})"
 
 # ── Release workflows ─────────────────────────────────────────────────────────
 
