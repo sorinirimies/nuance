@@ -62,7 +62,7 @@ if ((git-omz $gclean | ansi strip) | str contains "✗") { $errors = ($errors | 
 
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
-for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme"] {
+for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme"] {
     if ($c not-in $cmds) { $errors = ($errors | append $"command not defined: ($c)") }
 }
 
@@ -82,10 +82,17 @@ for row in $s_items {
 }
 
 let t_items = (theme-picker-items)
-if (($t_items | length) != (theme-list | length)) {
-    $errors = ($errors | append "theme-picker-items: count mismatch with theme-list")
+if (($t_items | length) != ((theme-list | length) + 1)) {
+    $errors = ($errors | append "theme-picker-items: count mismatch with theme-list (+1 for the leading sync entry)")
 }
-for row in $t_items {
+let t_sync = ($t_items | get 0?)
+if (($t_sync.key? | default "") != "__sync__") {
+    $errors = ($errors | append "theme-picker-items: first entry must be the sync-with-terminal item (key '__sync__')")
+}
+if ((($t_sync.label? | default "") | ansi strip | str downcase | str contains "sync with terminal") == false) {
+    $errors = ($errors | append "theme-picker-items: sync entry label doesn't mention 'sync with terminal'")
+}
+for row in ($t_items | skip 1) {
     if (($row.label | ansi strip) !~ $row.key) {
         $errors = ($errors | append $"theme-picker-items: label for '($row.key)' doesn't mention its name")
     }

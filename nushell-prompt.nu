@@ -563,14 +563,55 @@ def --env theme-label [name: string] {
 }
 
 def --env theme-picker-items [] {
-    theme-list | each {|n| { label: (theme-label $n), key: $n } }
+    [(sync-picker-item)] ++ (theme-list | each {|n| { label: (theme-label $n), key: $n } })
 }
 
-# Switch theme. With no argument, opens an interactive fuzzy picker (each
-# candidate shows a live-rendered preview of the current prompt in that
-# theme's colors). The choice is applied live and persisted for future
-# sessions.
+# Whether the compiled `nuance` (clap + ratatui) binary is on PATH. When it
+# is, every interactive picker delegates to it instead of Nushell's own
+# `input list`, so the UI is identical everywhere: inside `nu`, from
+# bash/zsh/fish via the `nuance` CLI, doesn't matter.
+def nuance-cli-available [] { (which nuance | is-not-empty) }
+
+# Re-read persisted theme/style state and apply it to *this* live session.
+# `^nuance ...` only ever persists to disk from its own subprocess — this
+# is what makes the change visible immediately in the shell you're
+# actually sitting in, instead of only the next new one.
+def --env reload-theme [] {
+    let saved = (try { open (theme-state-path) | str trim } catch { "auto" })
+    let name = (
+        if ($saved in (theme-list)) { $saved }
+        else {
+            let g = (ghostty-theme-name)
+            if ($g | is-not-empty) { $g } else { "gruvbox" }
+        }
+    )
+    theme-apply $name
+}
+
+def --env reload-style [] {
+    let saved = (try { open (prompt-style-path) | str trim } catch { "full" })
+    $env.PROMPT_STYLE = (if ($saved in (prompt-styles)) { $saved } else { "full" })
+}
+
+# The synthetic "sync with terminal" entry every theme/look picker leads
+# with — same icon + key ("__sync__") used by both the Nushell `input
+# list` fallback and the Rust ratatui picker (fed this same item over JSON).
+def --env sync-picker-item [] {
+    let sicon = (if ($env.PROMPT_NERD? | default true) { (char --unicode f021) } else { (char --unicode 27f3) })
+    { label: $"(ansi {fg: $env.THEME_PALETTE.ahead attr: b})($sicon)  sync with terminal(ansi reset)", key: "__sync__" }
+}
+
+# Switch theme. With no argument and the `nuance` binary available,
+# delegates to its ratatui picker (instant live preview, always the same
+# UI as any other shell) and reloads the result into this session. Without
+# it, falls back to Nushell's own fuzzy `input list` picker. Either way,
+# "↻ sync with terminal" is always the first entry.
 def --env theme [name?: string] {
+    if ($name | is-empty) and (nuance-cli-available) {
+        ^nuance theme
+        reload-theme
+        return
+    }
     let choice = if ($name | is-empty) {
         let items = (theme-picker-items)
         let pick = ($items | get label | input list --fuzzy $"theme  \(current: ($env.THEME_NAME? | default 'gruvbox')\)")
@@ -579,6 +620,7 @@ def --env theme [name?: string] {
         }
     } else { $name }
     if ($choice | is-empty) { return }
+    if ($choice == "__sync__") { theme-sync; return }
     if ($choice not-in (theme-list)) {
         print $"(ansi red)unknown theme:(ansi reset) ($choice)"
         print $"available: (theme-list | str join ', ')"
@@ -587,7 +629,10 @@ def --env theme [name?: string] {
     theme-apply $choice
     $choice | save -f (theme-state-path)
     print $"(ansi green_bold)✓(ansi reset) theme set to (ansi attr_bold)($choice)(ansi reset) (ansi grey)\(pinned\)(ansi reset)"
-    # When picked interactively, also choose a matching prompt style.
+    # When picked interactively via the Nushell fallback (no `nuance`
+    # binary), also choose a matching prompt style. The ratatui path above
+    # skips this deliberately, to keep the UI identical everywhere — use
+    # `look` for a theme+style combo.
     if ($name | is-empty) {
         let s_items = (style-picker-items)
         let s_pick = ($s_items | get label | input list --fuzzy $"prompt style for ($choice)  \(esc to keep ($env.PROMPT_STYLE? | default 'full')\)")
@@ -665,8 +710,15 @@ def --env look-picker-items [] {
     $ps | each {|r| { label: $"($r.name | fill --alignment left --width $w)  →  (look-label $r.theme $r.style)", key: $r.name } }
 }
 
-# Pick a full look (theme + prompt style). No arg = interactive picker.
+# Pick a full look (theme + prompt style). No arg = interactive picker
+# (delegates to the `nuance` ratatui picker when available).
 def --env look [name?: string] {
+    if ($name | is-empty) and (nuance-cli-available) {
+        ^nuance look
+        reload-theme
+        reload-style
+        return
+    }
     let ps = (presets)
     let choice = if ($name | is-empty) {
         let items = (look-picker-items)
@@ -746,34 +798,17 @@ def "nuance help" [] {
 }
 
 # `nuance theme` — no name opens a swatch selector; a name sets + pins it.
-def --env "nuance theme" [name?: string] {
-    if ($name | is-not-empty) { theme $name; return }
-    let sicon = (if ($env.PROMPT_NERD? | default true) { (char --unicode f021) } else { (char --unicode 27f3) })
-    let sync = $"(ansi {fg: $env.THEME_PALETTE.ahead attr: b})($sicon)  sync with terminal(ansi reset)"
-    let items = ([$sync] ++ (theme-list | each { theme-label $in }))
-    let choice = ($items | input list "select a theme  (↑↓, enter)")
-    if ($choice | is-empty) { return }
-    if (($choice | ansi strip) | str contains "sync with terminal") { nuance sync theme; return }
-    theme ($choice | ansi strip | str trim | split row "  →  " | first | str trim)
-}
+# `nuance theme` — same as bare `theme`: no name opens the picker
+# (ratatui via the external `nuance` binary when available, else Nushell's
+# own fuzzy `input list`); a name sets + pins it. Kept as a separate name
+# for discoverability/back-compat — identical behavior either way.
+def --env "nuance theme" [name?: string] { theme $name }
 
-# `nuance prompt-style` — no name opens a selector; a name sets it.
-def --env "nuance prompt-style" [name?: string] {
-    if ($name | is-not-empty) { prompt-style $name; return }
-    let items = (style-picker-items)
-    let pick = ($items | get label | input list "select a prompt style  (↑↓, enter)")
-    if ($pick | is-not-empty) {
-        let choice = ($items | where label == $pick | get 0?).key? | default ""
-        if ($choice | is-not-empty) { prompt-style $choice }
-    }
-}
+# `nuance prompt-style` — same as bare `prompt-style`.
+def --env "nuance prompt-style" [name?: string] { prompt-style $name }
 
-# `nuance look` — no name opens a selector; a name applies one.
-def --env "nuance look" [name?: string] {
-    if ($name | is-not-empty) { look $name; return }
-    let choice = (presets | get name | input list "select a look  (↑↓, enter)")
-    if ($choice | is-not-empty) { look $choice }
-}
+# `nuance look` — same as bare `look`.
+def --env "nuance look" [name?: string] { look $name }
 
 # Read Ghostty's active theme and map it to a nushell theme name.
 # Returns null when it can't be determined.
@@ -914,9 +949,14 @@ def --env style-picker-items [] {
     prompt-styles | each {|s| { label: (style-label $s), key: $s } }
 }
 
-# Switch prompt layout. No arg = interactive picker (shows a live-rendered
-# preview of each style next to its name). Persisted.
+# Switch prompt layout. No arg = interactive picker (delegates to the
+# `nuance` ratatui picker when available, same as every other picker here).
 def --env prompt-style [name?: string] {
+    if ($name | is-empty) and (nuance-cli-available) {
+        ^nuance prompt-style
+        reload-style
+        return
+    }
     let choice = if ($name | is-empty) {
         let items = (style-picker-items)
         let pick = ($items | get label | input list --fuzzy $"prompt style  \(current: ($env.PROMPT_STYLE)\)")

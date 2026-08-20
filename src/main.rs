@@ -114,7 +114,15 @@ fn pick_or_apply(
             };
             match tui::pick(items, label) {
                 Ok(Some(choice)) => {
-                    let script = format!("{apply_prefix} {}", nu::quote(&[choice]));
+                    // The theme picker always leads with a synthetic "sync
+                    // with terminal" entry (key "__sync__", added in
+                    // `theme-picker-items` in nushell-prompt.nu) so it's
+                    // the same choice whether you're inside `nu` or here.
+                    let script = if choice == "__sync__" {
+                        "nuance sync theme".to_string()
+                    } else {
+                        format!("{apply_prefix} {}", nu::quote(&[choice]))
+                    };
                     nu::run_nu(target, &script)
                 }
                 Ok(None) => {

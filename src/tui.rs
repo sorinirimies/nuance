@@ -169,7 +169,14 @@ fn draw_list(f: &mut Frame, area: Rect, state: &PickerState) {
         .iter()
         .map(|&i| {
             let it = &state.items[i];
-            ListItem::new(Line::from(Span::raw(it.key.clone())))
+            if it.key == "__sync__" {
+                // Synthetic "sync with terminal" entry: it has no preview
+                // arrow, just render its (already ANSI-colored) label
+                // directly instead of the raw "__sync__" key.
+                ListItem::new(ansi::parse_line(&it.label))
+            } else {
+                ListItem::new(Line::from(Span::raw(it.key.clone())))
+            }
         })
         .collect();
 
