@@ -67,11 +67,16 @@ jobs:
 
           # Create the release (or look up its id if the tag's release
           # already exists -- e.g. a re-run after a previous failed upload).
-          resp="$(curl -sf -X POST "${api}/releases" \
+          # NB: `resp="$(cmd1)" || cmd2` does NOT capture cmd2's output into
+          # $resp -- it just runs cmd2 with $resp left over from the failed
+          # cmd1 (usually empty, since curl -f suppresses the error body).
+          # Use an explicit if/else so $resp is always set correctly.
+          if ! resp="$(curl -sf -X POST "${api}/releases" \
             -H "Authorization: token ${GITEA_TOKEN}" \
             -H 'Content-Type: application/json' \
-            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")" \
-            || curl -sf "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}"
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")"; then
+            resp="$(curl -sf "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}")"
+          fi
           release_id="$(echo "$resp" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')"
           [ -n "$release_id" ] || { echo "::error::could not determine release id"; echo "$resp"; exit 1; }
           echo "release_id=${release_id}"
