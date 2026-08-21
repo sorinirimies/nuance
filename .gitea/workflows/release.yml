@@ -65,25 +65,39 @@ jobs:
           asset="nuance-cli-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
           api="${GITEA_SERVER}/api/v1/repos/${REPO}"
 
-          # Create the release (or look up its id if the tag's release
-          # already exists -- e.g. a re-run after a previous failed upload).
-          # NB: `resp="$(cmd1)" || cmd2` does NOT capture cmd2's output into
-          # $resp -- it just runs cmd2 with $resp left over from the failed
-          # cmd1 (usually empty, since curl -f suppresses the error body).
-          # Use an explicit if/else so $resp is always set correctly.
-          if ! resp="$(curl -sf -X POST "${api}/releases" \
+          # `-f` hides the response body on error, which makes failures
+          # here undiagnosable from the log alone -- use -w to capture the
+          # HTTP status separately instead, and always print the body.
+          create_out="$(curl -s -w '\n%{http_code}' -X POST "${api}/releases" \
             -H "Authorization: token ${GITEA_TOKEN}" \
             -H 'Content-Type: application/json' \
-            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")"; then
-            resp="$(curl -sf "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}")"
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")"
+          create_status="$(echo "$create_out" | tail -1)"
+          resp="$(echo "$create_out" | sed '$d')"
+          echo "create release: HTTP ${create_status}"
+          echo "$resp"
+
+          if [ "$create_status" != "201" ]; then
+            # Already exists (e.g. a re-run after a previous failed upload) --
+            # look up its id instead.
+            lookup_out="$(curl -s -w '\n%{http_code}' "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}")"
+            lookup_status="$(echo "$lookup_out" | tail -1)"
+            resp="$(echo "$lookup_out" | sed '$d')"
+            echo "lookup release: HTTP ${lookup_status}"
+            echo "$resp"
           fi
+
           release_id="$(echo "$resp" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')"
-          [ -n "$release_id" ] || { echo "::error::could not determine release id"; echo "$resp"; exit 1; }
+          [ -n "$release_id" ] || { echo "::error::could not determine release id"; exit 1; }
           echo "release_id=${release_id}"
 
-          curl -sf -X POST "${api}/releases/${release_id}/assets?name=${asset}" \
+          upload_out="$(curl -s -w '\n%{http_code}' -X POST "${api}/releases/${release_id}/assets?name=${asset}" \
             -H "Authorization: token ${GITEA_TOKEN}" \
-            -F "attachment=@${asset}"
+            -F "attachment=@${asset}")"
+          upload_status="$(echo "$upload_out" | tail -1)"
+          echo "upload asset: HTTP ${upload_status}"
+          echo "$upload_out" | sed '$d'
+          [ "$upload_status" = "201" ] || { echo "::error::asset upload failed (HTTP ${upload_status})"; exit 1; }
 
       # `secrets` isn't allowed directly in a step-level `if:` condition, so
       # check presence in a run step first and branch on its output instead.
