@@ -45,29 +45,40 @@ jobs:
         run: |
           tar -C target/release -czvf nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz nuance
 
-      # `id: create_release` is required -- without it the next step's
-      # `steps.create_release.outputs.upload_url` reference is always empty
-      # and the asset upload silently has nowhere to go.
-      - name: Create Gitea Release
-        id: create_release
-        uses: actions/create-release@v1
+      # Create the release + upload the asset via Gitea's own REST API
+      # directly (curl), instead of the legacy GitHub actions/create-release
+      # + actions/upload-release-asset actions. Those compute their API base
+      # URL internally rather than using this instance's real address, which
+      # is the same class of misconfiguration we already hit with the LFS
+      # batch endpoint (silently resolving to an unreachable internal host)
+      # -- `${{ github.server_url }}` is what Gitea Actions actually sets to
+      # point at itself, so use that instead of trusting a third-party
+      # action to get it right.
+      - name: Create Gitea Release + upload asset
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITEA_SERVER: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -e
+          asset="nuance-cli-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
+          api="${GITEA_SERVER}/api/v1/repos/${REPO}"
 
-      - name: Upload release binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz
-          asset_name: nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz
-          asset_content_type: application/gzip
+          # Create the release (or look up its id if the tag's release
+          # already exists -- e.g. a re-run after a previous failed upload).
+          resp="$(curl -sf -X POST "${api}/releases" \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")" \
+            || curl -sf "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}"
+          release_id="$(echo "$resp" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')"
+          [ -n "$release_id" ] || { echo "::error::could not determine release id"; echo "$resp"; exit 1; }
+          echo "release_id=${release_id}"
+
+          curl -sf -X POST "${api}/releases/${release_id}/assets?name=${asset}" \
+            -H "Authorization: token ${GITEA_TOKEN}" \
+            -F "attachment=@${asset}"
 
       # `secrets` isn't allowed directly in a step-level `if:` condition, so
       # check presence in a run step first and branch on its output instead.
