@@ -89,7 +89,7 @@ let t_sync = ($t_items | get 0?)
 if (($t_sync.key? | default "") != "__sync__") {
     $errors = ($errors | append "theme-picker-items: first entry must be the sync-with-terminal item (key '__sync__')")
 }
-if ((($t_sync.label? | default "") | ansi strip | str downcase | str contains "sync with terminal") == false) {
+if ((($t_sync.label? | default "") | ansi strip | str contains --ignore-case "sync with terminal") == false) {
     $errors = ($errors | append "theme-picker-items: sync entry label doesn't mention 'sync with terminal'")
 }
 for row in ($t_items | skip 1) {
