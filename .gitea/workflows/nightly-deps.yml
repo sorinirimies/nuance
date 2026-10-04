@@ -8,6 +8,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Job-level so the `if:` of the mirror-push step can see it (a step's own
+  # `env:` is not visible to that same step's `if:`, which silently skipped it).
+  GITHUB_REMOTE_URL: ${{ secrets.GITHUB_REMOTE_URL }}
 
 concurrency:
   group: deps-update
@@ -48,6 +51,11 @@ jobs:
           chmod +x "$HOME/.local/bin/nu"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      # Lockfile as committed on main, to tell later whether a *direct*
+      # dependency really moved (vs. transitive-only churn).
+      - name: Snapshot committed Cargo.lock (release gate)
+        run: git show HEAD:Cargo.lock > "$RUNNER_TEMP/Cargo.lock.head"
+
       - name: Update Cargo.lock
         run: cargo update
 
@@ -59,6 +67,13 @@ jobs:
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Transitive-only lock churn is still committed, but must NOT cut a
+      # release. Release only if a direct dependency (Cargo.toml) changed.
+      - name: Check for direct dependency changes
+        id: direct
+        run: |
+          echo "release=$(nu scripts/direct_deps_changed.nu --before "$RUNNER_TEMP/Cargo.lock.head" --after Cargo.lock)" >> "$GITHUB_OUTPUT"
 
       - name: Quality gate (fmt, clippy, cargo test, nu test.nu)
         if: steps.check.outputs.has_changes == 'true'
@@ -82,7 +97,7 @@ jobs:
       # `just bump` runs its own quality gate again, edits Cargo.toml, updates
       # Cargo.lock, commits, and tags -- it does not push (see justfile).
       - name: Compute next patch version
-        if: steps.check.outputs.has_changes == 'true'
+        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         id: version
         run: |
           current="$(just version)"
@@ -92,23 +107,25 @@ jobs:
           echo "next=$next" >> "$GITHUB_OUTPUT"
 
       - name: Bump version, commit and tag
-        if: steps.check.outputs.has_changes == 'true'
+        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         run: just bump ${{ steps.version.outputs.next }}
 
       - name: Push release commit and tag to Gitea
-        if: steps.check.outputs.has_changes == 'true'
+        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         run: |
           git push origin HEAD:${{ github.ref_name }}
           git push origin "v${{ steps.version.outputs.next }}"
 
       - name: Push release commit and tag to GitHub mirror
-        if: steps.check.outputs.has_changes == 'true' && env.GITHUB_REMOTE_URL != ''
-        env:
-          GITHUB_REMOTE_URL: ${{ secrets.GITHUB_REMOTE_URL }}
+        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true' && env.GITHUB_REMOTE_URL != ''
         run: |
           git remote add github-ci "$GITHUB_REMOTE_URL"
           git push github-ci HEAD:${{ github.ref_name }}
           git push github-ci "v${{ steps.version.outputs.next }}"
+
+      - name: Transitive-only update — no release
+        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release != 'true'
+        run: echo "ℹ️ Only transitive deps changed — lockfile committed, release skipped."
 
       - name: Nothing to update
         if: steps.check.outputs.has_changes == 'false'

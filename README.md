@@ -7,6 +7,7 @@
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 ![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
+[![Downloads](https://img.shields.io/crates/d/nuance-cli?label=downloads)](https://crates.io/crates/nuance-cli)
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
