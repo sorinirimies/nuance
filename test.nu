@@ -7,7 +7,7 @@ source nushell-prompt.nu
 mut errors = []
 
 # ── themes: color_config is substantial + palette has required keys ──
-let required = [user host path git sep ok err time added modified deleted untracked ahead behind stash conflict duration ink]
+let required = [user host path git sep ok err time added modified deleted untracked ahead behind stash conflict duration ink bg fg surface light inks]
 for t in (theme-list) {
     let g = (theme-get $t)
     let cols = ($g.color_config | columns | length)
@@ -39,6 +39,73 @@ if (($look_names | length) != ($look_names | uniq | length)) {
 # ── uniqueness of theme + style names ──
 if ((theme-list | length) != (theme-list | uniq | length)) { $errors = ($errors | append "duplicate theme names") }
 if ((prompt-styles | length) != (prompt-styles | uniq | length)) { $errors = ($errors | append "duplicate style names") }
+
+
+# ── theme quality: valid hex, readable text, AA ink on every segment ──
+# (color math lives in nushell-prompt.nu: contrast / ink-on / finish-palette)
+let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light]
+for t in (theme-list) {
+    let p = (theme-get $t).palette
+    for k in ($p | columns | where {|c| $c not-in [light inks] }) {
+        let v = ($p | get $k)
+        if ($v !~ '^#[0-9a-fA-F]{6}$') { $errors = ($errors | append $"theme '($t)': palette.($k) is not a #rrggbb hex: ($v)") }
+    }
+    if ($p.light != ($t in $light_themes)) {
+        $errors = ($errors | append $"theme '($t)': light flag is ($p.light) but theme is ((if ($t in $light_themes) { 'light' } else { 'dark' }))")
+    }
+    for k in (palette-text-roles) {
+        let c = (contrast ($p | get $k) $p.bg)
+        if $c < 3.0 { $errors = ($errors | append $"theme '($t)': text role '($k)' contrast ($c | math round --precision 2) < 3.0 on bg") }
+    }
+    for k in (palette-muted-roles) {
+        let c = (contrast ($p | get $k) $p.bg)
+        if $c < 2.4 { $errors = ($errors | append $"theme '($t)': muted role '($k)' contrast ($c | math round --precision 2) < 2.4 on bg") }
+    }
+    for k in (palette-seg-roles) {
+        let c = (contrast ($p.inks | get $k) ($p | get $k))
+        if $c < 4.5 { $errors = ($errors | append $"theme '($t)': ink on '($k)' segment contrast ($c | math round --precision 2) < 4.5 (WCAG AA)") }
+    }
+    # the three main block-segment colors must be distinct from each other
+    if (($p.user == $p.path) or ($p.path == $p.git) or ($p.user == $p.git)) {
+        $errors = ($errors | append $"theme '($t)': user/path/git colors are not all distinct")
+    }
+}
+
+# ── color math sanity ──
+if ((contrast "#000000" "#ffffff") | math round --precision 1) != 21.0 { $errors = ($errors | append "contrast(black, white) should be 21") }
+if ((hex-mix "#000000" "#ffffff" 0.5) != "#808080") { $errors = ($errors | append $"hex-mix midpoint wrong: (hex-mix '#000000' '#ffffff' 0.5)") }
+if ((hex-rgb "#0b0221") != [11.0 2.0 33.0]) { $errors = ($errors | append "hex-rgb mis-parses '0b' bytes") }
+
+# ── style registry: every style has a renderer, glyph, and valid tone ──
+let sdefs = (style-defs)
+for d in $sdefs {
+    if ($d.kind not-in [inline blocks]) { $errors = ($errors | append $"style '($d.name)': bad kind '($d.kind)'") }
+    if ($d.tone not-in [ok git modified]) { $errors = ($errors | append $"style '($d.name)': bad tone '($d.tone)'") }
+    if ($d.desc | is-empty) { $errors = ($errors | append $"style '($d.name)': empty desc") }
+    if $d.kind == "blocks" {
+        if ($d.shape not-in [arrow slant pill]) { $errors = ($errors | append $"style '($d.name)': bad shape '($d.shape)'") }
+        if ("path" not-in $d.segs) { $errors = ($errors | append $"style '($d.name)': blocks styles must include 'path'") }
+        for sg in $d.segs {
+            if ($sg not-in [user host path git]) { $errors = ($errors | append $"style '($d.name)': unknown segment '($sg)'") }
+        }
+    }
+}
+# every style renders non-empty output on every theme (catches renderer typos)
+$env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
+let saved_style = $env.PROMPT_STYLE
+for t in (theme-list) {
+    theme-apply $t
+    for d in $sdefs {
+        $env.PROMPT_STYLE = $d.name
+        let out = (create_left_prompt | ansi strip)
+        if ($out | str trim | is-empty) { $errors = ($errors | append $"style '($d.name)' on '($t)' rendered nothing") }
+        if ($d.kind == "blocks") and not ($out | str contains ($env.PWD | path basename)) {
+            $errors = ($errors | append $"style '($d.name)' on '($t)' missing the directory")
+        }
+    }
+}
+$env.PROMPT_STYLE = $saved_style
+hide-env PROMPT_USER PROMPT_HOST
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }

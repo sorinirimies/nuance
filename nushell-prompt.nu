@@ -147,7 +147,7 @@ def cat-prompt-palette [p: record] {
         sep: $p.overlay1, ok: $p.green, err: $p.red, time: $p.overlay0
         added: $p.green, modified: $p.yellow, deleted: $p.red, untracked: $p.overlay1
         ahead: $p.sky, behind: $p.peach, stash: $p.lavender, conflict: $p.maroon
-        duration: $p.peach, ink: $p.crust
+        duration: $p.peach, ink: $p.crust, bg: $p.base, fg: $p.text
     }
 }
 
@@ -467,8 +467,88 @@ def basic-prompt-palette [c: record] {
         sep: $c.gray, ok: $c.green, err: $c.red, time: $c.gray
         added: $c.green, modified: $c.yellow, deleted: $c.red, untracked: $c.gray
         ahead: $c.cyan, behind: $c.orange, stash: $c.magenta, conflict: $c.red
-        duration: $c.orange, ink: $c.bg
+        duration: $c.orange, ink: $c.bg, bg: $c.bg, fg: $c.fg
     }
+}
+
+# ── Color math (WCAG contrast) ────────────────────────────────
+# Used to guarantee every theme's prompt is readable: text roles are nudged
+# toward the theme's own foreground until they clear a contrast floor, and
+# each segment background gets a per-color `ink` that passes WCAG AA (4.5).
+# (Hex bytes get an explicit `0x` prefix: a bare "0b…" byte such as the "0b" in
+# "#0b0221" would otherwise be read as a binary literal prefix.)
+def hex-byte [s: string] { $"0x($s)" | into int | into float }
+def hex-rgb [h: string] { [1 3 5] | each {|i| hex-byte ($h | str substring $i..($i + 1)) } }
+def hex-from-rgb [rgb: list<float>] {
+    let d = "0123456789abcdef"
+    let bytes = ($rgb | each {|v|
+        let n = ([([$v 0.0] | math max) 255.0] | math min | math round | into int)
+        let hi = ($n // 16)
+        let lo = ($n mod 16)
+        $"($d | str substring $hi..$hi)($d | str substring $lo..$lo)"
+    })
+    $"#($bytes | str join '')"
+}
+# Blend `a` toward `b` by t (0.0 = a, 1.0 = b).
+def hex-mix [a: string, b: string, t: float] {
+    let x = (hex-rgb $a)
+    let y = (hex-rgb $b)
+    hex-from-rgb (0..2 | each {|i| ($x | get $i) * (1.0 - $t) + ($y | get $i) * $t })
+}
+def lum [h: string] {
+    let c = (hex-rgb $h | each {|v|
+        let x = ($v / 255.0)
+        if $x <= 0.03928 { $x / 12.92 } else { (($x + 0.055) / 1.055) ** 2.4 }
+    })
+    0.2126 * $c.0 + 0.7152 * $c.1 + 0.0722 * $c.2
+}
+# WCAG contrast ratio (1.0 – 21.0).
+def contrast [a: string, b: string] {
+    let la = (lum $a)
+    let lb = (lum $b)
+    if $la > $lb { ($la + 0.05) / ($lb + 0.05) } else { ($lb + 0.05) / ($la + 0.05) }
+}
+# Nudge `c` toward `pole` (in 10% steps) until it reaches `min` contrast on `bg`.
+def fit-contrast [c: string, bg: string, min: float, pole: string] {
+    if (contrast $c $bg) >= $min { return $c }
+    for i in 1..10 {
+        let cand = (hex-mix $c $pole (($i | into float) / 10.0))
+        if (contrast $cand $bg) >= $min { return $cand }
+    }
+    $pole
+}
+# Best text color to print on a segment background: the theme's `ink` when it
+# is already AA-readable, else the nearest readable shade of ink (or of the
+# theme fg when ink sits on the wrong side of the background).
+def ink-on [ink: string, fg: string, bg: string] {
+    if (contrast $ink $bg) >= 4.5 { return $ink }
+    let pole = (if (contrast "#000000" $bg) >= (contrast "#ffffff" $bg) { "#000000" } else { "#ffffff" })
+    let wrong_side = (if $pole == "#000000" { (lum $ink) > (lum $bg) } else { (lum $ink) < (lum $bg) })
+    fit-contrast (if $wrong_side { $fg } else { $ink }) $bg 4.5 $pole
+}
+
+# Colors used as text on the terminal background vs as segment backgrounds.
+def palette-text-roles [] { [user host path git ok err modified added deleted ahead behind stash conflict duration] }
+def palette-muted-roles [] { [sep time untracked] }
+def palette-seg-roles [] { [user host path git ok err modified ahead] }
+
+# Add the derived keys every theme exposes and enforce readability:
+#   bg fg surface light   + `inks` (a readable text color per segment role)
+def finish-palette [p: record] {
+    let bg = $p.bg
+    let fg = $p.fg
+    mut out = $p
+    for r in (palette-text-roles) { $out = ($out | upsert $r (fit-contrast ($p | get $r) $bg 3.0 $fg)) }
+    for r in (palette-muted-roles) { $out = ($out | upsert $r (fit-contrast ($p | get $r) $bg 2.4 $fg)) }
+    let fixed = $out
+    let inks = (palette-seg-roles | reduce --fold {} {|r, acc| $acc | insert $r (ink-on $p.ink $fg ($fixed | get $r)) })
+    $fixed | insert surface (hex-mix $bg $fg 0.1) | insert light ((lum $bg) > 0.4) | insert inks $inks
+}
+
+# Public: { color_config, palette } for a theme name.
+def theme-get [name: string] {
+    let t = (theme-get-raw $name)
+    { color_config: $t.color_config, palette: (finish-palette $t.palette) }
 }
 
 # ── Public API ────────────────────────────────────────────────
@@ -476,7 +556,7 @@ def theme-list [] {
     ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "super-mario" "cyberpunk"]
 }
 
-def theme-get [name: string] {
+def theme-get-raw [name: string] {
     match $name {
         "catppuccin-mocha"     => { color_config: (cat-color-config $CAT_MOCHA)     palette: (cat-prompt-palette $CAT_MOCHA) }
         "catppuccin-macchiato" => { color_config: (cat-color-config $CAT_MACCHIATO) palette: (cat-prompt-palette $CAT_MACCHIATO) }
@@ -489,7 +569,7 @@ def theme-get [name: string] {
                 sep: $NEON.gray, ok: $NEON.green, err: $NEON.pink, time: $NEON.violet
                 added: $NEON.green, modified: $NEON.yellow, deleted: $NEON.pink, untracked: $NEON.gray
                 ahead: $NEON.cyan, behind: $NEON.orange, stash: $NEON.magenta, conflict: $NEON.pink
-                duration: $NEON.orange, ink: $NEON.bg
+                duration: $NEON.orange, ink: $NEON.bg, bg: $NEON.bg, fg: $NEON.fg
             }
         }
         "tokyo-night" => { color_config: (basic-color-config $TOKYO) palette: (basic-prompt-palette $TOKYO) }
@@ -519,7 +599,7 @@ def theme-get [name: string] {
                 sep: $GRUV.gray, ok: $GRUV.green, err: $GRUV.red, time: $GRUV.gray
                 added: $GRUV.green, modified: $GRUV.yellow, deleted: $GRUV.red, untracked: $GRUV.gray
                 ahead: $GRUV.aqua, behind: $GRUV.orange, stash: $GRUV.purple, conflict: $GRUV.red
-                duration: $GRUV.orange, ink: $GRUV.bg
+                duration: $GRUV.orange, ink: $GRUV.bg, bg: $GRUV.bg, fg: $GRUV.fg
             }
         }
     }
@@ -679,6 +759,9 @@ def presets [] {
         { name: "super-mario",      theme: "super-mario",           style: "mario" }
         { name: "arcade",           theme: "super-mario",           style: "arcade" }
         { name: "8bit",             theme: "gruvbox",               style: "8bit" }
+        { name: "dracula-agnoster", theme: "dracula",               style: "agnoster" }
+        { name: "tokyo-skyline",    theme: "tokyo-night",           style: "skyline" }
+        { name: "nord-pills",       theme: "nord",                  style: "pills" }
     ]
 }
 
@@ -917,7 +1000,52 @@ theme-apply $start_theme
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
-def prompt-styles [] { ["full" "compact" "minimal" "lambda" "pure" "bracket" "arrow" "robbyrussell" "ys" "avit" "bira" "af-magic" "cloud" "powerline" "slant" "capsule" "rainbow" "boxed" "mario" "arcade" "8bit" "cyberpunk"] }
+# ── Style registry ───────────────────────────────────────────
+# One row per prompt style = the single source of truth for: the style list,
+# the indicator glyph/color, picker/gallery descriptions, and (for `blocks`
+# styles) the data-driven segment renderer below. Adding a block style is
+# one row; adding a hand-written layout is a row + a `match` arm in
+# `create_left_prompt`.
+#   kind    inline  → hand-written layout in create_left_prompt
+#           blocks  → generic renderer: `shape` (arrow|slant|pill) × `segs`
+#   glyph   prompt indicator (second line / before the cursor)
+#   tone    palette role for the indicator when the last command succeeded
+#   nerd    needs a Nerd Font for its separators
+def style-defs [] {
+    [
+        { name: "full",         kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "user@host in ~/path on  branch +git (default)" }
+        { name: "compact",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "…/last2/dirs on  branch +git" }
+        { name: "minimal",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "dirname on  branch" }
+        { name: "lambda",       kind: "inline", glyph: "λ",   tone: "ok",       nerd: false, desc: "λ ~/path on  branch +git" }
+        { name: "pure",         kind: "inline", glyph: "❯",   tone: "git",      nerd: false, desc: "two-line, pure-like" }
+        { name: "bracket",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "ASCII [user@host] [path] [git]" }
+        { name: "arrow",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "user » path » git" }
+        { name: "robbyrussell", kind: "inline", glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh default — ➜  dir git:(branch) ✗" }
+        { name: "ys",           kind: "inline", glyph: "$",   tone: "ok",       nerd: false, desc: "oh-my-zsh ys — # user @ host in ~/dir on ⎇ branch●" }
+        { name: "avit",         kind: "inline", glyph: "➜",   tone: "ok",       nerd: false, desc: "oh-my-zsh avit — clean two-line + git:(branch)" }
+        { name: "bira",         kind: "inline", glyph: "➤",   tone: "ok",       nerd: false, desc: "oh-my-zsh bira — ╭─user@host ~/dir / ╰─➤" }
+        { name: "af-magic",     kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "oh-my-zsh af-magic — full-width rule + info line" }
+        { name: "cloud",        kind: "inline", glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh cloud — ☁  ~/dir git:(branch)" }
+        { name: "powerline",    kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font segments with  separators", shape: "arrow", segs: ["path" "git"] }
+        { name: "slant",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font slanted segment separators", shape: "slant", segs: ["path" "git"] }
+        { name: "capsule",      kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pill segments", shape: "pill", segs: ["path" "git"] }
+        { name: "rainbow",      kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline, each segment its own color", shape: "arrow", segs: ["user" "path" "git"] }
+        { name: "agnoster",     kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline with user, host, path and git", shape: "arrow", segs: ["user" "host" "path" "git"] }
+        { name: "skyline",      kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font slanted segments for user, path and git", shape: "slant", segs: ["user" "path" "git"] }
+        { name: "pills",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pills for user, path and git", shape: "pill", segs: ["user" "path" "git"] }
+        { name: "boxed",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "two-line box-drawing with a ● clean/dirty marker" }
+        { name: "mario",        kind: "inline", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line 🍄 overworld — ▣ ◆ ⚑ ◉ ▄" }
+        { name: "arcade",       kind: "inline", glyph: "▮▮",  tone: "modified", nerd: false, desc: "retro all-caps ▶ 1UP score line" }
+        { name: "8bit",         kind: "inline", glyph: "█",   tone: "modified", nerd: false, desc: "pixel ░▒▓ gradient separators" }
+        { name: "cyberpunk",    kind: "inline", glyph: "▶▶▶", tone: "git",      nerd: false, desc: "two-line neon box-drawing with ⚡ and ▶▶▶" }
+    ]
+}
+def prompt-styles [] { style-defs | get name }
+# Registry row for a style name (falls back to `full` for unknown names).
+def style-def [name: string] {
+    let hit = (style-defs | where name == $name)
+    if ($hit | is-empty) { style-defs | first } else { $hit | first }
+}
 
 # `to json` does not escape raw control bytes (e.g. the ESC in ANSI color
 # codes) — it just embeds them verbatim, which produces invalid JSON. This
@@ -976,13 +1104,17 @@ def --env prompt-style [name?: string] {
 }
 
 # Gather git repo state as data (reused by every prompt style).
-def git-info [] {
+# `--light` only resolves the branch/HEAD (skips status + stash: much faster).
+def git-info [--light] {
     let inside = (do -i { git rev-parse --is-inside-work-tree } | complete)
     if $inside.exit_code != 0 { return { present: false } }
     let branch = (do -i { git branch --show-current } | complete | get stdout | str trim)
     let head = if ($branch | is-not-empty) { $branch } else {
         let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
         if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
+    }
+    if $light {
+        return { present: true, head: $head, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
     }
     let lines = (do -i { git status --porcelain=v1 --branch } | complete | get stdout | lines)
     let bl = ($lines | where {|l| $l | str starts-with "##" } | get 0? | default "")
@@ -1028,47 +1160,22 @@ def git-omz [g: record] {
 # Rich git segment: branch/commit + divergence + working-tree status.
 def git-segment [--counts] {
     let p = $env.THEME_PALETTE
-    let inside = (do -i { git rev-parse --is-inside-work-tree } | complete)
-    if $inside.exit_code != 0 { return "" }
+    let g = (if $counts { git-info } else { git-info --light })
+    if not $g.present { return "" }
 
-    let branch = (do -i { git branch --show-current } | complete | get stdout | str trim)
-    let head = if ($branch | is-not-empty) { $branch } else {
-        let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
-        if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
-    }
     let icon = if ($env.PROMPT_NERD? | default true) { " " } else { "" }
-    let base = $"(ansi {fg: $p.sep})on (ansi {fg: $p.git attr: b})($icon)($head)(ansi reset)"
+    let base = $"(ansi {fg: $p.sep})on (ansi {fg: $p.git attr: b})($icon)($g.head)(ansi reset)"
     if not $counts { return $" ($base)" }
 
-    let lines = (do -i { git status --porcelain=v1 --branch } | complete | get stdout | lines)
-    let bl = ($lines | where {|l| $l | str starts-with "##" } | get 0? | default "")
-    let ahead  = ($bl | parse -r 'ahead (?<n>\d+)'  | get n.0? | default "0" | into int)
-    let behind = ($bl | parse -r 'behind (?<n>\d+)' | get n.0? | default "0" | into int)
-
-    mut staged = 0; mut modified = 0; mut untracked = 0; mut conflict = 0
-    for line in ($lines | where {|l| not ($l | str starts-with "##") }) {
-        let cs = ($line | split chars)
-        let x = ($cs | get 0? | default " ")
-        let y = ($cs | get 1? | default " ")
-        if ($x == "?" and $y == "?") { $untracked = $untracked + 1
-        } else if ($x == "U" or $y == "U" or ($x == "A" and $y == "A") or ($x == "D" and $y == "D")) { $conflict = $conflict + 1
-        } else {
-            if $x != " " { $staged = $staged + 1 }
-            if $y != " " { $modified = $modified + 1 }
-        }
-    }
-    let stash = (do -i { git stash list } | complete | get stdout | lines | where {|l| $l | is-not-empty } | length)
-
     mut parts = []
-    if $ahead    > 0 { $parts = ($parts | append $"(ansi {fg: $p.ahead})⇡($ahead)(ansi reset)") }
-    if $behind   > 0 { $parts = ($parts | append $"(ansi {fg: $p.behind})⇣($behind)(ansi reset)") }
-    if $conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.conflict})=($conflict)(ansi reset)") }
-    if $staged   > 0 { $parts = ($parts | append $"(ansi {fg: $p.added})+($staged)(ansi reset)") }
-    if $modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.modified})!($modified)(ansi reset)") }
-    if $untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})?($untracked)(ansi reset)") }
-    if $stash    > 0 { $parts = ($parts | append $"(ansi {fg: $p.stash})*($stash)(ansi reset)") }
-    let clean = ($parts | is-empty)
-    let status_seg = if $clean {
+    if $g.ahead    > 0 { $parts = ($parts | append $"(ansi {fg: $p.ahead})⇡($g.ahead)(ansi reset)") }
+    if $g.behind   > 0 { $parts = ($parts | append $"(ansi {fg: $p.behind})⇣($g.behind)(ansi reset)") }
+    if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.conflict})=($g.conflict)(ansi reset)") }
+    if $g.staged   > 0 { $parts = ($parts | append $"(ansi {fg: $p.added})+($g.staged)(ansi reset)") }
+    if $g.modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.modified})!($g.modified)(ansi reset)") }
+    if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})?($g.untracked)(ansi reset)") }
+    if $g.stash    > 0 { $parts = ($parts | append $"(ansi {fg: $p.stash})*($g.stash)(ansi reset)") }
+    let status_seg = if ($parts | is-empty) {
         $" (ansi {fg: $p.added})✔(ansi reset)"
     } else {
         $" ($parts | str join ' ')"
@@ -1091,10 +1198,52 @@ def prompt-host [] {
     try { sys host | get hostname } catch { ($env.HOSTNAME? | default "host") }
 }
 
+# ── Segment engine ───────────────────────────────────────────
+# A block segment is { text, bg }. `block-seg` resolves a segment id (user,
+# host, path, git) to one — or null when it has nothing to show (e.g. git
+# outside a repo) — and `render-blocks` draws the list in a given shape.
+def block-seg [id: string, g: record] {
+    let p = $env.THEME_PALETTE
+    let ink = {|role| $p.inks? | default {} | get -o $role | default $p.ink }
+    match $id {
+        "user" => { text: (prompt-user), bg: $p.user, ink: (do $ink "user") }
+        "host" => { text: (prompt-host), bg: $p.host, ink: (do $ink "host") }
+        "path" => { text: ($env.PWD | str replace $nu.home-dir "~"), bg: $p.path, ink: (do $ink "path") }
+        "git"  => (if $g.present { { text: (git-plain $g), bg: $p.git, ink: (do $ink "git") } } else { null })
+        _ => null
+    }
+}
+
+# shape: "arrow" (powerline ), "slant" (), "pill" (rounded caps, gapped).
+def render-blocks [shape: string, ids: list<string>] {
+    let g = (git-info)
+    let segs = ($ids | each {|id| block-seg $id $g } | compact)
+    if $shape == "pill" {
+        let lc = (char --unicode e0b6)
+        let rc = (char --unicode e0b4)
+        return ($segs | each {|s|
+            $"(ansi {fg: $s.bg})($lc)(ansi {bg: $s.bg fg: $s.ink attr: b}) ($s.text) (ansi reset)(ansi {fg: $s.bg})($rc)(ansi reset)"
+        } | str join "  ")
+    }
+    let sep = (if $shape == "slant" { char --unicode e0b8 } else { char --unicode e0b0 })
+    mut out = ""
+    mut prev = null
+    for s in $segs {
+        if $prev != null { $out = $out + $"(ansi {fg: $prev bg: $s.bg})($sep)" }
+        $out = $out + $"(ansi {bg: $s.bg fg: $s.ink attr: b}) ($s.text) "
+        $prev = $s.bg
+    }
+    $"($out)(ansi reset)(ansi {fg: $prev})($sep)(ansi reset) "
+}
+
 def create_left_prompt [] {
     let p = $env.THEME_PALETTE
     let style = ($env.PROMPT_STYLE? | default "full")
     let full_dir = ($env.PWD | str replace $nu.home-dir "~")
+
+    # Data-driven styles: render straight from the registry row.
+    let def = (style-def $style)
+    if $def.kind == "blocks" { return (render-blocks $def.shape $def.segs) }
 
     match $style {
         "minimal" => {
@@ -1124,20 +1273,6 @@ def create_left_prompt [] {
             let dir = $"(ansi {fg: $p.path attr: b})[($full_dir)](ansi reset)"
             $"($uh) ($dir)($git_txt)"
         }
-        "slant" => {
-            let sep = (char --unicode e0b8)
-            let ink = $p.ink
-            let a = $p.path
-            let seg_a = $"(ansi {bg: $a fg: $ink attr: b}) ($full_dir) "
-            let g = (git-info)
-            if $g.present {
-                let b = $p.git
-                let seg_b = $"(ansi {fg: $a bg: $b})($sep)(ansi {bg: $b fg: $ink attr: b}) (git-plain $g) "
-                $"($seg_a)($seg_b)(ansi reset)(ansi {fg: $b})($sep)(ansi reset) "
-            } else {
-                $"($seg_a)(ansi reset)(ansi {fg: $a})($sep)(ansi reset) "
-            }
-        }
         "boxed" => {
             let g = (git-info)
             let git_txt = if $g.present {
@@ -1154,21 +1289,6 @@ def create_left_prompt [] {
             let sep = $"(ansi {fg: $p.sep}) » "
             let gitp = if $g.present { $"($sep)(ansi {fg: $p.git attr: b})(git-plain $g)(ansi reset)" } else { "" }
             $"(ansi {fg: $p.user attr: b})(prompt-user)(ansi reset)($sep)(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($gitp)"
-        }
-        "rainbow" => {
-            let a = (char --unicode e0b0)
-            let ink = $p.ink
-            let g = (git-info)
-            let s1 = $"(ansi {bg: $p.user fg: $ink attr: b}) (prompt-user) "
-            let t12 = $"(ansi {fg: $p.user bg: $p.path})($a)"
-            let s2 = $"(ansi {bg: $p.path fg: $ink attr: b}) ($full_dir) "
-            if $g.present {
-                let t23 = $"(ansi {fg: $p.path bg: $p.git})($a)"
-                let s3 = $"(ansi {bg: $p.git fg: $ink attr: b}) (git-plain $g) "
-                $"($s1)($t12)($s2)($t23)($s3)(ansi reset)(ansi {fg: $p.git})($a)(ansi reset) "
-            } else {
-                $"($s1)($t12)($s2)(ansi reset)(ansi {fg: $p.path})($a)(ansi reset) "
-            }
         }
         "robbyrussell" => {
             # oh-my-zsh default:  ➜  dir git:(branch) ✗
@@ -1253,31 +1373,6 @@ def create_left_prompt [] {
             let gitp = if $g.present { $"($grad)(ansi {fg: $p.git attr: b})(git-plain $g)(ansi reset)" } else { "" }
             $"(ansi {fg: $p.user attr: b})(prompt-user)($grad)(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($gitp)"
         }
-        "capsule" => {
-            let lc = (char --unicode e0b6)
-            let rc = (char --unicode e0b4)
-            let ink = $p.ink
-            let g = (git-info)
-            let path_cap = $"(ansi {fg: $p.path})($lc)(ansi {bg: $p.path fg: $ink attr: b}) ($full_dir) (ansi reset)(ansi {fg: $p.path})($rc)(ansi reset)"
-            let git_cap = if $g.present {
-                $"  (ansi {fg: $p.git})($lc)(ansi {bg: $p.git fg: $ink attr: b}) (git-plain $g) (ansi reset)(ansi {fg: $p.git})($rc)(ansi reset)"
-            } else { "" }
-            $"($path_cap)($git_cap)"
-        }
-        "powerline" => {
-            let sep = (char --unicode e0b0)
-            let ink = $p.ink
-            let a = $p.path
-            let seg_a = $"(ansi {bg: $a fg: $ink attr: b}) ($full_dir) "
-            let g = (git-info)
-            if $g.present {
-                let b = $p.git
-                let seg_b = $"(ansi {fg: $a bg: $b})($sep)(ansi {bg: $b fg: $ink attr: b}) (git-plain $g) "
-                $"($seg_a)($seg_b)(ansi reset)(ansi {fg: $b})($sep)(ansi reset) "
-            } else {
-                $"($seg_a)(ansi reset)(ansi {fg: $a})($sep)(ansi reset) "
-            }
-        }
         "cyberpunk" => {
             let g = (git-info)
             let git_txt = if $g.present {
@@ -1312,27 +1407,9 @@ def create_right_prompt [] {
 def prompt-indicator [] {
     let p = $env.THEME_PALETTE
     let ok = (($env.LAST_EXIT_CODE? | default 0) == 0)
-    let style = ($env.PROMPT_STYLE? | default "full")
-    let glyph = match $style {
-        "cyberpunk" => "▶▶▶"
-        "lambda" => "λ"
-        "mario" => "▶"
-        "arcade" => "▮▮"
-        "8bit" => "█"
-        "ys" => "$"
-        "avit" => "➜"
-        "bira" => "➤"
-        "af-magic" => "❯"
-        "cloud" => ""
-        "robbyrussell" => ""
-        _ => "❯"
-    }
-    let color = if $ok {
-        if $style in ["cyberpunk" "pure"] { $p.git
-        } else if $style == "mario" { $p.ok
-        } else if $style in ["arcade" "8bit"] { $p.modified
-        } else { $p.ok }
-    } else { $p.err }
+    let def = (style-def ($env.PROMPT_STYLE? | default "full"))
+    let glyph = $def.glyph
+    let color = if $ok { $p | get $def.tone } else { $p.err }
     $"(ansi {fg: $color attr: b})($glyph) (ansi reset)"
 }
 

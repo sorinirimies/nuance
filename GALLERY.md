@@ -4,8 +4,8 @@ Every **theme**, **style** and **look** at a glance.
 Usage & commands are in the [main README](README.md#theming--styling).
 
 - [Themes (26)](#themes-26)
-- [Prompt styles (22)](#prompt-styles-22)
-- [Looks (31)](#looks-31)
+- [Prompt styles (25)](#prompt-styles-25)
+- [Looks (34)](#looks-34)
 
 ---
 
@@ -39,7 +39,7 @@ Light themes on a light terminal background:
 
 ---
 
-## Prompt styles (22)
+## Prompt styles (25)
 
 Every style rendered once:
 
@@ -68,6 +68,9 @@ Cycling a few live:
 | `slant`        | Nerd-Font slanted segment separators                          |
 | `capsule`      | Nerd-Font rounded "pill" segments                             |
 | `rainbow`      | Nerd-Font powerline, each segment its own color               |
+| `agnoster`     | Nerd-Font powerline with user, host, path and git              |
+| `skyline`      | Nerd-Font slanted segments for user, path and git              |
+| `pills`        | Nerd-Font rounded pills for user, path and git                 |
 | `boxed`        | two-line box-drawing with a `●` clean/dirty marker            |
 | `mario`        | two-line 🍄 overworld — `▣`?-block, `◆` hero, `⚑` flag, `◉` coins, `▄` ground |
 | `arcade`       | retro all-caps `▶ 1UP` score line                             |
@@ -80,7 +83,7 @@ Game-inspired styles on the Super Mario theme:
 
 ---
 
-## Looks (31)
+## Looks (34)
 
 A **look** is a curated theme + style pairing.
 
@@ -119,3 +122,6 @@ A **look** is a curated theme + style pairing.
 | `super-mario`       | super-mario            | mario          |
 | `arcade`            | super-mario            | arcade         |
 | `8bit`              | gruvbox                | 8bit           |
+| `dracula-agnoster`  | dracula                | agnoster       |
+| `tokyo-skyline`     | tokyo-night            | skyline        |
+| `nord-pills`        | nord                   | pills          |
