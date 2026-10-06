@@ -795,7 +795,7 @@ dependencies = [
 
 [[package]]
 name = "nuance-cli"
-version = "0.2.17"
+version = "0.3.0"
 dependencies = [
  "clap",
  "crossterm",
