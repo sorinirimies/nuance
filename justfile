@@ -22,6 +22,15 @@ check-git-cliff:
 check-vhs:
     @command -v vhs >/dev/null 2>&1 || { echo "❌ vhs not found. Install: brew install vhs"; exit 1; }
 
+# Install recommended dev tools (git-cliff, nu, cargo-edit, cargo-outdated)
+install-tools:
+    @echo "Installing development tools…"
+    @command -v git-cliff >/dev/null 2>&1 || cargo install git-cliff --locked
+    @command -v nu >/dev/null 2>&1 || cargo install nu --locked
+    @command -v cargo-upgrade >/dev/null 2>&1 || cargo install cargo-edit --locked
+    @command -v cargo-outdated >/dev/null 2>&1 || cargo install cargo-outdated --locked
+    @echo "✅ All tools installed!"
+
 # ── Build ─────────────────────────────────────────────────────────────────────
 
 # Build the nuance-cli binary (debug)
@@ -31,6 +40,18 @@ build:
 # Build the nuance-cli binary (release)
 build-release:
     cargo build --release --locked
+
+# Run the nuance binary (usage: just run theme)
+run *args:
+    cargo run -- {{args}}
+
+# Type-check without building
+check:
+    cargo check --all-targets
+
+# Generate docs (no browser)
+doc:
+    cargo doc --no-deps
 
 # Install `nuance` from this checkout (cargo install --path .)
 install:
@@ -53,6 +74,10 @@ clippy:
 # Run all quality checks (fmt, clippy, both test suites)
 check-all: fmt-check clippy test test-nu
     @echo "✅ All checks passed!"
+
+# Full pre-release gate — check-all plus a locked release build
+check-release: check-all build-release
+    @echo "✅ Release quality gate passed (fmt + clippy + test + nu + release build)!"
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -100,14 +125,36 @@ changelog: check-git-cliff
 changelog-preview: check-git-cliff
     @git-cliff --config cliff.toml --unreleased
 
+# Show the latest tagged release entry (no file write)
+changelog-latest: check-git-cliff
+    @git-cliff --config cliff.toml --latest
+
+# Prepend only unreleased commits to CHANGELOG.md
+changelog-unreleased: check-git-cliff
+    git-cliff --config cliff.toml --unreleased --prepend CHANGELOG.md
+    @echo "✅ Unreleased changes prepended."
+
+# Show what would be released without making any changes
+release-preview: check-git-cliff
+    @echo "Current version: $(just version)"
+    @echo ""
+    @echo "Unreleased commits:"
+    @git-cliff --config cliff.toml --unreleased
+
 # ── Versioning ─────────────────────────────────────────────────────────────
 
 # Show the current crate version (from Cargo.toml)
 version:
     @grep '^version' Cargo.toml | head -1 | cut -d '"' -f2
 
+# Validate that a version string produces a valid vX.Y.Z tag.
+validate-tag version:
+    #!/usr/bin/env sh
+    echo "{{version}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' || { echo "❌ '{{version}}' is not a valid X.Y.Z version."; exit 1; }
+    echo "✅ v{{version}} is a valid tag."
+
 # Bump the version in Cargo.toml, update Cargo.lock, commit, and tag v<version>.
-bump version: check-all
+bump version: (validate-tag version) check-all
     #!/usr/bin/env sh
     set -e
     if git rev-parse "v{{version}}" >/dev/null 2>&1; then
@@ -167,6 +214,20 @@ release-all version: (bump version)
     GIT_LFS_SKIP_PUSH=1 git push gitea-starscream v{{version}}
     @echo "✅ Release v{{version}} pushed to all remotes."
 
+# ── Publish (crates.io) ───────────────────────────────────────────────────────
+
+# Dry-run publish (runs the full quality gate first)
+publish-dry: check-all
+    cargo publish --dry-run --locked
+
+# Alias: pre-publish readiness check
+check-publish: publish-dry
+
+# Publish nuance-cli to crates.io (normally done by release.yml on tag push)
+publish: check-all
+    cargo publish --locked
+    @echo "✅ nuance-cli published to crates.io!"
+
 # ── Git remotes & pushing ──────────────────────────────────────────────────────
 
 # Show configured git remotes
@@ -207,6 +268,20 @@ push-all:
         echo "✅ Pushed to GitHub and all Gitea instances!"
     fi
 
+# Force-push the current branch to all remotes (continues on failure)
+push-all-force:
+    #!/usr/bin/env sh
+    failed=""
+    git push --force origin main                               || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git push --force gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git push --force gitea-microlab main   || failed="$failed gitea-microlab"
+    GIT_LFS_SKIP_PUSH=1 git push --force gitea-starscream main || failed="$failed gitea-starscream"
+    if [ -n "$failed" ]; then
+        echo "⚠️  Failed to force-push to:$failed"
+    else
+        echo "✅ Force-pushed to GitHub and all Gitea instances!"
+    fi
+
 # Pull the current branch from GitHub (origin)
 pull:
     git pull origin main
@@ -222,6 +297,20 @@ pull-gitea-microlab:
 # Pull the current branch from Gitea Starscream
 pull-gitea-starscream:
     GIT_LFS_SKIP_SMUDGE=1 git pull gitea-starscream main
+
+# Pull the current branch from all remotes (continues on failure)
+pull-all:
+    #!/usr/bin/env sh
+    failed=""
+    git pull origin main                                 || failed="$failed origin"
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-microlab main   || failed="$failed gitea-microlab"
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-starscream main || failed="$failed gitea-starscream"
+    if [ -n "$failed" ]; then
+        echo "⚠️  Failed to pull from:$failed"
+    else
+        echo "✅ Pulled from GitHub and all Gitea instances!"
+    fi
 
 # Push all tags to GitHub
 push-tags:
@@ -239,6 +328,20 @@ push-tags-all:
         echo "⚠️  Failed to push tags to:$failed"
     else
         echo "✅ Tags pushed to all remotes!"
+    fi
+
+# Push the latest commit and its tags to every remote (no bump, continues on failure).
+push-release-all: check-all
+    #!/usr/bin/env sh
+    failed=""
+    git push --follow-tags origin main                               || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-microlab main   || failed="$failed gitea-microlab"
+    GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-starscream main || failed="$failed gitea-starscream"
+    if [ -n "$failed" ]; then
+        echo "⚠️  Failed to push to:$failed"
+    else
+        echo "✅ Latest commit + tags pushed to all remotes."
     fi
 
 # Force-sync Gitea (nexus-lab instance, SSH) with GitHub
@@ -296,6 +399,27 @@ tapes-all: check-vhs
 # Remove build artifacts
 clean:
     cargo clean
+
+# Update Cargo.lock only (compatible versions)
+update:
+    cargo update
+
+# Upgrade Cargo.toml requirements + Cargo.lock (needs cargo-edit). Majors included.
+upgrade-deps:
+    cargo upgrade --incompatible allow
+    cargo update
+
+# Upgrade deps, run the quality gate, then commit if green (does not push).
+update-deps: upgrade-deps check-all
+    #!/usr/bin/env sh
+    git add Cargo.toml Cargo.lock
+    git diff --cached --quiet && { echo "ℹ️  Nothing to update."; exit 0; }
+    git commit -m "chore(deps): update dependencies"
+    echo "✅ Committed — push with: just push-all"
+
+# Show outdated dependencies (requires cargo-outdated)
+outdated:
+    cargo outdated
 
 # Show project info
 info:

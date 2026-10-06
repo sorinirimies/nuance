@@ -5,6 +5,11 @@ on:
     # Runs at 02:00 UTC every day
     - cron: "0 2 * * *"
   workflow_dispatch:
+    inputs:
+      incompatible:
+        description: "Also take semver-incompatible (major) upgrades"
+        type: boolean
+        default: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -38,6 +43,12 @@ jobs:
       - name: Install just
         run: cargo install just --locked
 
+      # `cargo upgrade` (cargo-edit) rewrites the version requirements in
+      # Cargo.toml. Plain `cargo update` only moves Cargo.lock inside the
+      # existing requirements, which never reaches `cargo install` users.
+      - name: Install cargo-edit (cargo upgrade)
+        run: cargo install cargo-edit --locked
+
       - name: Install Nushell (test-nu / scripts/install.nu need it)
         run: |
           set -euo pipefail
@@ -51,44 +62,86 @@ jobs:
           chmod +x "$HOME/.local/bin/nu"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      # Lockfile as committed on main, to tell later whether a *direct*
-      # dependency really moved (vs. transitive-only churn).
+      # Manifest + lockfile as committed on main, to tell later whether a
+      # *direct* dependency really moved (vs. transitive-only churn).
       - name: Snapshot committed Cargo.lock (release gate)
         run: git show HEAD:Cargo.lock > "$RUNNER_TEMP/Cargo.lock.head"
 
-      - name: Update Cargo.lock
-        run: cargo update
-
-      - name: Check for changes
-        id: check
+      # Upgrade Cargo.toml requirements AND the lockfile. Majors are tried
+      # first (default; disable via the workflow_dispatch input). If the
+      # quality gate then fails, roll back and retry with compatible-only
+      # upgrades so one breaking major doesn't block every other update.
+      - name: Upgrade dependencies (Cargo.toml + Cargo.lock)
+        id: upgrade
+        shell: bash
         run: |
-          if git diff --quiet Cargo.lock; then
+          set -uo pipefail
+          want_major="${{ github.event.inputs.incompatible }}"
+          want_major="${want_major:-true}"
+
+          upgrade() {
+            if [ "$1" = "major" ]; then
+              cargo upgrade --incompatible allow
+            else
+              cargo upgrade
+            fi
+            cargo update
+          }
+
+          mode=compatible
+          [ "$want_major" = "true" ] && mode=major
+
+          upgrade "$mode"
+          if git diff --quiet Cargo.toml Cargo.lock; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-      # Transitive-only lock churn is still committed, but must NOT cut a
-      # release. Release only if a direct dependency (Cargo.toml) changed.
+          if ! just check-all; then
+            if [ "$mode" = "major" ]; then
+              echo "::warning::Major upgrades failed the quality gate - retrying compatible-only."
+              git checkout -- Cargo.toml Cargo.lock
+              upgrade compatible
+              if git diff --quiet Cargo.toml Cargo.lock; then
+                echo "has_changes=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              just check-all || exit 1
+              mode=compatible
+            else
+              exit 1
+            fi
+          fi
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+
+      # Release only if a direct dependency really moved: its requirement in
+      # Cargo.toml changed, or its locked version changed in Cargo.lock.
+      # Transitive-only lock churn is committed but never released.
       - name: Check for direct dependency changes
         id: direct
+        if: steps.upgrade.outputs.has_changes == 'true'
         run: |
-          echo "release=$(nu scripts/direct_deps_changed.nu --before "$RUNNER_TEMP/Cargo.lock.head" --after Cargo.lock)" >> "$GITHUB_OUTPUT"
-
-      - name: Quality gate (fmt, clippy, cargo test, nu test.nu)
-        if: steps.check.outputs.has_changes == 'true'
-        run: just check-all
+          if git diff --quiet Cargo.toml; then
+            echo "release=$(nu scripts/direct_deps_changed.nu --before "$RUNNER_TEMP/Cargo.lock.head" --after Cargo.lock)" >> "$GITHUB_OUTPUT"
+          else
+            echo "Cargo.toml requirements changed:" >&2
+            git diff -U0 Cargo.toml | grep -E '^[-+][a-z]' >&2 || true
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Commit and push dependency update
-        if: steps.check.outputs.has_changes == 'true'
+        if: steps.upgrade.outputs.has_changes == 'true'
         run: |
           DATE=$(date -u '+%Y-%m-%d')
 
           git config user.name  "gitea-actions[bot]"
           git config user.email "gitea-actions[bot]@noreply.gitea"
 
-          git add Cargo.lock
-          git commit -m "chore(deps): nightly dependency upgrade $DATE"
+          BODY="$(git diff -U0 Cargo.toml | grep -E '^[-+][a-z]' || true)"
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore(deps): nightly dependency upgrade $DATE" -m "$BODY"
           git push origin main
 
           echo "✅ Dependency update pushed to main."
@@ -97,7 +150,7 @@ jobs:
       # `just bump` runs its own quality gate again, edits Cargo.toml, updates
       # Cargo.lock, commits, and tags -- it does not push (see justfile).
       - name: Compute next patch version
-        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
+        if: steps.upgrade.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         id: version
         run: |
           current="$(just version)"
@@ -107,26 +160,26 @@ jobs:
           echo "next=$next" >> "$GITHUB_OUTPUT"
 
       - name: Bump version, commit and tag
-        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
+        if: steps.upgrade.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         run: just bump ${{ steps.version.outputs.next }}
 
       - name: Push release commit and tag to Gitea
-        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
+        if: steps.upgrade.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true'
         run: |
           git push origin HEAD:${{ github.ref_name }}
           git push origin "v${{ steps.version.outputs.next }}"
 
       - name: Push release commit and tag to GitHub mirror
-        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true' && env.GITHUB_REMOTE_URL != ''
+        if: steps.upgrade.outputs.has_changes == 'true' && steps.direct.outputs.release == 'true' && env.GITHUB_REMOTE_URL != ''
         run: |
           git remote add github-ci "$GITHUB_REMOTE_URL"
           git push github-ci HEAD:${{ github.ref_name }}
           git push github-ci "v${{ steps.version.outputs.next }}"
 
       - name: Transitive-only update — no release
-        if: steps.check.outputs.has_changes == 'true' && steps.direct.outputs.release != 'true'
+        if: steps.upgrade.outputs.has_changes == 'true' && steps.direct.outputs.release != 'true'
         run: echo "ℹ️ Only transitive deps changed — lockfile committed, release skipped."
 
       - name: Nothing to update
-        if: steps.check.outputs.has_changes == 'false'
+        if: steps.upgrade.outputs.has_changes == 'false'
         run: echo "✅ All dependencies already up to date — nothing to upgrade."
