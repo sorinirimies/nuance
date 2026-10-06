@@ -32,6 +32,18 @@ pub enum Commands {
         /// Look name, e.g. cyberpunk, gruvbox-minimal, tokyo-powerline
         name: Option<String>,
     },
+    /// Collapse finished prompts to a single glyph (on, off or toggle)
+    Transient {
+        /// on | off | toggle — omit to show the current state
+        mode: Option<String>,
+    },
+    /// Situational prompt segments: list | enable | disable | clear [name…]
+    Modules {
+        /// list (default), enable, disable or clear
+        action: Option<String>,
+        /// Module names, e.g. lang status jobs ssh venv nix k8s root
+        names: Vec<String>,
+    },
     /// Follow the terminal's own theme automatically
     Sync,
     /// Pull the latest checkout (git installs), or point at `cargo install --force`
@@ -44,6 +56,9 @@ pub fn usage() -> &'static str {
   nuance theme [name]          ratatui picker w/ live preview, or set + pin one
   nuance prompt-style [name]   ratatui picker w/ live preview, or set one
   nuance look [name]           ratatui picker w/ live preview, or apply one
+  nuance transient [on|off]    collapse finished prompts to one glyph
+  nuance modules [enable|disable|list|clear] [name…]
+                               situational segments: status jobs ssh root venv nix lang k8s
   nuance sync                  follow the terminal's theme (auto-follow)
   nuance update                pull the latest checkout, then: exec nu
   nuance help                  this help
@@ -59,7 +74,16 @@ mod tests {
     #[test]
     fn usage_mentions_every_subcommand() {
         let u = usage();
-        for cmd in ["theme", "prompt-style", "look", "sync", "update", "help"] {
+        for cmd in [
+            "theme",
+            "prompt-style",
+            "look",
+            "transient",
+            "modules",
+            "sync",
+            "update",
+            "help",
+        ] {
             assert!(u.contains(cmd), "usage() missing `{cmd}`");
         }
     }
@@ -87,6 +111,27 @@ mod tests {
         let cli = Cli::try_parse_from(["nuance", "prompt-style", "powerline"]).unwrap();
         match cli.command {
             Some(Commands::PromptStyle { name }) => assert_eq!(name.as_deref(), Some("powerline")),
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_modules_enable_with_names() {
+        let cli = Cli::try_parse_from(["nuance", "modules", "enable", "lang", "jobs"]).unwrap();
+        match cli.command {
+            Some(Commands::Modules { action, names }) => {
+                assert_eq!(action.as_deref(), Some("enable"));
+                assert_eq!(names, vec!["lang", "jobs"]);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_transient_mode() {
+        let cli = Cli::try_parse_from(["nuance", "transient", "on"]).unwrap();
+        match cli.command {
+            Some(Commands::Transient { mode }) => assert_eq!(mode.as_deref(), Some("on")),
             other => panic!("unexpected: {other:?}"),
         }
     }

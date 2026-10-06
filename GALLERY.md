@@ -4,7 +4,7 @@ Every **theme**, **style** and **look** at a glance.
 Usage & commands are in the [main README](README.md#theming--styling).
 
 - [Themes (26)](#themes-26)
-- [Prompt styles (25)](#prompt-styles-25)
+- [Prompt styles (27)](#prompt-styles-27)
 - [Looks (34)](#looks-34)
 
 ---
@@ -39,7 +39,7 @@ Light themes on a light terminal background:
 
 ---
 
-## Prompt styles (25)
+## Prompt styles (27)
 
 Every style rendered once:
 
@@ -71,6 +71,8 @@ Cycling a few live:
 | `agnoster`     | Nerd-Font powerline with user, host, path and git              |
 | `skyline`      | Nerd-Font slanted segments for user, path and git              |
 | `pills`        | Nerd-Font rounded pills for user, path and git                 |
+| `pastel`       | Nerd-Font powerline: user, path, git + toolchain (`lang` module) |
+| `devbar`       | Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs    |
 | `boxed`        | two-line box-drawing with a `●` clean/dirty marker            |
 | `mario`        | two-line 🍄 overworld — `▣`?-block, `◆` hero, `⚑` flag, `◉` coins, `▄` ground |
 | `arcade`       | retro all-caps `▶ 1UP` score line                             |

@@ -874,6 +874,8 @@ def "nuance help" [] {
     print "  nuance prompt-style [name]   selector, or set one"
     print "  nuance look [name]           list looks, or apply one (theme + style)"
     print "  nuance sync                  follow the terminal's theme (auto-follow)"
+    print "  nuance transient [on|off]    collapse finished prompts to one glyph"
+    print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
     print "  nuance help                  this help"
     print ""
@@ -892,6 +894,49 @@ def --env "nuance prompt-style" [name?: string] { prompt-style $name }
 
 # `nuance look` — same as bare `look`.
 def --env "nuance look" [name?: string] { look $name }
+
+# `nuance transient [on|off|toggle]` — collapse finished prompts to one glyph.
+def --env "nuance transient" [mode?: string] {
+    let cur = ($env.NUANCE_TRANSIENT? | default "off")
+    let next = match ($mode | default "") {
+        "" => { print $"transient prompt: (ansi attr_bold)($cur)(ansi reset)  \(nuance transient on|off|toggle\)"; return }
+        "toggle" => (if $cur == "on" { "off" } else { "on" })
+        "on" | "off" => $mode
+        _ => { print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, off or toggle"; return }
+    }
+    transient-apply $next
+    $next | save -f (transient-state-path)
+    print $"(ansi green_bold)✓(ansi reset) transient prompt (ansi attr_bold)($next)(ansi reset)"
+}
+
+# `nuance modules [list|enable|disable|clear] [name…]` — situational prompt segments.
+def --env "nuance modules" [action?: string, ...names: string] {
+    let act = ($action | default "list")
+    match $act {
+        "list" => {
+            let on = (enabled-modules)
+            module-defs | each {|m| { module: $m.name, enabled: ($m.name in $on), description: $m.desc } }
+        }
+        "enable" | "disable" => {
+            let bad = ($names | where {|n| $n not-in (module-names) })
+            if ($names | is-empty) or ($bad | is-not-empty) {
+                print $"(ansi red)usage:(ansi reset) nuance modules ($act) <name…>   modules: (module-names | str join ', ')"
+                return
+            }
+            let cur = (enabled-modules)
+            let next = if $act == "enable" { $cur | append $names | uniq } else { $cur | where {|m| $m not-in $names } }
+            $env.NUANCE_MODULES = $next
+            $next | str join "\n" | save -f (modules-state-path)
+            print $"(ansi green_bold)✓(ansi reset) modules: (if ($next | is-empty) { 'none' } else { $next | str join ', ' })"
+        }
+        "clear" => {
+            $env.NUANCE_MODULES = []
+            "" | save -f (modules-state-path)
+            print $"(ansi green_bold)✓(ansi reset) all modules disabled"
+        }
+        _ => { print $"(ansi red)unknown action:(ansi reset) ($act)  — use list, enable, disable or clear" }
+    }
+}
 
 # Read Ghostty's active theme and map it to a nushell theme name.
 # Returns null when it can't be determined.
@@ -1013,19 +1058,19 @@ def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt"
 #   nerd    needs a Nerd Font for its separators
 def style-defs [] {
     [
-        { name: "full",         kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "user@host in ~/path on  branch +git (default)" }
-        { name: "compact",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "…/last2/dirs on  branch +git" }
-        { name: "minimal",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "dirname on  branch" }
-        { name: "lambda",       kind: "inline", glyph: "λ",   tone: "ok",       nerd: false, desc: "λ ~/path on  branch +git" }
+        { name: "full",         kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "user@host in ~/path on  branch +git (default)" }
+        { name: "compact",      kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "…/last2/dirs on  branch +git" }
+        { name: "minimal",      kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "dirname on  branch" }
+        { name: "lambda",       kind: "inline", ctx: true, glyph: "λ",   tone: "ok",       nerd: false, desc: "λ ~/path on  branch +git" }
         { name: "pure",         kind: "inline", glyph: "❯",   tone: "git",      nerd: false, desc: "two-line, pure-like" }
-        { name: "bracket",      kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "ASCII [user@host] [path] [git]" }
-        { name: "arrow",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "user » path » git" }
-        { name: "robbyrussell", kind: "inline", glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh default — ➜  dir git:(branch) ✗" }
-        { name: "ys",           kind: "inline", glyph: "$",   tone: "ok",       nerd: false, desc: "oh-my-zsh ys — # user @ host in ~/dir on ⎇ branch●" }
+        { name: "bracket",      kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "ASCII [user@host] [path] [git]" }
+        { name: "arrow",        kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "user » path » git" }
+        { name: "robbyrussell", kind: "inline", ctx: true, glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh default — ➜  dir git:(branch) ✗" }
+        { name: "ys",           kind: "inline", ctx: true, glyph: "$",   tone: "ok",       nerd: false, desc: "oh-my-zsh ys — # user @ host in ~/dir on ⎇ branch●" }
         { name: "avit",         kind: "inline", glyph: "➜",   tone: "ok",       nerd: false, desc: "oh-my-zsh avit — clean two-line + git:(branch)" }
         { name: "bira",         kind: "inline", glyph: "➤",   tone: "ok",       nerd: false, desc: "oh-my-zsh bira — ╭─user@host ~/dir / ╰─➤" }
         { name: "af-magic",     kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "oh-my-zsh af-magic — full-width rule + info line" }
-        { name: "cloud",        kind: "inline", glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh cloud — ☁  ~/dir git:(branch)" }
+        { name: "cloud",        kind: "inline", ctx: true, glyph: "",    tone: "ok",       nerd: false, desc: "oh-my-zsh cloud — ☁  ~/dir git:(branch)" }
         { name: "powerline",    kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font segments with  separators", shape: "arrow", segs: ["path" "git"] }
         { name: "slant",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font slanted segment separators", shape: "slant", segs: ["path" "git"] }
         { name: "capsule",      kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pill segments", shape: "pill", segs: ["path" "git"] }
@@ -1033,6 +1078,8 @@ def style-defs [] {
         { name: "agnoster",     kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline with user, host, path and git", shape: "arrow", segs: ["user" "host" "path" "git"] }
         { name: "skyline",      kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font slanted segments for user, path and git", shape: "slant", segs: ["user" "path" "git"] }
         { name: "pills",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pills for user, path and git", shape: "pill", segs: ["user" "path" "git"] }
+        { name: "pastel",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline: user, path, git + toolchain (rust/node/python/go)", shape: "arrow", segs: ["user" "path" "git" "lang"] }
+        { name: "devbar",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs", shape: "pill", segs: ["status" "ssh" "path" "git" "lang" "jobs"] }
         { name: "boxed",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "two-line box-drawing with a ● clean/dirty marker" }
         { name: "mario",        kind: "inline", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line 🍄 overworld — ▣ ◆ ⚑ ◉ ▄" }
         { name: "arcade",       kind: "inline", glyph: "▮▮",  tone: "modified", nerd: false, desc: "retro all-caps ▶ 1UP score line" }
@@ -1198,6 +1245,128 @@ def prompt-host [] {
     try { sys host | get hostname } catch { ($env.HOSTNAME? | default "host") }
 }
 
+# ── Context modules ──────────────────────────────────────────
+# Small situational segments: they only render when they have something to
+# say (a failing exit code, background jobs, an SSH session, a project's
+# toolchain …). Block styles can list them in their registry `segs`
+# (pastel, devbar); on top of that you can opt in to any of them for every
+# style with `nuance modules enable <name>` — blocks styles append them as
+# extra segments, single-line styles as a colored tail.
+#   role = palette color the module is drawn with (must be a segment role)
+def module-defs [] {
+    [
+        { name: "status", role: "err",      desc: "exit code of the last command (when non-zero)" }
+        { name: "jobs",   role: "modified", desc: "number of background jobs" }
+        { name: "ssh",    role: "host",     desc: "shown inside an SSH session" }
+        { name: "root",   role: "err",      desc: "shown when running as root" }
+        { name: "venv",   role: "ok",       desc: "active Python virtualenv / conda env" }
+        { name: "nix",    role: "ahead",    desc: "inside a nix shell" }
+        { name: "lang",   role: "ahead",    desc: "project toolchain + version: rust, node, python, go, ruby, zig" }
+        { name: "k8s",    role: "host",     desc: "current kubectl context" }
+    ]
+}
+def module-names [] { module-defs | get name }
+def modules-state-path [] { $nu.default-config-dir | path join "modules.txt" }
+
+# Modules the user enabled globally (persisted in modules.txt).
+def enabled-modules [] {
+    ($env.NUANCE_MODULES? | default []) | where {|m| $m in (module-names) }
+}
+
+# First x.y[.z] version number in a tool's `--version` output.
+def first-version [text: string] {
+    $text | parse -r '(?<v>\d+\.\d+(?:\.\d+)?)' | get v.0? | default ""
+}
+
+# Toolchain version, cached on disk for an hour — spawning rustc/node on
+# every prompt would make the shell feel sluggish.
+def tool-version [tool: string, args: list<string>] {
+    let dir = ($nu.cache-dir | path join "nuance")
+    let f = ($dir | path join $"ver-($tool)")  # keyed by binary name
+    if ($f | path exists) {
+        let age = ((date now) - (ls -D $f | get 0.modified))
+        if $age < 1hr { return (open --raw $f | str trim) }
+    }
+    if (which $tool | is-empty) { return "" }
+    let out = (do -i { ^$tool ...$args } | complete)
+    let v = (first-version ($out.stdout + $out.stderr))
+    mkdir $dir
+    $v | save -f $f
+    $v
+}
+
+# Which toolchain does this project use? Walks up from $PWD (max 6 levels).
+def lang-detect [start?: string] {
+    let markers = [
+        { file: "Cargo.toml", lang: "rust" } { file: "go.mod", lang: "go" }
+        { file: "package.json", lang: "node" } { file: "pyproject.toml", lang: "python" }
+        { file: "requirements.txt", lang: "python" } { file: "setup.py", lang: "python" }
+        { file: "Gemfile", lang: "ruby" } { file: "build.zig", lang: "zig" }
+    ]
+    mut dir = ($start | default $env.PWD)
+    for _ in 0..5 {
+        for m in $markers {
+            if ($dir | path join $m.file | path exists) { return $m.lang }
+        }
+        let up = ($dir | path dirname)
+        if $up == $dir { break }
+        $dir = $up
+    }
+    ""
+}
+
+# Text of one module, or null when it has nothing to show.
+def module-text [name: string] {
+    match $name {
+        "status" => {
+            let c = ($env.LAST_EXIT_CODE? | default 0)
+            if $c == 0 { null } else { $"✘ ($c)" }
+        }
+        "jobs" => {
+            let n = (try { job list | length } catch { 0 })
+            if $n > 0 { $"⚙ ($n)" } else { null }
+        }
+        "ssh" => (if (($env.SSH_CONNECTION? | default "") | is-not-empty) { "ssh" } else { null })
+        "root" => (if (($env.USER? | default "") == "root") { "root" } else { null })
+        "venv" => {
+            let v = ($env.VIRTUAL_ENV? | default ($env.CONDA_DEFAULT_ENV? | default ""))
+            if ($v | is-empty) { null } else { $"py:($v | path basename)" }
+        }
+        "nix" => (if (($env.IN_NIX_SHELL? | default "") | is-not-empty) { "nix" } else { null })
+        "lang" => {
+            let l = (lang-detect)
+            if ($l | is-empty) { null } else {
+                let args = (if $l == "go" { ["version"] } else if $l == "zig" { ["version"] } else { ["--version"] })
+                let tool = (match $l { "python" => "python3", "rust" => "rustc", _ => $l })
+                let v = (tool-version $tool $args)
+                if ($v | is-empty) { $l } else { $"($l) ($v)" }
+            }
+        }
+        "k8s" => {
+            let cfg = ($env.KUBECONFIG? | default ($nu.home-dir | path join ".kube" "config") | split row (char esep) | first)
+            if not ($cfg | path exists) { null } else {
+                let ctx = (open --raw $cfg | lines | where {|l| $l | str starts-with "current-context:" } | get 0? | default "" | str replace "current-context:" "" | str trim)
+                if ($ctx | is-empty) { null } else { $"k8s:($ctx)" }
+            }
+        }
+        _ => null
+    }
+}
+
+# Enabled modules as a colored, space-separated tail for single-line styles.
+def module-inline [] {
+    let p = $env.THEME_PALETTE
+    let on = (enabled-modules)
+    if ($on | is-empty) { return "" }
+    $on | each {|m|
+        let t = (module-text $m)
+        if $t == null { null } else {
+            let role = (module-defs | where name == $m | get 0.role)
+            $"(ansi {fg: ($p | get $role)})($t)(ansi reset)"
+        }
+    } | compact | str join " "
+}
+
 # ── Segment engine ───────────────────────────────────────────
 # A block segment is { text, bg }. `block-seg` resolves a segment id (user,
 # host, path, git) to one — or null when it has nothing to show (e.g. git
@@ -1210,13 +1379,21 @@ def block-seg [id: string, g: record] {
         "host" => { text: (prompt-host), bg: $p.host, ink: (do $ink "host") }
         "path" => { text: ($env.PWD | str replace $nu.home-dir "~"), bg: $p.path, ink: (do $ink "path") }
         "git"  => (if $g.present { { text: (git-plain $g), bg: $p.git, ink: (do $ink "git") } } else { null })
-        _ => null
+        _ => {
+            # context module (status, jobs, ssh, lang, …) — null when it has nothing to say
+            let def = (module-defs | where name == $id | get 0?)
+            if $def == null { null } else {
+                let text = (module-text $id)
+                if $text == null { null } else { { text: $text, bg: ($p | get $def.role), ink: (do $ink $def.role) } }
+            }
+        }
     }
 }
 
 # shape: "arrow" (powerline ), "slant" (), "pill" (rounded caps, gapped).
 def render-blocks [shape: string, ids: list<string>] {
     let g = (git-info)
+    let ids = ($ids | append (enabled-modules | where {|m| $m not-in $ids }))
     let segs = ($ids | each {|id| block-seg $id $g } | compact)
     if $shape == "pill" {
         let lc = (char --unicode e0b6)
@@ -1236,7 +1413,19 @@ def render-blocks [shape: string, ids: list<string>] {
     $"($out)(ansi reset)(ansi {fg: $prev})($sep)(ansi reset) "
 }
 
+# Left prompt: the style's layout, plus the user's enabled context modules
+# as a tail for single-line styles (blocks styles fold them in as segments).
 def create_left_prompt [] {
+    let left = (render-left)
+    let d = (style-def ($env.PROMPT_STYLE? | default "full"))
+    if ($d.ctx? | default false) {
+        let tail = (module-inline)
+        if ($tail | is-not-empty) { return $"($left) ($tail)" }
+    }
+    $left
+}
+
+def render-left [] {
     let p = $env.THEME_PALETTE
     let style = ($env.PROMPT_STYLE? | default "full")
     let full_dir = ($env.PWD | str replace $nu.home-dir "~")
@@ -1412,6 +1601,33 @@ def prompt-indicator [] {
     let color = if $ok { $p | get $def.tone } else { $p.err }
     $"(ansi {fg: $color attr: b})($glyph) (ansi reset)"
 }
+
+# ── Transient prompt ─────────────────────────────────────────
+# Once you press Enter, the finished prompt collapses to a single colored
+# glyph so scrollback stays clean (powerlevel10k / starship "transient").
+# Uses Nushell's TRANSIENT_PROMPT_* variables. Toggle: `nuance transient`.
+def transient-state-path [] { $nu.default-config-dir | path join "transient.txt" }
+def transient-left [] {
+    let p = $env.THEME_PALETTE
+    let g = (style-def ($env.PROMPT_STYLE? | default "full")).glyph
+    let glyph = if ($g | is-empty) { "❯" } else { $g }
+    $"(ansi {fg: $p.ok attr: b})($glyph) (ansi reset)"
+}
+def --env transient-apply [mode: string] {
+    if $mode == "on" {
+        $env.TRANSIENT_PROMPT_COMMAND = { || transient-left }
+        $env.TRANSIENT_PROMPT_INDICATOR = { || "" }
+        $env.TRANSIENT_PROMPT_INDICATOR_VI_INSERT = { || "" }
+        $env.TRANSIENT_PROMPT_COMMAND_RIGHT = { || "" }
+        $env.NUANCE_TRANSIENT = "on"
+    } else {
+        hide-env --ignore-errors TRANSIENT_PROMPT_COMMAND TRANSIENT_PROMPT_INDICATOR TRANSIENT_PROMPT_INDICATOR_VI_INSERT TRANSIENT_PROMPT_COMMAND_RIGHT
+        $env.NUANCE_TRANSIENT = "off"
+    }
+}
+
+$env.NUANCE_MODULES = (try { open (modules-state-path) | lines | each { str trim } | where {|l| $l in (module-names) } } catch { [] })
+transient-apply (try { open (transient-state-path) | str trim } catch { "off" })
 
 $env.PROMPT_COMMAND = { || create_left_prompt }
 $env.PROMPT_COMMAND_RIGHT = { || create_right_prompt }

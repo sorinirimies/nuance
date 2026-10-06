@@ -86,7 +86,7 @@ for d in $sdefs {
         if ($d.shape not-in [arrow slant pill]) { $errors = ($errors | append $"style '($d.name)': bad shape '($d.shape)'") }
         if ("path" not-in $d.segs) { $errors = ($errors | append $"style '($d.name)': blocks styles must include 'path'") }
         for sg in $d.segs {
-            if ($sg not-in [user host path git]) { $errors = ($errors | append $"style '($d.name)': unknown segment '($sg)'") }
+            if ($sg not-in ([user host path git] ++ (module-names))) { $errors = ($errors | append $"style '($d.name)': unknown segment '($sg)'") }
         }
     }
 }
@@ -106,6 +106,56 @@ for t in (theme-list) {
 }
 $env.PROMPT_STYLE = $saved_style
 hide-env PROMPT_USER PROMPT_HOST
+
+# ── context modules ──
+let mdefs = (module-defs)
+if (($mdefs | get name | uniq | length) != ($mdefs | length)) { $errors = ($errors | append "duplicate module names") }
+for m in $mdefs {
+    if ($m.role not-in (palette-seg-roles)) { $errors = ($errors | append $"module '($m.name)': role '($m.role)' is not a segment role (no ink computed)") }
+}
+let r_ok = (with-env { LAST_EXIT_CODE: 0 } { module-text "status" })
+if ($r_ok != null) { $errors = ($errors | append "status module shows with exit code 0") }
+let r_status = (with-env { LAST_EXIT_CODE: 2 } { module-text "status" })
+if ($r_status != "✘ 2") { $errors = ($errors | append $"status module wrong for exit code 2: ($r_status)") }
+let r_ssh = (with-env { SSH_CONNECTION: "1 2 3 4" } { module-text "ssh" })
+if ($r_ssh != "ssh") { $errors = ($errors | append "ssh module missing inside SSH_CONNECTION") }
+let r_venv = (with-env { VIRTUAL_ENV: "/tmp/proj/.venv-demo" } { module-text "venv" })
+if ($r_venv != "py:.venv-demo") { $errors = ($errors | append $"venv module wrong: ($r_venv)") }
+let r_nix = (with-env { IN_NIX_SHELL: "pure" } { module-text "nix" })
+if ($r_nix != "nix") { $errors = ($errors | append "nix module missing in IN_NIX_SHELL") }
+if ((first-version "rustc 1.99.0 (b940084d7 2026-09-28)") != "1.99.0") { $errors = ($errors | append "first-version parse wrong") }
+if ((first-version "go version go1.22 darwin/arm64") != "1.22") { $errors = ($errors | append "first-version parse wrong for go") }
+let ld = (mktemp -d)
+let l_empty = (lang-detect $ld)
+if ($l_empty != "") { $errors = ($errors | append "lang-detect found a project in an empty dir") }
+"" | save ($ld | path join "Cargo.toml")
+mkdir ($ld | path join "src")
+let l_root = (lang-detect $ld)
+let l_sub = (lang-detect ($ld | path join "src"))
+if ($l_root != "rust") { $errors = ($errors | append "lang-detect missed Cargo.toml") }
+if ($l_sub != "rust") { $errors = ($errors | append "lang-detect doesn't walk up to parent project") }
+rm -rf $ld
+
+# ctx tail shows up on single-line styles only when a module is enabled
+theme-apply "gruvbox"
+$env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
+$env.PROMPT_STYLE = "full"
+let tail_off = (with-env { LAST_EXIT_CODE: 1, NUANCE_MODULES: [] } { create_left_prompt | ansi strip })
+if ($tail_off | str contains "✘ 1") { $errors = ($errors | append "module tail shown while no module is enabled") }
+let tail_full = (with-env { LAST_EXIT_CODE: 1, NUANCE_MODULES: ["status"] } { create_left_prompt | ansi strip })
+if not ($tail_full | str contains "✘ 1") { $errors = ($errors | append "enabled status module missing on `full`") }
+$env.PROMPT_STYLE = "powerline"
+let tail_pl = (with-env { LAST_EXIT_CODE: 1, NUANCE_MODULES: ["status"] } { create_left_prompt | ansi strip })
+if not ($tail_pl | str contains "✘ 1") { $errors = ($errors | append "enabled status module missing on `powerline`") }
+hide-env PROMPT_USER PROMPT_HOST
+$env.PROMPT_STYLE = $saved_style
+
+# ── transient prompt ──
+transient-apply "on"
+if ($env.NUANCE_TRANSIENT != "on") or ("TRANSIENT_PROMPT_COMMAND" not-in ($env | columns)) { $errors = ($errors | append "transient-apply on didn't set TRANSIENT_PROMPT_COMMAND") }
+if ((transient-left | ansi strip | str trim | is-empty)) { $errors = ($errors | append "transient-left rendered nothing") }
+transient-apply "off"
+if ($env.NUANCE_TRANSIENT != "off") or ("TRANSIENT_PROMPT_COMMAND" in ($env | columns)) { $errors = ($errors | append "transient-apply off didn't clear TRANSIENT_PROMPT_COMMAND") }
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
@@ -129,7 +179,7 @@ if ((git-omz $gclean | ansi strip) | str contains "✗") { $errors = ($errors | 
 
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
-for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme"] {
+for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules"] {
     if ($c not-in $cmds) { $errors = ($errors | append $"command not defined: ($c)") }
 }
 

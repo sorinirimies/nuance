@@ -3,7 +3,7 @@
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
 ![themes](https://img.shields.io/badge/themes-26-cba6f7)
-![styles](https://img.shields.io/badge/prompt%20styles-25-89b4fa)
+![styles](https://img.shields.io/badge/prompt%20styles-27-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 ![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
@@ -11,7 +11,7 @@
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
-single drop-in file. Switch between **26 color themes** and **25 prompt
+single drop-in file. Switch between **26 color themes** and **27 prompt
 styles**, combine them into named **looks**, and optionally let the shell
 **follow your terminal's theme** automatically. macOS · Linux · WSL.
 
@@ -84,6 +84,8 @@ nuance theme           # ↑↓ selector (top entry: ↻ sync with terminal), or
 nuance theme dracula   # …e.g. set + pin dracula
 nuance prompt-style    # ↑↓ selector, or set a name
 nuance look            # list looks; add a name to apply one (theme + style)
+nuance transient on    # collapse finished prompts to a single ❯ (off / toggle)
+nuance modules         # list situational segments; enable lang status jobs …
 nuance sync            # follow the terminal's theme (auto-follow)
 nuance update          # git pull the checkout, then: exec nu
 ```
@@ -107,6 +109,18 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
   and an exit-status-aware indicator.
+
+- **Readable by construction.** Every theme is checked against WCAG contrast
+  (text ≥ 3:1, segment text ≥ 4.5:1) and out-of-range colors are nudged toward
+  the theme's own foreground — so light themes and dim separators stay legible.
+- **Transient prompt** (`nuance transient on`): once you press Enter, the old
+  multi-segment prompt collapses to one colored glyph, keeping scrollback clean.
+- **Context modules** (`nuance modules enable lang jobs …`) add segments only
+  when they matter: `status` (non-zero exit), `jobs`, `ssh`, `root`, `venv`,
+  `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached) and `k8s`.
+  Block styles (`powerline`, `capsule`, …) fold them in as extra segments;
+  single-line styles append them as a colored tail. `pastel` and `devbar`
+  include `lang`/`status`/`jobs` out of the box.
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
@@ -142,7 +156,7 @@ macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `cargo test` (the `nuance` CLI/TUI, 39 unit + integration tests):
 
 ```sh
-nu test.nu       # ✓ all checks passed — 26 themes, 25 styles, 34 looks
+nu test.nu       # ✓ all checks passed — 26 themes, 27 styles, 34 looks
 cargo test       # ✓ 39 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
