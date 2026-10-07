@@ -396,6 +396,136 @@ const SUPER_MARIO = {
     magenta: "#ff77d4", purple: "#8a6be0", bg: "#0f0b24"
 }
 
+# More themes — name → palette (same shape as the consts above), rendered via
+# the shared basic-color-config / basic-prompt-palette builders.
+const EXTRA_THEMES = {
+    "tokyo-night-storm": {
+        fg: "#c0caf5", gray: "#565f89", red: "#f7768e", orange: "#ff9e64"
+        yellow: "#e0af68", green: "#9ece6a", cyan: "#7dcfff", blue: "#7aa2f7"
+        magenta: "#bb9af7", purple: "#9d7cd8", bg: "#24283b"
+    }
+    "tokyo-night-moon": {
+        fg: "#c8d3f5", gray: "#636da6", red: "#ff757f", orange: "#ff966c"
+        yellow: "#ffc777", green: "#c3e88d", cyan: "#86e1fc", blue: "#82aaff"
+        magenta: "#c099ff", purple: "#fca7ea", bg: "#222436"
+    }
+    "tokyo-night-day": {
+        fg: "#3760bf", gray: "#848cb5", red: "#f52a65", orange: "#b15c00"
+        yellow: "#8c6c3e", green: "#587539", cyan: "#007197", blue: "#2e7de9"
+        magenta: "#9854f1", purple: "#7847bd", bg: "#e1e2e7"
+    }
+    "gruvbox-light": {
+        fg: "#3c3836", gray: "#7c6f64", red: "#9d0006", orange: "#af3a03"
+        yellow: "#b57614", green: "#79740e", cyan: "#427b58", blue: "#076678"
+        magenta: "#8f3f71", purple: "#8f3f71", bg: "#fbf1c7"
+    }
+    "gruvbox-material": {
+        fg: "#d4be98", gray: "#928374", red: "#ea6962", orange: "#e78a4e"
+        yellow: "#d8a657", green: "#a9b665", cyan: "#89b482", blue: "#7daea3"
+        magenta: "#d3869b", purple: "#d3869b", bg: "#282828"
+    }
+    "nightfox": {
+        fg: "#cdcecf", gray: "#738091", red: "#c94f6d", orange: "#f4a261"
+        yellow: "#dbc074", green: "#81b29a", cyan: "#63cdcf", blue: "#719cd6"
+        magenta: "#9d79d6", purple: "#9d79d6", bg: "#192330"
+    }
+    "dawnfox": {
+        fg: "#575279", gray: "#a8a3b3", red: "#b4637a", orange: "#d7827e"
+        yellow: "#ea9d34", green: "#618774", cyan: "#56949f", blue: "#286983"
+        magenta: "#907aa9", purple: "#907aa9", bg: "#faf4ed"
+    }
+    "kanagawa-dragon": {
+        fg: "#c5c9c5", gray: "#727169", red: "#c4746e", orange: "#b6927b"
+        yellow: "#c4b28a", green: "#8a9a7b", cyan: "#8ea4a2", blue: "#8ba4b0"
+        magenta: "#a292a3", purple: "#8992a7", bg: "#181616"
+    }
+    "kanagawa-lotus": {
+        fg: "#545464", gray: "#8a8980", red: "#c84053", orange: "#cc6d00"
+        yellow: "#77713f", green: "#6f894e", cyan: "#597b75", blue: "#4d699b"
+        magenta: "#b35b79", purple: "#624c83", bg: "#f2ecbc"
+    }
+    "flexoki": {
+        fg: "#cecdc3", gray: "#878580", red: "#d14d41", orange: "#da702c"
+        yellow: "#d0a215", green: "#879a39", cyan: "#3aa99f", blue: "#4385be"
+        magenta: "#ce5d97", purple: "#8b7ec8", bg: "#100f0f"
+    }
+    "flexoki-light": {
+        fg: "#100f0f", gray: "#6f6e69", red: "#af3029", orange: "#bc5215"
+        yellow: "#ad8301", green: "#66800b", cyan: "#24837b", blue: "#205ea6"
+        magenta: "#a02f6f", purple: "#5e409d", bg: "#fffcf0"
+    }
+    "melange": {
+        fg: "#ece1d7", gray: "#867462", red: "#d47766", orange: "#e49b5d"
+        yellow: "#ebc06d", green: "#78997a", cyan: "#7b9695", blue: "#7f91b2"
+        magenta: "#b380b0", purple: "#b380b0", bg: "#292522"
+    }
+    "nightfly": {
+        fg: "#bdc1c6", gray: "#7c8f8f", red: "#fc514e", orange: "#f78c6c"
+        yellow: "#e3d18a", green: "#a1cd5e", cyan: "#7fdbca", blue: "#82aaff"
+        magenta: "#c792ea", purple: "#ae81ff", bg: "#011627"
+    }
+    "material-palenight": {
+        fg: "#a6accd", gray: "#676e95", red: "#f07178", orange: "#f78c6c"
+        yellow: "#ffcb6b", green: "#c3e88d", cyan: "#89ddff", blue: "#82aaff"
+        magenta: "#c792ea", purple: "#c792ea", bg: "#292d3e"
+    }
+    "tomorrow-night": {
+        fg: "#c5c8c6", gray: "#969896", red: "#cc6666", orange: "#de935f"
+        yellow: "#f0c674", green: "#b5bd68", cyan: "#8abeb7", blue: "#81a2be"
+        magenta: "#b294bb", purple: "#b294bb", bg: "#1d1f21"
+    }
+    "snazzy": {
+        fg: "#eff0eb", gray: "#686868", red: "#ff5c57", orange: "#ff9f43"
+        yellow: "#f3f99d", green: "#5af78e", cyan: "#9aedfe", blue: "#57c7ff"
+        magenta: "#ff6ac1", purple: "#bd93f9", bg: "#282a36"
+    }
+    "iceberg": {
+        fg: "#c6c8d1", gray: "#6b7089", red: "#e27878", orange: "#e2a478"
+        yellow: "#e9b189", green: "#b4be82", cyan: "#89b8c2", blue: "#84a0c6"
+        magenta: "#a093c7", purple: "#a093c7", bg: "#161821"
+    }
+    "one-light": {
+        fg: "#383a42", gray: "#a0a1a7", red: "#e45649", orange: "#986801"
+        yellow: "#c18401", green: "#50a14f", cyan: "#0184bc", blue: "#4078f2"
+        magenta: "#a626a4", purple: "#a626a4", bg: "#fafafa"
+    }
+    "papercolor-light": {
+        fg: "#444444", gray: "#878787", red: "#af0000", orange: "#d75f00"
+        yellow: "#d78700", green: "#008700", cyan: "#0087af", blue: "#005f87"
+        magenta: "#8700af", purple: "#8700af", bg: "#eeeeee"
+    }
+    "synthwave-84": {
+        fg: "#ffffff", gray: "#848bbd", red: "#fe4450", orange: "#f97e72"
+        yellow: "#fede5d", green: "#72f1b8", cyan: "#03edf9", blue: "#36f9f6"
+        magenta: "#ff7edb", purple: "#b893ce", bg: "#262335"
+    }
+    "cobalt2": {
+        fg: "#e1efff", gray: "#6f8fa3", red: "#ff628c", orange: "#ff9d00"
+        yellow: "#ffc600", green: "#3ad900", cyan: "#80ffbb", blue: "#0088ff"
+        magenta: "#fb94ff", purple: "#9a5feb", bg: "#193549"
+    }
+    "modus-vivendi": {
+        fg: "#ffffff", gray: "#989898", red: "#ff5f59", orange: "#ef8b50"
+        yellow: "#d0bc00", green: "#44bc44", cyan: "#00d3d0", blue: "#2fafff"
+        magenta: "#feacd0", purple: "#b6a0ff", bg: "#000000"
+    }
+    "modus-operandi": {
+        fg: "#000000", gray: "#595959", red: "#a60000", orange: "#884900"
+        yellow: "#6f5500", green: "#006800", cyan: "#00538b", blue: "#0031a9"
+        magenta: "#721045", purple: "#531ab6", bg: "#ffffff"
+    }
+    "horizon": {
+        fg: "#d5d8da", gray: "#6c6f93", red: "#e95678", orange: "#fab795"
+        yellow: "#fac29a", green: "#29d398", cyan: "#59e1e3", blue: "#26bbd9"
+        magenta: "#ee64ac", purple: "#b877db", bg: "#1c1e26"
+    }
+    "sonokai": {
+        fg: "#e2e2e3", gray: "#7f8490", red: "#fc5d7c", orange: "#f39660"
+        yellow: "#e7c664", green: "#9ed072", cyan: "#76cce0", blue: "#7ec8e3"
+        magenta: "#b39df3", purple: "#b39df3", bg: "#2c2e34"
+    }
+}
+
 # Generic color_config from a simple palette (fg/gray/red/orange/yellow/
 # green/cyan/blue/magenta/bg). Reused by tokyo-night and nord.
 def basic-color-config [c: record] {
@@ -552,8 +682,27 @@ def theme-get [name: string] {
 }
 
 # ── Public API ────────────────────────────────────────────────
-def theme-list [] {
+def theme-list-builtin [] {
     ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "super-mario" "cyberpunk"]
+}
+
+# ── User themes (nuance import …) ─────────────────────────────
+# One .nuon file per theme in <config>/nuance/themes (override the directory
+# with $env.NUANCE_THEMES_DIR). Same 11-color shape as the consts above.
+def user-themes-dir [] {
+    $env.NUANCE_THEMES_DIR? | default ($nu.default-config-dir | path join "nuance" "themes")
+}
+def user-theme-names [] {
+    let dir = (user-themes-dir)
+    if not ($dir | path exists) { return [] }
+    let taken = ((theme-list-builtin) ++ ($EXTRA_THEMES | columns))
+    ls $dir | where name =~ '\.nuon$' | get name | each {|f| $f | path parse | get stem } | where {|n| $n not-in $taken } | sort
+}
+def user-theme-load [name: string] { open (user-themes-dir | path join $"($name).nuon") }
+
+# Every available theme: built-ins, then the extra set, then imported ones.
+def theme-list [] {
+    (theme-list-builtin) ++ ($EXTRA_THEMES | columns) ++ (user-theme-names)
 }
 
 def theme-get-raw [name: string] {
@@ -592,6 +741,14 @@ def theme-get-raw [name: string] {
         "super-mario" => { color_config: (basic-color-config $SUPER_MARIO) palette: (basic-prompt-palette $SUPER_MARIO) }
         "solarized"       => { color_config: (basic-color-config $SOLARIZED)       palette: (basic-prompt-palette $SOLARIZED) }
         "solarized-light" => { color_config: (basic-color-config $SOLARIZED_LIGHT) palette: (basic-prompt-palette $SOLARIZED_LIGHT) }
+        _ if ($name in ($EXTRA_THEMES | columns)) => {
+            let c = ($EXTRA_THEMES | get $name)
+            { color_config: (basic-color-config $c) palette: (basic-prompt-palette $c) }
+        }
+        _ if ($name in (user-theme-names)) => {
+            let c = (user-theme-load $name)
+            { color_config: (basic-color-config $c) palette: (basic-prompt-palette $c) }
+        }
         _ => {
             color_config: (gruvbox-color-config)
             palette: {
@@ -636,7 +793,7 @@ def --env theme-apply [name: string] {
 def --env theme-label [name: string] {
     let saved = $env.THEME_PALETTE?
     $env.THEME_PALETTE = (theme-get $name).palette
-    let rendered = (create_left_prompt)
+    let rendered = (left-prompt-core)
     $env.THEME_PALETTE = $saved
     let w = (theme-list | each { str length } | math max)
     $"($name | fill --alignment left --width $w)  →  ($rendered)"
@@ -762,6 +919,18 @@ def presets [] {
         { name: "dracula-agnoster", theme: "dracula",               style: "agnoster" }
         { name: "tokyo-skyline",    theme: "tokyo-night",           style: "skyline" }
         { name: "nord-pills",       theme: "nord",                  style: "pills" }
+        { name: "storm-devbar", theme: "tokyo-night-storm", style: "devbar" }
+        { name: "moon-pills", theme: "tokyo-night-moon", style: "pills" }
+        { name: "day-agnoster", theme: "tokyo-night-day", style: "agnoster" }
+        { name: "gruvbox-light-pure", theme: "gruvbox-light", style: "pure" }
+        { name: "palenight-powerline", theme: "material-palenight", style: "powerline" }
+        { name: "nightfox-skyline", theme: "nightfox", style: "skyline" }
+        { name: "dawnfox-compact", theme: "dawnfox", style: "compact" }
+        { name: "synthwave84-capsule", theme: "synthwave-84", style: "capsule" }
+        { name: "flexoki-lambda", theme: "flexoki", style: "lambda" }
+        { name: "melange-arrow", theme: "melange", style: "arrow" }
+        { name: "snazzy-rainbow", theme: "snazzy", style: "rainbow" }
+        { name: "modus-pure", theme: "modus-vivendi", style: "pure" }
     ]
 }
 
@@ -781,7 +950,7 @@ def --env look-label [theme_name: string, style_name: string] {
     let saved_s = $env.PROMPT_STYLE?
     $env.THEME_PALETTE = (theme-get $theme_name).palette
     $env.PROMPT_STYLE = $style_name
-    let rendered = (create_left_prompt)
+    let rendered = (left-prompt-core)
     $env.THEME_PALETTE = $saved_p
     $env.PROMPT_STYLE = $saved_s
     $rendered
@@ -841,7 +1010,7 @@ def style-preview [] {
     for s in (prompt-styles) {
         $env.PROMPT_STYLE = $s
         print $"(ansi {fg: $sep})($s)(ansi reset)"
-        print (create_left_prompt)
+        print (left-prompt-core)
         print ""
     }
     $env.PROMPT_STYLE = $saved
@@ -874,6 +1043,10 @@ def "nuance help" [] {
     print "  nuance prompt-style [name]   selector, or set one"
     print "  nuance look [name]           list looks, or apply one (theme + style)"
     print "  nuance sync                  follow the terminal's theme (auto-follow)"
+    print "  nuance configure             guided setup (look, transient, modules)"
+    print "  nuance doctor                check fonts, truecolor, install, state"
+    print "  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme"
+    print "  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)"
     print "  nuance transient [on|off]    collapse finished prompts to one glyph"
     print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
@@ -907,6 +1080,86 @@ def --env "nuance transient" [mode?: string] {
     transient-apply $next
     $next | save -f (transient-state-path)
     print $"(ansi green_bold)✓(ansi reset) transient prompt (ansi attr_bold)($next)(ansi reset)"
+}
+
+# `nuance here [theme [style]] | clear` — pin a theme/style to this directory tree.
+def "nuance here" [theme?: string, style?: string] {
+    let f = ($env.PWD | path join ".nuance")
+    if $theme == null {
+        let found = (dir-config-find)
+        if $found == null {
+            print "no .nuance here — create one with: nuance here <theme> [style]"
+        } else {
+            print $"(ansi attr_bold)($found)(ansi reset)"
+            print (open --raw $found)
+        }
+        return
+    }
+    if $theme == "clear" {
+        if ($f | path exists) { rm -f $f; print $"(ansi green_bold)✓(ansi reset) removed ($f)" } else { print "nothing to clear" }
+        return
+    }
+    if $theme not-in (theme-list) { print $"(ansi red)unknown theme:(ansi reset) ($theme)"; return }
+    if $style != null and $style not-in (prompt-styles) { print $"(ansi red)unknown style:(ansi reset) ($style)"; return }
+    let cfg = ({ theme: $theme } | merge (if $style != null { { style: $style } } else { {} }))
+    $cfg | to toml | save -f $f
+    print $"(ansi green_bold)✓(ansi reset) wrote ($f) — prompt in this tree now uses (ansi attr_bold)($theme)(ansi reset)(if $style != null { $' + ($style)' } else { '' })"
+}
+
+# `nuance configure` — guided setup: look (or theme + style), transient prompt, modules.
+def --env "nuance configure" [] {
+    print $"(ansi green_bold)nuance setup(ansi reset) — Esc cancels a step"
+    let items = (look-picker-items)
+    let skip = "(skip — choose theme and style separately)"
+    let pick = ($items | get label | prepend $skip | input list --fuzzy "1/4  start from a look")
+    if ($pick | is-empty) { print "cancelled."; return }
+    if $pick == $skip {
+        theme
+        prompt-style
+    } else {
+        let key = ($items | where label == $pick | get 0.key)
+        look $key
+    }
+    let tr = (["off — keep every prompt" "on — collapse finished prompts to one glyph"] | input list "2/4  transient prompt")
+    if ($tr | is-not-empty) {
+        let mode = (if ($tr | str starts-with "on") { "on" } else { "off" })
+        transient-apply $mode
+        $mode | save -f (transient-state-path)
+    }
+    let opts = (module-defs | each {|m| $"($m.name | fill --width 7)  ($m.desc)" })
+    let chosen = ($opts | input list --multi "3/4  extra segments (space toggles, enter confirms)")
+    if $chosen != null {
+        let names = ($chosen | each {|l| $l | split row " " | first })
+        $env.NUANCE_MODULES = $names
+        $names | str join "\n" | save -f (modules-state-path)
+    }
+    print $"(ansi green_bold)4/4  done(ansi reset) — theme (ansi attr_bold)($env.THEME_NAME? | default '?')(ansi reset), style (ansi attr_bold)($env.PROMPT_STYLE)(ansi reset), transient (ansi attr_bold)($env.NUANCE_TRANSIENT)(ansi reset), modules (ansi attr_bold)((enabled-modules | str join ', ') | default 'none')(ansi reset)"
+}
+
+# `nuance doctor` — check the environment nuance depends on.
+def "nuance doctor" [] {
+    let nu_ver = (version | get version)
+    let minor = ($nu_ver | split row "." | get 1 | into int)
+    let autoload = ($nu.user-autoload-dirs | get 0? | default "" | path join "nushell-prompt.nu")
+    let glyphs = ([e0b0 e0b6 e0b4 f126 e725] | each {|c| char --unicode $c } | str join " ")
+    let ghostty = (try { ghostty-theme-name } catch { null })
+    let saved_theme = (try { open (theme-state-path) | str trim } catch { "auto" })
+    let local = (dir-config-find)
+    [
+        { check: "nushell version", status: (if $minor >= 100 { "ok" } else { "warn" }), detail: $"($nu_ver)(if $minor < 100 { ' — transient prompt needs 0.100+' } else { '' })" }
+        { check: "truecolor", status: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "ok" } else { "warn" }), detail: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "COLORTERM is set" } else { "COLORTERM not truecolor/24bit — theme colors may be approximated" }) }
+        { check: "nerd font", status: "info", detail: $"glyph sample: ($glyphs)  — boxes? install a Nerd Font or set $env.PROMPT_NERD = false" }
+        { check: "autoload file", status: (if (($autoload | path exists) or (($autoload | path type) == "symlink")) { "ok" } else { "warn" }), detail: (if ($autoload | path exists) { $"($autoload)(if (($autoload | path type) == 'symlink') { ' (symlink → git checkout)' } else { '' })" } else { $"($autoload) missing — run: nuance sync (installs it), or the installer" }) }
+        { check: "git", status: (if (which git | is-empty) { "warn" } else { "ok" }), detail: (if (which git | is-empty) { "git not found — git segment disabled" } else { "found" }) }
+        { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }
+        { check: "theme", status: "info", detail: $"($env.THEME_NAME? | default 'unknown') \(($saved_theme))" }
+        { check: "prompt style", status: "info", detail: ($env.PROMPT_STYLE? | default "full") }
+        { check: "transient prompt", status: "info", detail: ($env.NUANCE_TRANSIENT? | default "off") }
+        { check: "modules", status: "info", detail: (if (enabled-modules | is-empty) { "none enabled" } else { enabled-modules | str join ", " }) }
+        { check: "terminal theme", status: "info", detail: (if ($ghostty | is-empty) { "no Ghostty theme detected" } else { $"Ghostty → ($ghostty)" }) }
+        { check: "imported themes", status: "info", detail: $"(user-theme-names | length) in (user-themes-dir)" }
+        { check: ".nuance override", status: "info", detail: (if $local == null { "none for this directory" } else { $local }) }
+    ]
 }
 
 # `nuance modules [list|enable|disable|clear] [name…]` — situational prompt segments.
@@ -950,7 +1203,42 @@ def os-dark-mode [] {
 }
 
 # Map a raw theme name (from Ghostty or anywhere) to a nuance theme, or null.
+def theme-slug [name: string] {
+    $name | str downcase | str replace --all --regex '[^a-z0-9]+' '-' | str trim --char '-'
+}
+
 def ghostty-map-name [low: string] {
+    # 1. exact (slugged) match with any built-in / extra / imported theme
+    let slug = (theme-slug $low)
+    if $slug in (theme-list) { return $slug }
+    # 2. well-known variants
+    let l = ($low | str downcase)
+    let has = {|w| $l | str contains $w }
+    if (do $has "tokyo") {
+        return (if (do $has "storm") { "tokyo-night-storm" } else if (do $has "moon") { "tokyo-night-moon" } else if ((do $has "day") or (do $has "light")) { "tokyo-night-day" } else { "tokyo-night" })
+    }
+    if (do $has "gruvbox") and (do $has "light") { return "gruvbox-light" }
+    if (do $has "gruvbox") and (do $has "material") { return "gruvbox-material" }
+    if (do $has "kanagawa") {
+        return (if (do $has "dragon") { "kanagawa-dragon" } else if ((do $has "lotus") or (do $has "light")) { "kanagawa-lotus" } else { "kanagawa" })
+    }
+    if (do $has "dawnfox") { return "dawnfox" }
+    if (do $has "nightfox") { return "nightfox" }
+    if (do $has "flexoki") { return (if (do $has "light") { "flexoki-light" } else { "flexoki" }) }
+    if (do $has "melange") { return "melange" }
+    if (do $has "nightfly") { return "nightfly" }
+    if (do $has "palenight") { return "material-palenight" }
+    if (do $has "tomorrow") and (do $has "night") { return "tomorrow-night" }
+    if (do $has "snazzy") { return "snazzy" }
+    if (do $has "iceberg") { return "iceberg" }
+    if (do $has "one") and (do $has "light") { return "one-light" }
+    if (do $has "papercolor") and (do $has "light") { return "papercolor-light" }
+    if (do $has "synthwave") { return "synthwave-84" }
+    if (do $has "cobalt2") { return "cobalt2" }
+    if (do $has "modus") { return (if (do $has "operandi") { "modus-operandi" } else { "modus-vivendi" }) }
+    if (do $has "horizon") { return "horizon" }
+    if (do $has "sonokai") { return "sonokai" }
+    # 3. the original keyword families
     if ($low | str contains --ignore-case "gruvbox") { "gruvbox"
     } else if ($low | str contains --ignore-case "mocha") { "catppuccin-mocha"
     } else if ($low | str contains --ignore-case "macchiato") { "catppuccin-macchiato"
@@ -1004,7 +1292,155 @@ def ghostty-theme-name [] {
         if ($seg | is-not-empty) { $val = ($seg | split row ":" | last | str trim) }
     }
 
-    ghostty-map-name $val
+    let mapped = (ghostty-map-name $val)
+    if ($mapped | is-not-empty) { return $mapped }
+    # Unknown to nuance: if Ghostty ships/has that theme file, import it so
+    # *any* Ghostty theme works with auto-follow.
+    ghostty-adopt $val
+}
+
+
+# ── Theme import (ghostty · kitty · alacritty · base16) ──────
+# Converts a terminal color scheme into a nuance theme and stores it in the
+# user themes dir. Ghostty themes can also be imported by *name*, and any
+# unknown theme Ghostty is using is imported automatically on sync.
+def norm-hex [v: any] {
+    if $v == null { return null }
+    let t = ($v | into string | str trim | str trim --char '"' | str trim --char "'" | str downcase | str replace --regex '^(#|0x)' '')
+    if ($t =~ '^[0-9a-f]{6}$') { $"#($t)" } else { null }
+}
+
+# Build a theme record from bg/fg + the 16 ANSI colors (nulls allowed).
+def theme-from-ansi [bg: string, fg: string, ansi: list, --orange: string, --purple: string] {
+    # (missing colors are "" — `each` would drop nulls and shift the indices)
+    let a = {|i| let v = ($ansi | get -o $i | default ""); if ($v | is-empty) { $fg } else { $v } }
+    let red = (do $a 1)
+    let yellow = (do $a 3)
+    let magenta = (do $a 5)
+    {
+        fg: $fg
+        gray: (do $a 8)
+        red: $red
+        orange: ($orange | default (hex-mix $red $yellow 0.5))
+        yellow: $yellow
+        green: (do $a 2)
+        cyan: (do $a 6)
+        blue: (do $a 4)
+        magenta: $magenta
+        purple: ($purple | default (let v = ($ansi | get -o 13 | default ""); if ($v | is-empty) { $magenta } else { $v }))
+        bg: $bg
+    }
+}
+
+def import-detect [text: string] {
+    if ($text =~ '(?m)^\s*palette\s*=') { "ghostty"
+    } else if ($text =~ '(?m)^\s*base0[0-9a-fA-F]\s*:') { "base16"
+    } else if ($text =~ '(?m)^\s*\[colors') { "alacritty"
+    } else if ($text =~ '(?m)^\s*(color\d+|foreground|background)\s+#?[0-9a-fA-F]{6}') { "kitty"
+    } else { null }
+}
+
+def import-ghostty [text: string] {
+    let lines = ($text | lines | each { str trim } | where {|l| ($l | is-not-empty) and not ($l | str starts-with "#") })
+    let pal = ($lines | parse -r '^palette\s*=\s*(?<i>\d+)\s*=\s*(?<c>\S+)')
+    let ansi = (0..15 | each {|i| norm-hex ($pal | where {|r| ($r.i | into int) == $i } | get 0?.c?) | default "" })
+    let bg = (norm-hex ($lines | parse -r '^background\s*=\s*(?<c>\S+)' | get 0?.c?))
+    let fg = (norm-hex ($lines | parse -r '^foreground\s*=\s*(?<c>\S+)' | get 0?.c?))
+    if $bg == null or $fg == null { error make { msg: "ghostty theme has no background/foreground" } }
+    theme-from-ansi $bg $fg $ansi
+}
+
+def import-kitty [text: string] {
+    let lines = ($text | lines | each { str trim } | where {|l| ($l | is-not-empty) and not ($l | str starts-with "#") })
+    let cols = ($lines | parse -r '^color(?<i>\d+)\s+(?<c>\S+)')
+    let ansi = (0..15 | each {|i| norm-hex ($cols | where {|r| ($r.i | into int) == $i } | get 0?.c?) | default "" })
+    let bg = (norm-hex ($lines | parse -r '^background\s+(?<c>\S+)' | get 0?.c?))
+    let fg = (norm-hex ($lines | parse -r '^foreground\s+(?<c>\S+)' | get 0?.c?))
+    if $bg == null or $fg == null { error make { msg: "kitty theme has no background/foreground" } }
+    theme-from-ansi $bg $fg $ansi
+}
+
+def import-alacritty [text: string] {
+    let c = ($text | from toml | get colors)
+    let names = [black red green yellow blue magenta cyan white]
+    let norm = {|grp| $names | each {|n| norm-hex ($c | get -o $grp | default {} | get -o $n) | default "" } }
+    let ansi = ((do $norm "normal") ++ (do $norm "bright"))
+    let bg = (norm-hex ($c.primary?.background?))
+    let fg = (norm-hex ($c.primary?.foreground?))
+    if $bg == null or $fg == null { error make { msg: "alacritty theme has no primary background/foreground" } }
+    theme-from-ansi $bg $fg $ansi
+}
+
+def import-base16 [text: string] {
+    let rows = ($text | lines | each { str trim } | parse -r '^(?<k>base0[0-9a-fA-F])\s*:\s*(?<v>\S+)')
+    let b = {|k| norm-hex ($rows | where {|r| ($r.k | str downcase) == $k } | get 0?.v?) }
+    let bg = (do $b "base00")
+    let fg = (do $b "base05")
+    if $bg == null or $fg == null { error make { msg: "base16 scheme is missing base00/base05" } }
+    let ansi = ["base00" "base08" "base0b" "base0a" "base0d" "base0e" "base0c" "base05" "base03" "base08" "base0b" "base0a" "base0d" "base0e" "base0c" "base07"] | each {|k| do $b $k | default "" }
+    theme-from-ansi $bg $fg $ansi --orange (do $b "base09") --purple (do $b "base0e")
+}
+
+def ghostty-theme-dirs [] {
+    let home = $nu.home-dir
+    [
+        ($env.GHOSTTY_RESOURCES_DIR? | default "" | path join "themes")
+        ($home | path join ".config" "ghostty" "themes")
+        ($home | path join "Library" "Application Support" "com.mitchellh.ghostty" "themes")
+        "/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
+        "/usr/share/ghostty/themes"
+        "/usr/local/share/ghostty/themes"
+        "/opt/homebrew/share/ghostty/themes"
+    ] | where {|d| ($d | path type) == "dir" }
+}
+
+# Path of a Ghostty theme file by (case-insensitive) name, or null.
+def ghostty-theme-file [name: string] {
+    let want = ($name | str downcase)
+    for d in (ghostty-theme-dirs) {
+        let hit = (ls $d | where {|f| ($f.name | path basename | str downcase) == $want } | get 0?.name?)
+        if $hit != null { return $hit }
+    }
+    null
+}
+
+# Import `source` (a file path, or a Ghostty theme name) as theme `name`.
+def theme-import [source: string, name?: string] {
+    let file = if ($source | path exists) { $source } else { ghostty-theme-file $source }
+    if $file == null { error make { msg: $"not a file and not a Ghostty theme name: ($source)" } }
+    let text = (open --raw $file)
+    let fmt = (import-detect $text)
+    if $fmt == null { error make { msg: $"unrecognized color scheme format: ($file)" } }
+    let theme = match $fmt {
+        "ghostty" => (import-ghostty $text)
+        "kitty" => (import-kitty $text)
+        "alacritty" => (import-alacritty $text)
+        _ => (import-base16 $text)
+    }
+    let slug = (theme-slug ($name | default ($file | path parse | get stem)))
+    if ($slug | is-empty) { error make { msg: "could not derive a theme name — pass --name" } }
+    if $slug in ((theme-list-builtin) ++ ($EXTRA_THEMES | columns)) {
+        error make { msg: $"'($slug)' is a built-in theme — pass --name to import it under another name" }
+    }
+    let dir = (user-themes-dir)
+    mkdir $dir
+    $theme | to nuon | save -f ($dir | path join $"($slug).nuon")
+    { name: $slug, format: $fmt, file: $file }
+}
+
+# Import a Ghostty theme by name for auto-follow; returns its slug or null.
+def ghostty-adopt [name: string] {
+    let slug = (theme-slug $name)
+    if ($slug | is-empty) { return null }
+    if $slug in (theme-list) { return $slug }
+    if (ghostty-theme-file $name) == null { return null }
+    try { theme-import $name $slug | get name } catch { null }
+}
+
+# `nuance import <file|ghostty-theme-name> [--name x]`
+def "nuance import" [source: string, --name: string] {
+    let r = (try { theme-import $source $name } catch {|e| print $"(ansi red)import failed:(ansi reset) ($e.msg)"; return })
+    print $"(ansi green_bold)✓(ansi reset) imported (ansi attr_bold)($r.name)(ansi reset) from ($r.format) theme — apply with: (ansi attr_bold)nuance theme ($r.name)(ansi reset)"
 }
 
 # Re-adopt Ghostty's current theme in this session.
@@ -1113,7 +1549,7 @@ $env.PROMPT_STYLE = (if ($saved_style in (prompt-styles)) { $saved_style } else 
 def --env style-label [s: string] {
     let saved = $env.PROMPT_STYLE
     $env.PROMPT_STYLE = $s
-    let rendered = (create_left_prompt)
+    let rendered = (left-prompt-core)
     $env.PROMPT_STYLE = $saved
     let w = (prompt-styles | each { str length } | math max)
     $"($s | fill --alignment left --width $w)  →  ($rendered)"
@@ -1415,7 +1851,7 @@ def render-blocks [shape: string, ids: list<string>] {
 
 # Left prompt: the style's layout, plus the user's enabled context modules
 # as a tail for single-line styles (blocks styles fold them in as segments).
-def create_left_prompt [] {
+def left-prompt-core [] {
     let left = (render-left)
     let d = (style-def ($env.PROMPT_STYLE? | default "full"))
     if ($d.ctx? | default false) {
@@ -1581,7 +2017,7 @@ def render-left [] {
     }
 }
 
-def create_right_prompt [] {
+def right-prompt-core [] {
     let p = $env.THEME_PALETTE
     let dur_ms = ($env.CMD_DURATION_MS? | default "0" | into int)
     let dur_seg = if $dur_ms > 2000 {
@@ -1593,7 +2029,7 @@ def create_right_prompt [] {
 }
 
 # Indicator: style-aware glyph, turns red after a failed command.
-def prompt-indicator [] {
+def indicator-core [] {
     let p = $env.THEME_PALETTE
     let ok = (($env.LAST_EXIT_CODE? | default 0) == 0)
     let def = (style-def ($env.PROMPT_STYLE? | default "full"))
@@ -1601,6 +2037,52 @@ def prompt-indicator [] {
     let color = if $ok { $p | get $def.tone } else { $p.err }
     $"(ansi {fg: $color attr: b})($glyph) (ansi reset)"
 }
+
+
+# ── Per-directory overrides (.nuance) ────────────────────────
+# A `.nuance` TOML file in a directory (or any parent) re-themes the prompt
+# while you are inside it — e.g. a red theme for prod checkouts:
+#     theme = "gruvbox"
+#     style = "powerline"
+# Only theme/style *names* are read (validated against the known lists), so a
+# `.nuance` file in a cloned repo can change colors but never run anything.
+# Create/clear one with `nuance here <theme> [style]` / `nuance here clear`.
+def dir-config-find [start?: string] {
+    mut dir = ($start | default $env.PWD)
+    for _ in 0..8 {
+        let f = ($dir | path join ".nuance")
+        if (($f | path exists) and (($f | path type) == "file")) { return $f }
+        let up = ($dir | path dirname)
+        if $up == $dir { break }
+        $dir = $up
+    }
+    null
+}
+
+# Env overrides ({ THEME_PALETTE, THEME_NAME, PROMPT_STYLE }) or null.
+def dir-override [] {
+    let f = (dir-config-find)
+    if $f == null { return null }
+    let cfg = (try { open --raw $f | from toml } catch { null })
+    if $cfg == null { return null }
+    mut e = {}
+    let t = ($cfg.theme? | default "")
+    if ($t | describe) == "string" and $t in (theme-list) {
+        $e = ($e | insert THEME_PALETTE (theme-get $t).palette | insert THEME_NAME $t)
+    }
+    let st = ($cfg.style? | default "")
+    if ($st | describe) == "string" and $st in (prompt-styles) { $e = ($e | insert PROMPT_STYLE $st) }
+    if ($e | is-empty) { null } else { $e }
+}
+
+def with-local [body: closure] {
+    let o = (dir-override)
+    if $o == null { do $body } else { with-env $o { do $body } }
+}
+
+def create_left_prompt [] { with-local { left-prompt-core } }
+def create_right_prompt [] { with-local { right-prompt-core } }
+def prompt-indicator [] { with-local { indicator-core } }
 
 # ── Transient prompt ─────────────────────────────────────────
 # Once you press Enter, the finished prompt collapses to a single colored
@@ -1615,7 +2097,7 @@ def transient-left [] {
 }
 def --env transient-apply [mode: string] {
     if $mode == "on" {
-        $env.TRANSIENT_PROMPT_COMMAND = { || transient-left }
+        $env.TRANSIENT_PROMPT_COMMAND = { || with-local { transient-left } }
         $env.TRANSIENT_PROMPT_INDICATOR = { || "" }
         $env.TRANSIENT_PROMPT_INDICATOR_VI_INSERT = { || "" }
         $env.TRANSIENT_PROMPT_COMMAND_RIGHT = { || "" }

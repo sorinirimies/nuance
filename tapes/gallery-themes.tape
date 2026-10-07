@@ -1,11 +1,11 @@
-# Gallery: color swatch of every theme (all 26 at once).
+# Gallery: color swatch of every theme (all 51 at once).
 Output docs/gallery-themes.gif
 
 Set Shell "nu"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 18
 Set Width 760
-Set Height 900
+Set Height 1480
 Set Padding 22
 Set LineHeight 1.15
 

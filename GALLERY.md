@@ -3,13 +3,13 @@
 Every **theme**, **style** and **look** at a glance.
 Usage & commands are in the [main README](README.md#theming--styling).
 
-- [Themes (26)](#themes-26)
+- [Themes (51)](#themes-51)
 - [Prompt styles (27)](#prompt-styles-27)
-- [Looks (34)](#looks-34)
+- [Looks (46)](#looks-46)
 
 ---
 
-## Themes (26)
+## Themes (51)
 
 Every theme's palette at a glance:
 
@@ -28,14 +28,22 @@ Light themes on a light terminal background:
 
 ![light themes](docs/light.gif)
 
-**Dark:** `gruvbox` · `catppuccin-mocha` · `catppuccin-macchiato` ·
-`catppuccin-frappe` · `tokyo-night` · `nord` · `dracula` · `rose-pine` ·
-`rose-pine-moon` · `everforest` · `kanagawa` · `onedark` · `monokai` ·
-`ayu-dark` · `ayu-mirage` · `night-owl` · `github-dark` · `oxocarbon` ·
-`zenburn` · `solarized` · `super-mario` · `cyberpunk` (neon)
+**Dark:** `gruvbox` · `gruvbox-material` · `catppuccin-mocha` ·
+`catppuccin-macchiato` · `catppuccin-frappe` · `tokyo-night` ·
+`tokyo-night-storm` · `tokyo-night-moon` · `nord` · `dracula` · `rose-pine` ·
+`rose-pine-moon` · `everforest` · `kanagawa` · `kanagawa-dragon` · `onedark` ·
+`monokai` · `ayu-dark` · `ayu-mirage` · `night-owl` · `github-dark` ·
+`oxocarbon` · `zenburn` · `solarized` · `nightfox` · `flexoki` · `melange` ·
+`nightfly` · `material-palenight` · `tomorrow-night` · `snazzy` · `iceberg` ·
+`synthwave-84` · `cobalt2` · `modus-vivendi` · `horizon` · `sonokai` ·
+`super-mario` · `cyberpunk` (neon)
 
 **Light:** `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
-`solarized-light`
+`solarized-light` · `tokyo-night-day` · `gruvbox-light` · `dawnfox` ·
+`kanagawa-lotus` · `flexoki-light` · `one-light` · `papercolor-light` ·
+`modus-operandi`
+
+**Yours:** anything you `nuance import` (Ghostty, kitty, Alacritty, base16).
 
 ---
 
@@ -85,7 +93,7 @@ Game-inspired styles on the Super Mario theme:
 
 ---
 
-## Looks (34)
+## Looks (46)
 
 A **look** is a curated theme + style pairing.
 
@@ -127,3 +135,15 @@ A **look** is a curated theme + style pairing.
 | `dracula-agnoster`  | dracula                | agnoster       |
 | `tokyo-skyline`     | tokyo-night            | skyline        |
 | `nord-pills`        | nord                   | pills          |
+| `storm-devbar`      | tokyo-night-storm      | devbar       |
+| `moon-pills`        | tokyo-night-moon       | pills        |
+| `day-agnoster`      | tokyo-night-day        | agnoster     |
+| `gruvbox-light-pure`| gruvbox-light          | pure         |
+| `palenight-powerline`| material-palenight     | powerline    |
+| `nightfox-skyline`  | nightfox               | skyline      |
+| `dawnfox-compact`   | dawnfox                | compact      |
+| `synthwave84-capsule`| synthwave-84           | capsule      |
+| `flexoki-lambda`    | flexoki                | lambda       |
+| `melange-arrow`     | melange                | arrow        |
+| `snazzy-rainbow`    | snazzy                 | rainbow      |
+| `modus-pure`        | modus-vivendi          | pure         |

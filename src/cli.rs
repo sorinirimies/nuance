@@ -32,6 +32,23 @@ pub enum Commands {
         /// Look name, e.g. cyberpunk, gruvbox-minimal, tokyo-powerline
         name: Option<String>,
     },
+    /// Guided setup: pick a look (or theme + style), transient prompt, modules
+    Configure,
+    /// Check fonts, truecolor, install and current nuance state
+    Doctor,
+    /// Import a ghostty/kitty/alacritty/base16 theme (file path, or a Ghostty theme name)
+    Import {
+        /// Color-scheme file, or the name of a Ghostty theme
+        source: String,
+        /// Name to store it under (default: derived from the file name)
+        #[arg(long)]
+        name: Option<String>,
+    },
+    /// Pin a theme (and optionally a style) to this directory tree via .nuance
+    Here {
+        /// <theme> [style] | clear — omit to show the current .nuance
+        args: Vec<String>,
+    },
     /// Collapse finished prompts to a single glyph (on, off or toggle)
     Transient {
         /// on | off | toggle — omit to show the current state
@@ -56,6 +73,10 @@ pub fn usage() -> &'static str {
   nuance theme [name]          ratatui picker w/ live preview, or set + pin one
   nuance prompt-style [name]   ratatui picker w/ live preview, or set one
   nuance look [name]           ratatui picker w/ live preview, or apply one
+  nuance configure             guided setup (look, transient prompt, modules)
+  nuance doctor                check fonts, truecolor, install and state
+  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme
+  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)
   nuance transient [on|off]    collapse finished prompts to one glyph
   nuance modules [enable|disable|list|clear] [name…]
                                situational segments: status jobs ssh root venv nix lang k8s
@@ -78,6 +99,10 @@ mod tests {
             "theme",
             "prompt-style",
             "look",
+            "configure",
+            "doctor",
+            "import",
+            "here",
             "transient",
             "modules",
             "sync",
@@ -125,6 +150,37 @@ mod tests {
             }
             other => panic!("unexpected: {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_import_with_name() {
+        let cli = Cli::try_parse_from(["nuance", "import", "Rose Pine", "--name", "rp"]).unwrap();
+        match cli.command {
+            Some(Commands::Import { source, name }) => {
+                assert_eq!(source, "Rose Pine");
+                assert_eq!(name.as_deref(), Some("rp"));
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_here_args() {
+        let cli = Cli::try_parse_from(["nuance", "here", "dracula", "powerline"]).unwrap();
+        match cli.command {
+            Some(Commands::Here { args }) => assert_eq!(args, vec!["dracula", "powerline"]),
+            other => panic!("unexpected: {other:?}"),
+        }
+        assert!(matches!(
+            Cli::try_parse_from(["nuance", "doctor"]).unwrap().command,
+            Some(Commands::Doctor)
+        ));
+        assert!(matches!(
+            Cli::try_parse_from(["nuance", "configure"])
+                .unwrap()
+                .command,
+            Some(Commands::Configure)
+        ));
     }
 
     #[test]

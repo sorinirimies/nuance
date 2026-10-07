@@ -57,6 +57,18 @@ fn main() -> ExitCode {
             print!("{}", cli::usage());
             ExitCode::SUCCESS
         }
+        Some(Commands::Configure) => with_nu(|target| nu::run_nu(target, "nuance configure")),
+        Some(Commands::Doctor) => with_nu(|target| nu::run_nu(target, "nuance doctor")),
+        Some(Commands::Import { source, name }) => {
+            let mut script = format!("nuance import {}", nu::quote(&[source]));
+            if let Some(n) = name {
+                script.push_str(&format!(" --name {}", nu::quote(&[n])));
+            }
+            with_nu(|target| nu::run_nu(target, &script))
+        }
+        Some(Commands::Here { args }) => {
+            with_nu(|target| nu::run_nu(target, &format!("nuance here {}", nu::quote(&args))))
+        }
         Some(Commands::Transient { mode }) => {
             let args: Vec<String> = mode.into_iter().collect();
             with_nu(|target| nu::run_nu(target, &format!("nuance transient {}", nu::quote(&args))))

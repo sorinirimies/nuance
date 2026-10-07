@@ -3,6 +3,7 @@
 # the prompt renders, and helpers behave. Exits non-zero on any failure.
 # Run:  nu test.nu
 source nushell-prompt.nu
+$env.NUANCE_THEMES_DIR = (mktemp -d)
 
 mut errors = []
 
@@ -43,7 +44,7 @@ if ((prompt-styles | length) != (prompt-styles | uniq | length)) { $errors = ($e
 
 # ── theme quality: valid hex, readable text, AA ink on every segment ──
 # (color math lives in nushell-prompt.nu: contrast / ink-on / finish-palette)
-let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light]
+let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi]
 for t in (theme-list) {
     let p = (theme-get $t).palette
     for k in ($p | columns | where {|c| $c not-in [light inks] }) {
@@ -157,6 +158,81 @@ if ((transient-left | ansi strip | str trim | is-empty)) { $errors = ($errors | 
 transient-apply "off"
 if ($env.NUANCE_TRANSIENT != "off") or ("TRANSIENT_PROMPT_COMMAND" in ($env | columns)) { $errors = ($errors | append "transient-apply off didn't clear TRANSIENT_PROMPT_COMMAND") }
 
+# ── extra themes: shape + builtin separation ──
+let pal_keys = [fg gray red orange yellow green cyan blue magenta purple bg]
+for n in ($EXTRA_THEMES | columns) {
+    let c = ($EXTRA_THEMES | get $n)
+    for k in $pal_keys {
+        if ($k not-in ($c | columns)) { $errors = ($errors | append $"extra theme '($n)': missing '($k)'") }
+    }
+    if ($n in (theme-list-builtin)) { $errors = ($errors | append $"extra theme '($n)' shadows a built-in") }
+}
+
+# ── ghostty names -> themes (exact slug, variants, families) ──
+let gmap2 = { "Tokyo Night Storm": "tokyo-night-storm", "TokyoNight Moon": "tokyo-night-moon", "Gruvbox Light": "gruvbox-light", "Kanagawa Dragon": "kanagawa-dragon", "One Light": "one-light", "Flexoki Light": "flexoki-light", "Modus Operandi": "modus-operandi", "Nightfox": "nightfox", "Material Palenight": "material-palenight" }
+for row in ($gmap2 | transpose k v) {
+    let got = (ghostty-map-name $row.k)
+    if ($got != $row.v) { $errors = ($errors | append $"ghostty map '($row.k)' -> '($got)' (want '($row.v)')") }
+}
+
+# ── theme import: every format, positions of missing colors, built-in guard ──
+let idir = (mktemp -d)
+"palette = 1=#ff5555\npalette = 2=#50fa7b\npalette = 3=#f1fa8c\npalette = 4=#bd93f9\npalette = 5=#ff79c6\npalette = 6=#8be9fd\npalette = 8=#6272a4\nbackground = #282a36\nforeground = #f8f8f2\n" | save ($idir | path join "gh-sample")
+"foreground #c0c0c0\nbackground #101010\ncolor1 #ff0000\ncolor2 #00ff00\ncolor3 #ffff00\ncolor4 #0000ff\ncolor5 #ff00ff\ncolor6 #00ffff\ncolor8 #555555\n" | save ($idir | path join "kitty-sample.conf")
+"[colors.primary]\nbackground = \"#1d1f21\"\nforeground = \"#c5c8c6\"\n[colors.normal]\nred = \"#cc6666\"\ngreen = \"#b5bd68\"\nyellow = \"#f0c674\"\nblue = \"#81a2be\"\nmagenta = \"#b294bb\"\ncyan = \"#8abeb7\"\n" | save ($idir | path join "alac-sample.toml")
+"base00: \"282828\"\nbase03: \"928374\"\nbase05: \"d5c4a1\"\nbase08: \"fb4934\"\nbase09: \"fe8019\"\nbase0A: \"fabd2f\"\nbase0B: \"b8bb26\"\nbase0C: \"8ec07c\"\nbase0D: \"83a598\"\nbase0E: \"d3869b\"\n" | save ($idir | path join "b16-sample.yaml")
+let imports = [["gh-sample" "ghostty" "#f1fa8c"] ["kitty-sample.conf" "kitty" "#ffff00"] ["alac-sample.toml" "alacritty" "#f0c674"] ["b16-sample.yaml" "base16" "#fabd2f"]]
+for i in $imports {
+    let r = (try { theme-import ($idir | path join $i.0) } catch {|e| { name: "", format: $e.msg } })
+    if ($r.format != $i.1) { $errors = ($errors | append $"import '($i.0)': expected ($i.1), got ($r.format)") } else {
+        let c = (user-theme-load $r.name)
+        if ($c.yellow != $i.2) { $errors = ($errors | append $"import '($i.0)': yellow is ($c.yellow), want ($i.2) (color positions shifted?)") }
+        if ($r.name not-in (theme-list)) { $errors = ($errors | append $"imported '($r.name)' missing from theme-list") }
+        let pal = (theme-get $r.name).palette
+        for k in (palette-text-roles) {
+            if (contrast ($pal | get $k) $pal.bg) < 3.0 { $errors = ($errors | append $"imported '($r.name)': text role '($k)' below contrast floor") }
+        }
+    }
+}
+let guard = (try { theme-import ($idir | path join "gh-sample") "dracula"; "allowed" } catch { "refused" })
+if ($guard != "refused") { $errors = ($errors | append "import allowed overwriting a built-in theme name") }
+let bad = (try { theme-import ($idir | path join "nope-nope"); "ok" } catch { "refused" })
+if ($bad != "refused") { $errors = ($errors | append "import of a missing source didn't fail") }
+if ((norm-hex "0xABCDEF") != "#abcdef") or ((norm-hex "\"ABCDEF\"") != "#abcdef") or ((norm-hex "xyz") != null) { $errors = ($errors | append "norm-hex wrong") }
+rm -rf $idir
+rm -rf $env.NUANCE_THEMES_DIR
+mkdir $env.NUANCE_THEMES_DIR
+
+# ── per-directory overrides (.nuance) ──
+let orig_pwd = $env.PWD
+let ddir = (mktemp -d)
+mkdir ($ddir | path join "sub")
+"theme = \"dracula\"\nstyle = \"powerline\"\n" | save ($ddir | path join ".nuance")
+cd ($ddir | path join "sub")
+$env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
+theme-apply "gruvbox"
+$env.PROMPT_STYLE = "full"
+let ov = (dir-override)
+let local_out = (create_left_prompt | ansi strip)
+let core_out = (left-prompt-core | ansi strip)
+"theme = \"not-a-theme\"\nstyle = 5\n" | save -f ($ddir | path join ".nuance")
+let ov_bad = (dir-override)
+cd $orig_pwd
+rm -rf $ddir
+if ($ov == null) or ($ov.THEME_NAME != "dracula") or ($ov.PROMPT_STYLE != "powerline") { $errors = ($errors | append $"dir-override didn't pick up .nuance from a parent: ($ov | to nuon)") }
+if ($local_out == $core_out) { $errors = ($errors | append ".nuance override didn't change the rendered prompt") }
+if ($ov_bad != null) { $errors = ($errors | append "invalid .nuance values should be ignored") }
+if ($env.THEME_NAME? | default "") == "dracula" { $errors = ($errors | append ".nuance override leaked into the session env") }
+hide-env PROMPT_USER PROMPT_HOST
+$env.PROMPT_STYLE = $saved_style
+
+# ── doctor ──
+let doc = (nuance doctor)
+if (($doc | length) < 10) { $errors = ($errors | append "nuance doctor returned too few checks") }
+for r in $doc {
+    if ($r.status not-in [ok warn info]) { $errors = ($errors | append $"doctor check '($r.check)': bad status '($r.status)'") }
+}
+
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
 if ((prompt-host) | is-empty) { $errors = ($errors | append "prompt-host returned empty") }
@@ -179,7 +255,7 @@ if ((git-omz $gclean | ansi strip) | str contains "✗") { $errors = ($errors | 
 
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
-for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules"] {
+for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules" "nuance configure" "nuance doctor" "nuance import" "nuance here"] {
     if ($c not-in $cmds) { $errors = ($errors | append $"command not defined: ($c)") }
 }
 

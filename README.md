@@ -2,7 +2,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
-![themes](https://img.shields.io/badge/themes-26-cba6f7)
+![themes](https://img.shields.io/badge/themes-51-cba6f7)
 ![styles](https://img.shields.io/badge/prompt%20styles-27-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
@@ -11,7 +11,7 @@
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
-single drop-in file. Switch between **26 color themes** and **27 prompt
+single drop-in file. Switch between **51 color themes** and **27 prompt
 styles**, combine them into named **looks**, and optionally let the shell
 **follow your terminal's theme** automatically. macOS · Linux · WSL.
 
@@ -86,6 +86,10 @@ nuance prompt-style    # ↑↓ selector, or set a name
 nuance look            # list looks; add a name to apply one (theme + style)
 nuance transient on    # collapse finished prompts to a single ❯ (off / toggle)
 nuance modules         # list situational segments; enable lang status jobs …
+nuance configure       # guided setup: look → transient prompt → modules
+nuance doctor          # check nu version, truecolor, Nerd Font, install, state
+nuance import <file|ghostty-theme-name> [--name x]   # ghostty/kitty/alacritty/base16 → theme
+nuance here dracula powerline   # pin a theme/style to this directory tree (.nuance)
 nuance sync            # follow the terminal's theme (auto-follow)
 nuance update          # git pull the checkout, then: exec nu
 ```
@@ -122,6 +126,20 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   single-line styles append them as a colored tail. `pastel` and `devbar`
   include `lang`/`status`/`jobs` out of the box.
 
+- **Import any terminal theme** (`nuance import`): Ghostty, kitty, Alacritty
+  (TOML) and base16 (YAML) color schemes become nuance themes, or pass a
+  Ghostty theme *name* (e.g. `nuance import "Rose Pine Moon" --name rpm`).
+  Imported themes live in `<nushell config>/nuance/themes/*.nuon`, show up in
+  every picker, and get the same contrast guarantees. With auto-follow, an
+  unknown Ghostty theme is imported automatically — so *all* of Ghostty's
+  ~450 themes work.
+- **Per-directory themes** (`nuance here <theme> [style]`): a `.nuance` TOML
+  file (`theme = "…"`, `style = "…"`) re-themes the prompt in that directory
+  tree — handy to make prod checkouts look different. Only known theme/style
+  names are read from it; it can never run code. `nuance here clear` removes it.
+- **`nuance configure`** walks you through look → transient prompt → modules;
+  **`nuance doctor`** diagnoses font/truecolor/install problems.
+
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
 ## Ghostty auto-follow
@@ -156,7 +174,7 @@ macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `cargo test` (the `nuance` CLI/TUI, 39 unit + integration tests):
 
 ```sh
-nu test.nu       # ✓ all checks passed — 26 themes, 27 styles, 34 looks
+nu test.nu       # ✓ all checks passed — 51 themes, 27 styles, 46 looks
 cargo test       # ✓ 39 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
