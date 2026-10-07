@@ -229,6 +229,8 @@ $env.PROMPT_STYLE = $saved_style
 # ── doctor ──
 let doc = (nuance doctor)
 if (($doc | length) < 10) { $errors = ($errors | append "nuance doctor returned too few checks") }
+let missing = (doctor-autoload "/nonexistent/autoload/nushell-prompt.nu")
+if ($missing.status != "warn") or not ($missing.detail | str contains "missing") { $errors = ($errors | append "doctor-autoload should warn when the file is missing") }
 for r in $doc {
     if ($r.status not-in [ok warn info]) { $errors = ($errors | append $"doctor check '($r.check)': bad status '($r.status)'") }
 }

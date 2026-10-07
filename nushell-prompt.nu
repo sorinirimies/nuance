@@ -1133,7 +1133,17 @@ def --env "nuance configure" [] {
         $env.NUANCE_MODULES = $names
         $names | str join "\n" | save -f (modules-state-path)
     }
-    print $"(ansi green_bold)4/4  done(ansi reset) — theme (ansi attr_bold)($env.THEME_NAME? | default '?')(ansi reset), style (ansi attr_bold)($env.PROMPT_STYLE)(ansi reset), transient (ansi attr_bold)($env.NUANCE_TRANSIENT)(ansi reset), modules (ansi attr_bold)((enabled-modules | str join ', ') | default 'none')(ansi reset)"
+    print $"(ansi green_bold)4/4  done(ansi reset) — theme (ansi attr_bold)($env.THEME_NAME? | default '?')(ansi reset), style (ansi attr_bold)($env.PROMPT_STYLE)(ansi reset), transient (ansi attr_bold)($env.NUANCE_TRANSIENT)(ansi reset), modules (ansi attr_bold)(if (enabled-modules | is-empty) { 'none' } else { enabled-modules | str join ', ' })(ansi reset)"
+}
+
+# Doctor row for the autoload file: is nuance installed where Nushell loads it?
+def doctor-autoload [path: string] {
+    if ($path | path exists) {
+        let note = (if (($path | path type) == "symlink") { " (symlink to a git checkout)" } else { "" })
+        { check: "autoload file", status: "ok", detail: $"($path)($note)" }
+    } else {
+        { check: "autoload file", status: "warn", detail: $"($path) is missing - run `nuance sync`, which installs it, or the installer" }
+    }
 }
 
 # `nuance doctor` — check the environment nuance depends on.
@@ -1149,7 +1159,7 @@ def "nuance doctor" [] {
         { check: "nushell version", status: (if $minor >= 100 { "ok" } else { "warn" }), detail: $"($nu_ver)(if $minor < 100 { ' — transient prompt needs 0.100+' } else { '' })" }
         { check: "truecolor", status: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "ok" } else { "warn" }), detail: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "COLORTERM is set" } else { "COLORTERM not truecolor/24bit — theme colors may be approximated" }) }
         { check: "nerd font", status: "info", detail: $"glyph sample: ($glyphs)  — boxes? install a Nerd Font or set $env.PROMPT_NERD = false" }
-        { check: "autoload file", status: (if (($autoload | path exists) or (($autoload | path type) == "symlink")) { "ok" } else { "warn" }), detail: (if ($autoload | path exists) { $"($autoload)(if (($autoload | path type) == 'symlink') { ' (symlink → git checkout)' } else { '' })" } else { $"($autoload) missing — run: nuance sync (installs it), or the installer" }) }
+        (doctor-autoload $autoload)
         { check: "git", status: (if (which git | is-empty) { "warn" } else { "ok" }), detail: (if (which git | is-empty) { "git not found — git segment disabled" } else { "found" }) }
         { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }
         { check: "theme", status: "info", detail: $"($env.THEME_NAME? | default 'unknown') \(($saved_theme))" }
@@ -1684,7 +1694,7 @@ def prompt-user [] {
     if (($env.PROMPT_USER? | default "") | is-not-empty) { return $env.PROMPT_USER }
     let u = ($env.USER? | default ($env.USERNAME? | default ""))
     if ($u | is-not-empty) { $u } else {
-        let w = (do -i { whoami } | complete | get stdout | str trim)
+        let w = (do -i { ^whoami } | complete | get stdout | str trim)
         if ($w | is-not-empty) { $w } else { "user" }
     }
 }
