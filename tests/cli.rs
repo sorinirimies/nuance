@@ -15,7 +15,13 @@ fn have_nu() -> bool {
 }
 
 fn run(home: &Path, args: &[&str]) -> Output {
+    run_in(home, home, args)
+}
+
+/// Like `run`, but with an explicit working directory (for `nuance here`).
+fn run_in(home: &Path, cwd: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_nuance"))
+        .current_dir(cwd)
         .args(args)
         .env("HOME", home)
         // Force full isolation from the outer environment: on Linux, Nushell
@@ -149,4 +155,130 @@ fn first_run_vendors_prompt_script_into_autoload_dir() {
         .unwrap();
     let dir = String::from_utf8_lossy(&dir.stdout).trim().to_string();
     assert!(Path::new(&dir).join("nushell-prompt.nu").exists());
+}
+
+#[test]
+fn transient_persists_and_reports_state() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["transient", "on"]);
+    assert!(out.status.success());
+    let cfg = config_dir(home.path());
+    let saved = std::fs::read_to_string(format!("{cfg}/transient.txt")).unwrap();
+    assert_eq!(saved.trim(), "on");
+    let out = run(home.path(), &["transient"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("transient prompt: "));
+    let out = run(home.path(), &["transient", "sideways"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("unknown mode"));
+}
+
+#[test]
+fn modules_enable_persists_and_rejects_unknown() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["modules", "enable", "lang", "jobs"]);
+    assert!(out.status.success());
+    let cfg = config_dir(home.path());
+    let saved = std::fs::read_to_string(format!("{cfg}/modules.txt")).unwrap();
+    assert_eq!(saved.lines().collect::<Vec<_>>(), ["lang", "jobs"]);
+
+    let out = run(home.path(), &["modules", "disable", "jobs"]);
+    assert!(out.status.success());
+    let saved = std::fs::read_to_string(format!("{cfg}/modules.txt")).unwrap();
+    assert_eq!(saved.lines().collect::<Vec<_>>(), ["lang"]);
+
+    let out = run(home.path(), &["modules", "enable", "bogus"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("usage:"));
+    let out = run(home.path(), &["modules"]);
+    let listing = String::from_utf8_lossy(&out.stdout);
+    assert!(listing.contains("status") && listing.contains("lang"));
+}
+
+#[test]
+fn import_creates_a_selectable_theme() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let scheme = home.path().join("sample-scheme");
+    std::fs::write(
+        &scheme,
+        "palette = 1=#ff5555\npalette = 2=#50fa7b\npalette = 3=#f1fa8c\n\
+         palette = 4=#bd93f9\npalette = 5=#ff79c6\npalette = 6=#8be9fd\n\
+         palette = 8=#6272a4\nbackground = #282a36\nforeground = #f8f8f2\n",
+    )
+    .unwrap();
+    let out = run(
+        home.path(),
+        &["import", scheme.to_str().unwrap(), "--name", "My Sample"],
+    );
+    assert!(out.status.success());
+    assert!(String::from_utf8_lossy(&out.stdout).contains("imported"));
+    let cfg = config_dir(home.path());
+    assert!(Path::new(&format!("{cfg}/nuance/themes/my-sample.nuon")).exists());
+
+    // …and it can be pinned like any built-in theme.
+    let out = run(home.path(), &["theme", "my-sample"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("my-sample"));
+    let pinned = std::fs::read_to_string(format!("{cfg}/current-theme.txt")).unwrap();
+    assert_eq!(pinned.trim(), "my-sample");
+
+    // Built-in names are protected.
+    let out = run(
+        home.path(),
+        &["import", scheme.to_str().unwrap(), "--name", "dracula"],
+    );
+    assert!(String::from_utf8_lossy(&out.stdout).contains("built-in"));
+}
+
+#[test]
+fn here_writes_and_clears_dot_nuance() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let work = tempfile::tempdir().unwrap();
+    let out = run_in(home.path(), work.path(), &["here", "dracula", "powerline"]);
+    assert!(out.status.success());
+    let body = std::fs::read_to_string(work.path().join(".nuance")).unwrap();
+    assert!(body.contains("theme = \"dracula\""), "got: {body}");
+    assert!(body.contains("style = \"powerline\""), "got: {body}");
+
+    let out = run_in(home.path(), work.path(), &["here", "not-a-theme"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("unknown theme"));
+
+    let out = run_in(home.path(), work.path(), &["here", "clear"]);
+    assert!(out.status.success());
+    assert!(!work.path().join(".nuance").exists());
+}
+
+#[test]
+fn doctor_reports_checks() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["doctor"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    for check in [
+        "nushell version",
+        "truecolor",
+        "autoload file",
+        "transient prompt",
+    ] {
+        assert!(
+            stdout.contains(check),
+            "doctor output missing `{check}`:\n{stdout}"
+        );
+    }
 }

@@ -119,12 +119,17 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   the theme's own foreground — so light themes and dim separators stay legible.
 - **Transient prompt** (`nuance transient on`): once you press Enter, the old
   multi-segment prompt collapses to one colored glyph, keeping scrollback clean.
+
+  ![transient prompt](docs/transient.gif)
+
 - **Context modules** (`nuance modules enable lang jobs …`) add segments only
   when they matter: `status` (non-zero exit), `jobs`, `ssh`, `root`, `venv`,
   `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached) and `k8s`.
   Block styles (`powerline`, `capsule`, …) fold them in as extra segments;
   single-line styles append them as a colored tail. `pastel` and `devbar`
   include `lang`/`status`/`jobs` out of the box.
+
+  ![context modules](docs/modules.gif)
 
 - **Import any terminal theme** (`nuance import`): Ghostty, kitty, Alacritty
   (TOML) and base16 (YAML) color schemes become nuance themes, or pass a
@@ -133,12 +138,17 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   every picker, and get the same contrast guarantees. With auto-follow, an
   unknown Ghostty theme is imported automatically — so *all* of Ghostty's
   ~450 themes work.
+
+  ![import and per-directory themes](docs/import-here.gif)
+
 - **Per-directory themes** (`nuance here <theme> [style]`): a `.nuance` TOML
   file (`theme = "…"`, `style = "…"`) re-themes the prompt in that directory
   tree — handy to make prod checkouts look different. Only known theme/style
   names are read from it; it can never run code. `nuance here clear` removes it.
 - **`nuance configure`** walks you through look → transient prompt → modules;
   **`nuance doctor`** diagnoses font/truecolor/install problems.
+
+  ![nuance doctor](docs/doctor.gif)
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
@@ -171,11 +181,11 @@ built-ins; the Ghostty config is found at `~/.config/ghostty/config` or the
 macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `gsettings`. Two suites run in CI on **Ubuntu + macOS** — `nu test.nu`
 (themes/styles/looks/helpers, across Nushell **0.111** and **0.114**) and
-`cargo test` (the `nuance` CLI/TUI, 39 unit + integration tests):
+`cargo test` (the `nuance` CLI/TUI, 48 unit + integration tests):
 
 ```sh
 nu test.nu       # ✓ all checks passed — 51 themes, 27 styles, 46 looks
-cargo test       # ✓ 39 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
+cargo test       # ✓ 48 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
 ## How it works
@@ -186,12 +196,23 @@ cargo test       # ✓ 39 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 touching your `config.nu`, and nothing runs but a prompt. Selections persist in
 `current-theme.txt` / `prompt-style.txt` in your Nushell config dir.
 
-**Add a theme:** add a palette + `color_config` in `nushell-prompt.nu`, then
-register it in `theme-list` and `theme-get`. The prompt reads accent colors
-from the theme's `palette`, so it restyles automatically.
+**Add a theme:** add a palette (11 hex colors: `fg gray red orange yellow green
+cyan blue magenta purple bg`) to `EXTRA_THEMES` in `nushell-prompt.nu` — it is
+picked up by `theme-list`, every picker and the tests automatically. Contrast
+fixing and the per-segment text colors are derived for you (`finish-palette`).
+Or skip the code entirely and `nuance import` a terminal color scheme.
+
+**Add a prompt style:** add a row to `style-defs`. A `blocks` row
+(`shape: arrow|slant|pill` + `segs: [user host path git status lang …]`) needs
+no other code; a hand-written layout also gets a `match` arm in `render-left`.
+
+**State** lives in your Nushell config dir: `current-theme.txt`,
+`prompt-style.txt`, `transient.txt`, `modules.txt`, and `nuance/themes/*.nuon`
+for imported themes.
 
 **Toggles:** `$env.PROMPT_NERD` (Nerd Font glyphs on/off) ·
-`$env.PROMPT_USER` / `$env.PROMPT_HOST` (override shown user/host).
+`$env.PROMPT_USER` / `$env.PROMPT_HOST` (override shown user/host) ·
+`$env.NUANCE_THEMES_DIR` (where imported themes are stored).
 
 ## Contributing / demos
 
@@ -202,7 +223,7 @@ opening a PR.
 
 There's also a [`justfile`](justfile) (`cargo install just`) wrapping the
 common tasks — `just --list` to see them all: `just check-all` (fmt +
-clippy + both test suites), `just changelog`, `just tape welcome`,
+clippy + both test suites), `just changelog`, `just tape welcome` / `just tapes-all` (re-record every demo GIF),
 `just release 0.2.0`.
 
 Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the

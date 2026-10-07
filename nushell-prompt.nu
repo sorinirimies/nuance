@@ -10,7 +10,7 @@
 #   theme-get <name>   -> { color_config: {...}, palette: {...} }
 #
 # `color_config` plugs into `$env.config.color_config`.
-# `palette` supplies accent colors for the custom prompt (see config.nu).
+# `palette` supplies accent colors for the custom prompt (see `create_left_prompt`).
 
 # ── Catppuccin flavor palettes ────────────────────────────────
 const CAT_MOCHA = {
@@ -763,7 +763,7 @@ def theme-get-raw [name: string] {
 }
 
 # ─────────────────────────────────────────────────────────────
-# Theme system  (definitions live in theme.nu)
+# Theme system  (definitions live above, in this same file)
 #   • Ghostty is the source of truth: on startup nushell adopts
 #     whatever theme Ghostty is using (gruvbox → gruvbox, etc.)
 #   • re-sync in a running shell:  theme-sync
@@ -1203,8 +1203,19 @@ def os-dark-mode [] {
 }
 
 # Map a raw theme name (from Ghostty or anywhere) to a nuance theme, or null.
+# ASCII lowercase that works on every nu version: `str downcase` is deprecated
+# from 0.114 and `str lowercase` doesn't exist before it.
+def lower [s: string] {
+    let up = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    let lo = "abcdefghijklmnopqrstuvwxyz"
+    $s | split chars | each {|c|
+        let i = ($up | str index-of $c)
+        if $i < 0 { $c } else { $lo | str substring $i..$i }
+    } | str join ""
+}
+
 def theme-slug [name: string] {
-    $name | str downcase | str replace --all --regex '[^a-z0-9]+' '-' | str trim --char '-'
+    (lower $name) | str replace --all --regex '[^a-z0-9]+' '-' | str trim --char '-'
 }
 
 def ghostty-map-name [low: string] {
@@ -1212,7 +1223,7 @@ def ghostty-map-name [low: string] {
     let slug = (theme-slug $low)
     if $slug in (theme-list) { return $slug }
     # 2. well-known variants
-    let l = ($low | str downcase)
+    let l = (lower $low)
     let has = {|w| $l | str contains $w }
     if (do $has "tokyo") {
         return (if (do $has "storm") { "tokyo-night-storm" } else if (do $has "moon") { "tokyo-night-moon" } else if ((do $has "day") or (do $has "light")) { "tokyo-night-day" } else { "tokyo-night" })
@@ -1306,7 +1317,8 @@ def ghostty-theme-name [] {
 # unknown theme Ghostty is using is imported automatically on sync.
 def norm-hex [v: any] {
     if $v == null { return null }
-    let t = ($v | into string | str trim | str trim --char '"' | str trim --char "'" | str downcase | str replace --regex '^(#|0x)' '')
+    let raw = ($v | into string | str trim | str trim --char '"' | str trim --char "'")
+    let t = ((lower $raw) | str replace --regex '^(#|0x)' '')
     if ($t =~ '^[0-9a-f]{6}$') { $"#($t)" } else { null }
 }
 
@@ -1373,7 +1385,7 @@ def import-alacritty [text: string] {
 
 def import-base16 [text: string] {
     let rows = ($text | lines | each { str trim } | parse -r '^(?<k>base0[0-9a-fA-F])\s*:\s*(?<v>\S+)')
-    let b = {|k| norm-hex ($rows | where {|r| ($r.k | str downcase) == $k } | get 0?.v?) }
+    let b = {|k| norm-hex ($rows | where {|r| (lower $r.k) == $k } | get 0?.v?) }
     let bg = (do $b "base00")
     let fg = (do $b "base05")
     if $bg == null or $fg == null { error make { msg: "base16 scheme is missing base00/base05" } }
@@ -1396,9 +1408,9 @@ def ghostty-theme-dirs [] {
 
 # Path of a Ghostty theme file by (case-insensitive) name, or null.
 def ghostty-theme-file [name: string] {
-    let want = ($name | str downcase)
+    let want = (lower $name)
     for d in (ghostty-theme-dirs) {
-        let hit = (ls $d | where {|f| ($f.name | path basename | str downcase) == $want } | get 0?.name?)
+        let hit = (ls $d | where {|f| (lower ($f.name | path basename)) == $want } | get 0?.name?)
         if $hit != null { return $hit }
     }
     null
@@ -1477,7 +1489,7 @@ theme-apply $start_theme
 # Prompt — git-aware, oh-my-zsh style, themed via $env.THEME_PALETTE
 #   • rich repo info: branch, ahead/behind, staged/modified/etc.
 #   • command duration + exit status
-#   • switch layout with:  prompt-style   (full | compact | minimal)
+#   • switch layout with:  prompt-style   (see `style-defs` for every style)
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
@@ -1840,9 +1852,9 @@ def render-blocks [shape: string, ids: list<string>] {
     }
     let sep = (if $shape == "slant" { char --unicode e0b8 } else { char --unicode e0b0 })
     mut out = ""
-    mut prev = null
+    mut prev = ""
     for s in $segs {
-        if $prev != null { $out = $out + $"(ansi {fg: $prev bg: $s.bg})($sep)" }
+        if $prev != "" { $out = $out + $"(ansi {fg: $prev bg: $s.bg})($sep)" }
         $out = $out + $"(ansi {bg: $s.bg fg: $s.ink attr: b}) ($s.text) "
         $prev = $s.bg
     }
