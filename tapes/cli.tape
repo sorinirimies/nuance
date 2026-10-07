@@ -17,7 +17,7 @@ Type "export HOME=/tmp/nuance-cli-tape-home && rm -rf $HOME && mkdir -p $HOME"
 Enter
 Type "export PROMPT_USER=sorin PROMPT_HOST=nuance"
 Enter
-Type "export PATH=$PWD/cli/target/release:$PATH"
+Type "export PATH=$PWD/target/release:$PATH"
 Enter
 Type "clear"
 Enter
@@ -30,14 +30,10 @@ Enter
 Sleep 1.4s
 Type "nuance theme"
 Enter
-Sleep 1.2s
-Down
-Sleep 350ms
-Down
-Sleep 350ms
-Down
-Sleep 350ms
+Sleep 3s
 Type "tokyo"
 Sleep 900ms
+Down
+Sleep 600ms
 Enter
 Sleep 1.5s

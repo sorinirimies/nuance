@@ -49,6 +49,15 @@ Sleep 1.3s
 Type "prompt-style rainbow"
 Enter
 Sleep 1.3s
+Type "prompt-style skyline"
+Enter
+Sleep 1.3s
+Type "prompt-style pills"
+Enter
+Sleep 1.3s
+Type "prompt-style pastel"
+Enter
+Sleep 1.5s
 Type "prompt-style boxed"
 Enter
 Sleep 1.5s

@@ -197,8 +197,8 @@ release-gitea-microlab version: (bump version)
 # Full automated release to Gitea Starscream only.
 release-gitea-starscream version: (bump version)
     @echo "Pushing branch and tag to Gitea Starscream…"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream v{{version}}
+    git push gitea-starscream main
+    git push gitea-starscream v{{version}}
     @echo "✅ Release v{{version}} live on Gitea Starscream."
 
 # Full automated release to GitHub and all Gitea instances.
@@ -207,11 +207,11 @@ release-all version: (bump version)
     git push origin main
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main
+    git push gitea-starscream main
     git push origin v{{version}}
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab v{{version}}
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab v{{version}}
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream v{{version}}
+    git push gitea-starscream v{{version}}
     @echo "✅ Release v{{version}} pushed to all remotes."
 
 # ── Publish (crates.io) ───────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ push-gitea-microlab:
 
 # Push the current branch to Gitea Starscream
 push-gitea-starscream:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main
+    git push gitea-starscream main
 
 # Push the current branch to all remotes (continues on failure)
 push-all:
@@ -261,7 +261,7 @@ push-all:
     git push origin main                              || failed="$failed origin"
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main   || failed="$failed gitea-microlab"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main || failed="$failed gitea-starscream"
+    git push gitea-starscream main || failed="$failed gitea-starscream"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push to:$failed"
     else
@@ -275,7 +275,7 @@ push-all-force:
     git push --force origin main                               || failed="$failed origin"
     GIT_LFS_SKIP_PUSH=1 git push --force gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
     GIT_LFS_SKIP_PUSH=1 git push --force gitea-microlab main   || failed="$failed gitea-microlab"
-    GIT_LFS_SKIP_PUSH=1 git push --force gitea-starscream main || failed="$failed gitea-starscream"
+    git push --force gitea-starscream main || failed="$failed gitea-starscream"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to force-push to:$failed"
     else
@@ -323,7 +323,7 @@ push-tags-all:
     git push origin --tags                              || failed="$failed origin"
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab --tags || failed="$failed gitea-nexus-lab"
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab --tags  || failed="$failed gitea-microlab"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream --tags || failed="$failed gitea-starscream"
+    git push gitea-starscream --tags || failed="$failed gitea-starscream"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push tags to:$failed"
     else
@@ -337,7 +337,7 @@ push-release-all: check-all
     git push --follow-tags origin main                               || failed="$failed origin"
     GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
     GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-microlab main   || failed="$failed gitea-microlab"
-    GIT_LFS_SKIP_PUSH=1 git push --follow-tags gitea-starscream main || failed="$failed gitea-starscream"
+    git push --follow-tags gitea-starscream main || failed="$failed gitea-starscream"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push to:$failed"
     else
@@ -358,8 +358,8 @@ sync-gitea-microlab:
 
 # Force-sync Gitea Starscream with GitHub
 sync-gitea-starscream:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main --force
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream --tags --force
+    git push gitea-starscream main --force
+    git push gitea-starscream --tags --force
     @echo "✅ Gitea Starscream synced!"
 
 # Force-sync all Gitea instances with GitHub (continues on failure)
@@ -370,8 +370,8 @@ sync-all-gitea:
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab --tags --force || failed="$failed gitea-nexus-lab-tags"
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main --force    || failed="$failed gitea-microlab"
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab --tags --force  || failed="$failed gitea-microlab-tags"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream main --force  || failed="$failed gitea-starscream"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-starscream --tags --force || failed="$failed gitea-starscream-tags"
+    git push gitea-starscream main --force  || failed="$failed gitea-starscream"
+    git push gitea-starscream --tags --force || failed="$failed gitea-starscream-tags"
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to sync:$failed"
     else

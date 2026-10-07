@@ -255,6 +255,13 @@ if not ($omz | str contains "git:(main)") { $errors = ($errors | append $"git-om
 if not ($omz | str contains "✗") { $errors = ($errors | append "git-omz missing dirty mark") }
 if ((git-omz $gclean | ansi strip) | str contains "✗") { $errors = ($errors | append "git-omz shows dirty mark when clean") }
 
+# ── pickers reuse one git lookup instead of re-running git per preview ──
+$env.NUANCE_GIT = { present: true, head: "cached-branch", ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
+if ((git-info).head != "cached-branch") { $errors = ($errors | append "git-info ignores $env.NUANCE_GIT") }
+hide-env NUANCE_GIT
+let _items = (theme-picker-items)
+if ("NUANCE_GIT" in ($env | columns)) { $errors = ($errors | append "theme-picker-items leaked $env.NUANCE_GIT") }
+
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
 for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules" "nuance configure" "nuance doctor" "nuance import" "nuance here"] {

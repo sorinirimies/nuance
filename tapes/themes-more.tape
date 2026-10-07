@@ -1,4 +1,4 @@
-# More themes: newer additions, with recolored tables.
+# More themes: the newer additions (tokyo-night variants, nightfox, flexoki, …), with recolored tables.
 Output docs/themes-more.gif
 
 Set Shell "nu"
@@ -25,49 +25,49 @@ Sleep 300ms
 Show
 
 Sleep 700ms
-Type "theme nord"
+Type "theme tokyo-night-storm"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme rose-pine"
+Type "theme nightfox"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme everforest"
+Type "theme kanagawa-dragon"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme kanagawa"
+Type "theme flexoki"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme ayu-mirage"
+Type "theme material-palenight"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme onedark"
+Type "theme synthwave-84"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme solarized"
+Type "theme horizon"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.6s
-Type "theme super-mario"
+Type "theme iceberg"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"

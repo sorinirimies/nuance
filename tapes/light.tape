@@ -1,11 +1,11 @@
-# Light themes spotlight (rendered on a light terminal background).
+# Light themes spotlight (github, catppuccin, rosé pine, solarized, tokyo-night day, gruvbox, one, flexoki) (rendered on a light terminal background).
 Output docs/light.gif
 
 Set Shell "nu"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 20
 Set Width 1200
-Set Height 620
+Set Height 700
 Set Padding 24
 Set LineHeight 1.2
 Set TypingSpeed 45ms
@@ -45,6 +45,30 @@ Type "ls | first 3 | select name size modified"
 Enter
 Sleep 1.8s
 Type "theme solarized-light"
+Enter
+Sleep 450ms
+Type "ls | first 3 | select name size modified"
+Enter
+Sleep 1.8s
+Type "theme tokyo-night-day"
+Enter
+Sleep 450ms
+Type "ls | first 3 | select name size modified"
+Enter
+Sleep 1.8s
+Type "theme gruvbox-light"
+Enter
+Sleep 450ms
+Type "ls | first 3 | select name size modified"
+Enter
+Sleep 1.8s
+Type "theme one-light"
+Enter
+Sleep 450ms
+Type "ls | first 3 | select name size modified"
+Enter
+Sleep 1.8s
+Type "theme flexoki-light"
 Enter
 Sleep 450ms
 Type "ls | first 3 | select name size modified"

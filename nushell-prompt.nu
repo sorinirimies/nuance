@@ -800,7 +800,10 @@ def --env theme-label [name: string] {
 }
 
 def --env theme-picker-items [] {
-    [(sync-picker-item)] ++ (theme-list | each {|n| { label: (theme-label $n), key: $n } })
+    $env.NUANCE_GIT = (git-info)
+    let items = ([(sync-picker-item)] ++ (theme-list | each {|n| { label: (theme-label $n), key: $n } }))
+    hide-env NUANCE_GIT
+    $items
 }
 
 # Whether the compiled `nuance` (clap + ratatui) binary is on PATH. When it
@@ -959,7 +962,10 @@ def --env look-label [theme_name: string, style_name: string] {
 def --env look-picker-items [] {
     let ps = (presets)
     let w = ($ps | get name | each { str length } | math max)
-    $ps | each {|r| { label: $"($r.name | fill --alignment left --width $w)  →  (look-label $r.theme $r.style)", key: $r.name } }
+    $env.NUANCE_GIT = (git-info)
+    let items = ($ps | each {|r| { label: $"($r.name | fill --alignment left --width $w)  →  (look-label $r.theme $r.style)", key: $r.name } })
+    hide-env NUANCE_GIT
+    $items
 }
 
 # Pick a full look (theme + prompt style). No arg = interactive picker
@@ -1579,7 +1585,10 @@ def --env style-label [s: string] {
 
 # Build the labelled candidate list once, and a lookup back to plain names.
 def --env style-picker-items [] {
-    prompt-styles | each {|s| { label: (style-label $s), key: $s } }
+    $env.NUANCE_GIT = (git-info)
+    let items = (prompt-styles | each {|s| { label: (style-label $s), key: $s } })
+    hide-env NUANCE_GIT
+    $items
 }
 
 # Switch prompt layout. No arg = interactive picker (delegates to the
@@ -1611,6 +1620,9 @@ def --env prompt-style [name?: string] {
 # Gather git repo state as data (reused by every prompt style).
 # `--light` only resolves the branch/HEAD (skips status + stash: much faster).
 def git-info [--light] {
+    # Pickers render dozens of previews in one go: they resolve git once and
+    # park the record in $env.NUANCE_GIT so every preview reuses it.
+    if ($env.NUANCE_GIT? | default null) != null { return $env.NUANCE_GIT }
     let inside = (do -i { git rev-parse --is-inside-work-tree } | complete)
     if $inside.exit_code != 0 { return { present: false } }
     let branch = (do -i { git branch --show-current } | complete | get stdout | str trim)

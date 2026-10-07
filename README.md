@@ -148,6 +148,8 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 - **`nuance configure`** walks you through look → transient prompt → modules;
   **`nuance doctor`** diagnoses font/truecolor/install problems.
 
+  ![nuance configure](docs/configure.gif)
+
   ![nuance doctor](docs/doctor.gif)
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.

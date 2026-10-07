@@ -41,6 +41,12 @@ Sleep 2.2s
 Type "look cloud"
 Enter
 Sleep 2.2s
+Type "look storm-devbar"
+Enter
+Sleep 2.2s
+Type "look dracula-agnoster"
+Enter
+Sleep 2.2s
 Type "look super-mario"
 Enter
 Sleep 2.4s
