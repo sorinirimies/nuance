@@ -44,7 +44,7 @@ if ((prompt-styles | length) != (prompt-styles | uniq | length)) { $errors = ($e
 
 # ── theme quality: valid hex, readable text, AA ink on every segment ──
 # (color math lives in nushell-prompt.nu: contrast / ink-on / finish-palette)
-let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi]
+let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi clair-obscur-canvas mario-overworld]
 for t in (theme-list) {
     let p = (theme-get $t).palette
     for k in ($p | columns | where {|c| $c not-in [light inks] }) {
@@ -94,6 +94,7 @@ for d in $sdefs {
 # every style renders non-empty output on every theme (catches renderer typos)
 $env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
 let saved_style = $env.PROMPT_STYLE
+$env.NUANCE_GIT = (git-info)   # one git lookup for the whole render matrix
 for t in (theme-list) {
     theme-apply $t
     for d in $sdefs {
@@ -234,6 +235,48 @@ if ($missing.status != "warn") or not ($missing.detail | str contains "missing")
 for r in $doc {
     if ($r.status not-in [ok warn info]) { $errors = ($errors | append $"doctor check '($r.check)': bad status '($r.status)'") }
 }
+
+# ── game / framework styles reflect git state (injected via $env.NUANCE_GIT) ──
+let dirty_g = { present: true, head: "main", ahead: 1, behind: 0, staged: 1, modified: 2, untracked: 3, conflict: 0, stash: 0, clean: false }
+let clean_g = { present: true, head: "main", ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
+if ((git-flags $dirty_g) != "+!?⇡") { $errors = ($errors | append $"git-flags wrong: (git-flags $dirty_g)") }
+if ((dirty-count { present: true, staged: 1, modified: 2, untracked: 3, conflict: 1 }) != 9) { $errors = ($errors | append "dirty-count should count conflicts triple") }
+if ((bar5 3 "#ffffff" | ansi strip) != "▰▰▰▱▱") { $errors = ($errors | append $"bar5 wrong: (bar5 3 '#ffffff' | ansi strip)") }
+if ((bar5 9 "#ffffff" | ansi strip) != "▰▰▰▰▰") or ((bar5 -2 "#ffffff" | ansi strip) != "▱▱▱▱▱") { $errors = ($errors | append "bar5 should clamp to 0..5") }
+if ((repeat-str "✿" 3) != "✿✿✿") or ((repeat-str "x" 0) != "") { $errors = ($errors | append "repeat-str wrong") }
+$env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
+theme-apply "clair-obscur"
+let game_checks = [
+    ["mario" $dirty_g 0 ["MARIO" "◉×06" "WORLD" "⚑ main" "▲1" "▀▄▀▄▀▄◆"]]
+    ["mario" $clean_g 0 ["◉×00" "★"]]
+    ["gommage" $dirty_g 0 ["✿✿✿✿✿✿" "main"]]
+    ["gommage" $clean_g 0 ["✧"]]
+    ["vault" $dirty_g 0 ["[VAULT-111]" "HP 70/100" "[main]"]]
+    ["grace" $dirty_g 0 ["♥▰▱▱▱▱" "✦▰▰▰▰▰"]]
+    ["grace" $clean_g 1 ["YOU DIED" "⚡▰▱▱▱▱"]]
+    ["triforce" $dirty_g 0 ["▲" "♡♡♡" "◆3"]]
+    ["doomguy" $dirty_g 0 ["HEALTH 70%" "ARMOR 1" "AMMO 1" "☺"]]
+    ["expedition33" $dirty_g 0 ["╭─❖" "⚜" "main" "⇡1" "❖1" "✶2" "✧3"]]
+    ["expedition33" $clean_g 0 ["✦"]]
+    ["spaceship" $dirty_g 0 ["on" "main" "[+!?⇡]"]]
+    ["p10k-lean" $dirty_g 0 ["main" "⇡1" "+1" "!2" "?3"]]
+    ["fish" $dirty_g 0 ["sorin@nuance" "(main|" "●1" "✚2" "…3"]]
+    ["steeef" $dirty_g 0 ["sorin at nuance in" "[main●●●]"]]
+    ["fino" $dirty_g 0 ["╭─" "git:main" "✗" "╰─"]]
+]
+for c in $game_checks {
+    let out = (with-env { NUANCE_GIT: $c.1, LAST_EXIT_CODE: $c.2, PROMPT_STYLE: $c.0 } { left-prompt-core | ansi strip })
+    for frag in $c.3 {
+        if not ($out | str contains $frag) { $errors = ($errors | append $"style '($c.0)': output missing '($frag)' — got: ($out | str replace --all (char nl) ' ⏎ ')") }
+    }
+}
+# styles that promise two lines really have two (and the ground/rule on the second)
+for s in [mario expedition33 fino spaceship p10k-lean steeef powerline2l pills2l] {
+    let raw = (with-env { NUANCE_GIT: $clean_g, PROMPT_STYLE: $s } { left-prompt-core })
+    if not ($raw | str contains (char nl)) { $errors = ($errors | append $"style '($s)' should render on 2 lines") }
+}
+hide-env PROMPT_USER PROMPT_HOST
+$env.PROMPT_STYLE = $saved_style
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }

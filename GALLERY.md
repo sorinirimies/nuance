@@ -3,13 +3,13 @@
 Every **theme**, **style** and **look** at a glance.
 Usage & commands are in the [main README](README.md#theming--styling).
 
-- [Themes (51)](#themes-51)
-- [Prompt styles (27)](#prompt-styles-27)
-- [Looks (46)](#looks-46)
+- [Themes (59)](#themes-59)
+- [Prompt styles (40)](#prompt-styles-40)
+- [Looks (62)](#looks-62)
 
 ---
 
-## Themes (51)
+## Themes (59)
 
 Every theme's palette at a glance:
 
@@ -38,16 +38,20 @@ Light themes on a light terminal background:
 `synthwave-84` · `cobalt2` · `modus-vivendi` · `horizon` · `sonokai` ·
 `super-mario` · `cyberpunk` (neon)
 
+**Game themes:** `clair-obscur` (Expedition 33) · `mario-underground` ·
+`pip-boy` (Fallout) · `tarnished` (Elden Ring) · `hyrule` (Zelda) · `doom` — and
+the light `clair-obscur-canvas` and `mario-overworld`.
+
 **Light:** `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
 `solarized-light` · `tokyo-night-day` · `gruvbox-light` · `dawnfox` ·
 `kanagawa-lotus` · `flexoki-light` · `one-light` · `papercolor-light` ·
-`modus-operandi`
+`modus-operandi` · `clair-obscur-canvas` · `mario-overworld`
 
 **Yours:** anything you `nuance import` (Ghostty, kitty, Alacritty, base16).
 
 ---
 
-## Prompt styles (27)
+## Prompt styles (40)
 
 Every style rendered once:
 
@@ -81,19 +85,32 @@ Cycling a few live:
 | `pills`        | Nerd-Font rounded pills for user, path and git                 |
 | `pastel`       | Nerd-Font powerline: user, path, git + toolchain (`lang` module) |
 | `devbar`       | Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs    |
+| `expedition33` | Clair Obscur: Expedition 33 — Belle Époque two-liner: gold `❖ ✦ ⚜` ornaments, `✶` Gommage marks|
+| `gommage`      | Clair Obscur — a red `✿` petal falls for every changed file    |
+| `vault`        | Fallout Pip-Boy — `[VAULT-111] … HP 75/100 ☢`                  |
+| `grace`        | Elden Ring — `♥` HP / `✦` FP / `⚡` stamina bars; **YOU DIED** after a failed command|
+| `triforce`     | Zelda — `▲` Triforce, `♥♥♡` hearts, `◆` rupees                 |
+| `doomguy`      | DOOM status bar — `HEALTH 75%  ARMOR 0  AMMO 3  ☺`             |
+| `spaceship`    | spaceship — `path on  branch [!⇡] via rust 1.99`, two-line     |
+| `p10k-lean`    | powerlevel10k lean — path + colored git state, two-line        |
+| `fish`         | fish informative — `user@host ~/path (main|✚2…1)`              |
+| `steeef`       | oh-my-zsh steeef — `user at host in ~/path [main●]`            |
+| `fino`         | oh-my-zsh fino — `╭─ user at host in ~/path on git:main ✗` / `╰─○`|
+| `powerline2l`  | Nerd-Font powerline segments with the prompt on its own line   |
+| `pills2l`      | Nerd-Font pills with the prompt on its own line                |
 | `boxed`        | two-line box-drawing with a `●` clean/dirty marker            |
-| `mario`        | two-line 🍄 overworld — `▣`?-block, `◆` hero, `⚑` flag, `◉` coins, `▄` ground |
+| `mario`        | two-line NES HUD: `MARIO ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲▼✖⬢★`, then a brick ground with the `◆` hero |
 | `arcade`       | retro all-caps `▶ 1UP` score line                             |
 | `8bit`         | pixel `░▒▓` gradient separators                                |
 | `cyberpunk`    | two-line neon box-drawing with `⚡` and `▶▶▶`                   |
 
-Game-inspired styles on the Super Mario theme:
+Game-inspired looks — Clair Obscur: Expedition 33, Super Mario, Fallout, Elden Ring, Zelda, DOOM, Cyberpunk:
 
 ![game styles](docs/games.gif)
 
 ---
 
-## Looks (46)
+## Looks (62)
 
 A **look** is a curated theme + style pairing.
 
@@ -147,3 +164,19 @@ A **look** is a curated theme + style pairing.
 | `melange-arrow`     | melange                | arrow        |
 | `snazzy-rainbow`    | snazzy                 | rainbow      |
 | `modus-pure`        | modus-vivendi          | pure         |
+| `expedition-33`      | clair-obscur           | expedition33 |
+| `gommage`            | clair-obscur           | gommage      |
+| `canvas-33`          | clair-obscur-canvas    | expedition33 |
+| `mario-world`        | mario-overworld        | mario        |
+| `mario-underground`  | mario-underground      | mario        |
+| `vault-111`          | pip-boy                | vault        |
+| `tarnished`          | tarnished              | grace        |
+| `hyrule`             | hyrule                 | triforce     |
+| `doom`               | doom                   | doomguy      |
+| `spaceship-nord`     | nord                   | spaceship    |
+| `p10k-tokyo`         | tokyo-night            | p10k-lean    |
+| `fish-gruvbox`       | gruvbox                | fish         |
+| `steeef-mocha`       | catppuccin-mocha       | steeef       |
+| `fino-dracula`       | dracula                | fino         |
+| `onedark-twoline`    | onedark                | powerline2l  |
+| `rosepine-pills2l`   | rose-pine              | pills2l      |

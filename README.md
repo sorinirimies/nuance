@@ -2,8 +2,8 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
-![themes](https://img.shields.io/badge/themes-51-cba6f7)
-![styles](https://img.shields.io/badge/prompt%20styles-27-89b4fa)
+![themes](https://img.shields.io/badge/themes-59-cba6f7)
+![styles](https://img.shields.io/badge/prompt%20styles-40-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 ![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
@@ -11,7 +11,7 @@
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
-single drop-in file. Switch between **51 color themes** and **27 prompt
+single drop-in file. Switch between **59 color themes** and **40 prompt
 styles**, combine them into named **looks**, and optionally let the shell
 **follow your terminal's theme** automatically. macOS · Linux · WSL.
 
@@ -107,8 +107,16 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 
 - **Themes** recolor syntax highlighting, tables **and** the prompt.
 - **Styles** are prompt *layouts* (minimal, powerline, two-line, oh-my-zsh
-  classics like `robbyrussell`/`ys`, game-inspired `mario`/`8bit`, neon
+  classics like `robbyrussell`/`ys`/`steeef`/`fino`, framework clones
+  `spaceship`/`p10k-lean`/`fish`, and **game-inspired** ones — Clair Obscur:
+  Expedition 33 (`expedition33`, `gommage`), Super Mario (`mario` HUD), Fallout
+  (`vault`), Elden Ring (`grace`), Zelda (`triforce`), DOOM (`doomguy`),
   `cyberpunk`, …), independent of the colors.
+- **Game looks** pair a style with a matching theme: `expedition-33`,
+  `gommage`, `canvas-33`, `mario-world`, `mario-underground`, `vault-111`,
+  `tarnished`, `hyrule`, `doom`, `cyberpunk`.
+
+  ![game looks](docs/games.gif)
 - A **look** pins a theme + style together and overrides Ghostty auto-follow.
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
@@ -186,7 +194,7 @@ macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `cargo test` (the `nuance` CLI/TUI, 48 unit + integration tests):
 
 ```sh
-nu test.nu       # ✓ all checks passed — 51 themes, 27 styles, 46 looks
+nu test.nu       # ✓ all checks passed — 59 themes, 40 styles, 62 looks
 cargo test       # ✓ 48 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 

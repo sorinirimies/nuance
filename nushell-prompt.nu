@@ -524,6 +524,54 @@ const EXTRA_THEMES = {
         yellow: "#e7c664", green: "#9ed072", cyan: "#76cce0", blue: "#7ec8e3"
         magenta: "#b39df3", purple: "#b39df3", bg: "#2c2e34"
     }
+    # Clair Obscur: Expedition 33 — Belle Époque night: ink-black blue, parchment, gold, Gommage crimson, Lumina cyan.
+    "clair-obscur": {
+        fg: "#e9dfc7", gray: "#5d6178", red: "#d4343f", orange: "#d98a3d"
+        yellow: "#e3b95a", green: "#8fae8b", cyan: "#7fd0e0", blue: "#4a78c2"
+        magenta: "#c9708a", purple: "#8a6bbf", bg: "#0b0d17"
+    }
+    # Clair Obscur — the Paintress's canvas: parchment ground, dark ink, oil-paint reds and golds (light).
+    "clair-obscur-canvas": {
+        fg: "#2b2433", gray: "#8a7f72", red: "#a3212c", orange: "#b4601f"
+        yellow: "#8c6a12", green: "#4d6b4a", cyan: "#2a6f80", blue: "#2a4f8f"
+        magenta: "#8f3b58", purple: "#5e3f8c", bg: "#efe4cc"
+    }
+    # Super Mario overworld — daytime sky, pipe green, Mario red (light).
+    "mario-overworld": {
+        fg: "#14173d", gray: "#5b6a8a", red: "#c4161c", orange: "#b85c00"
+        yellow: "#8a6a00", green: "#1c7a2a", cyan: "#00738f", blue: "#0b4fa8"
+        magenta: "#a1307a", purple: "#5a3da8", bg: "#a6d8ff"
+    }
+    # Super Mario underground — black cave, blue bricks, coin gold.
+    "mario-underground": {
+        fg: "#e8f0ff", gray: "#5a6a9a", red: "#ff4d3d", orange: "#f89b3a"
+        yellow: "#fcd23a", green: "#3fd16a", cyan: "#3ee0e8", blue: "#3b7bff"
+        magenta: "#ff6fc8", purple: "#8f7bff", bg: "#02030f"
+    }
+    # Fallout Pip-Boy — phosphor green terminal (amber for alerts).
+    "pip-boy": {
+        fg: "#46ff90", gray: "#1f8f55", red: "#ff8a3d", orange: "#c8ff4d"
+        yellow: "#e6ff7a", green: "#3dff8a", cyan: "#6dffd0", blue: "#29d97a"
+        magenta: "#9dffb0", purple: "#7fe0a0", bg: "#031208"
+    }
+    # Elden Ring — Site-of-Grace gold on the Lands Between's gloom.
+    "tarnished": {
+        fg: "#e6d8b0", gray: "#6f654f", red: "#a63a2f", orange: "#c77f2e"
+        yellow: "#e3b24a", green: "#7a8c52", cyan: "#7fa8a0", blue: "#5d7690"
+        magenta: "#9c5f6e", purple: "#77608f", bg: "#0e0c09"
+    }
+    # Zelda — Hyrule field green, Triforce gold, Sheikah blue.
+    "hyrule": {
+        fg: "#e8e2c4", gray: "#5f7060", red: "#d6453a", orange: "#e08a2c"
+        yellow: "#f2d04a", green: "#6fbf5b", cyan: "#5ed1c7", blue: "#4aa3d6"
+        magenta: "#c06fa8", purple: "#8a78c8", bg: "#0f1a14"
+    }
+    # DOOM — hellfire red/orange, armor green, rusted steel.
+    "doom": {
+        fg: "#d9cfc4", gray: "#6a5f58", red: "#e5251c", orange: "#ff7a1a"
+        yellow: "#ffc21a", green: "#4aa83a", cyan: "#3aa5a0", blue: "#4a6ea8"
+        magenta: "#b0407a", purple: "#7a4a9a", bg: "#120c0b"
+    }
 }
 
 # Generic color_config from a simple palette (fg/gray/red/orange/yellow/
@@ -934,6 +982,22 @@ def presets [] {
         { name: "melange-arrow", theme: "melange", style: "arrow" }
         { name: "snazzy-rainbow", theme: "snazzy", style: "rainbow" }
         { name: "modus-pure", theme: "modus-vivendi", style: "pure" }
+        { name: "expedition-33", theme: "clair-obscur", style: "expedition33" }
+        { name: "gommage", theme: "clair-obscur", style: "gommage" }
+        { name: "canvas-33", theme: "clair-obscur-canvas", style: "expedition33" }
+        { name: "mario-world", theme: "mario-overworld", style: "mario" }
+        { name: "mario-underground", theme: "mario-underground", style: "mario" }
+        { name: "vault-111", theme: "pip-boy", style: "vault" }
+        { name: "tarnished", theme: "tarnished", style: "grace" }
+        { name: "hyrule", theme: "hyrule", style: "triforce" }
+        { name: "doom", theme: "doom", style: "doomguy" }
+        { name: "spaceship-nord", theme: "nord", style: "spaceship" }
+        { name: "p10k-tokyo", theme: "tokyo-night", style: "p10k-lean" }
+        { name: "fish-gruvbox", theme: "gruvbox", style: "fish" }
+        { name: "steeef-mocha", theme: "catppuccin-mocha", style: "steeef" }
+        { name: "fino-dracula", theme: "dracula", style: "fino" }
+        { name: "onedark-twoline", theme: "onedark", style: "powerline2l" }
+        { name: "rosepine-pills2l", theme: "rose-pine", style: "pills2l" }
     ]
 }
 
@@ -1544,6 +1608,19 @@ def style-defs [] {
         { name: "pills",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pills for user, path and git", shape: "pill", segs: ["user" "path" "git"] }
         { name: "pastel",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline: user, path, git + toolchain (rust/node/python/go)", shape: "arrow", segs: ["user" "path" "git" "lang"] }
         { name: "devbar",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs", shape: "pill", segs: ["status" "ssh" "path" "git" "lang" "jobs"] }
+        { name: "expedition33", kind: "inline", glyph: "❧",   tone: "modified", nerd: false, desc: "Clair Obscur: Expedition 33 — Belle Époque two-liner, gold ornaments, Gommage marks" }
+        { name: "gommage",      kind: "inline", ctx: true, glyph: "✿",   tone: "git",      nerd: false, desc: "Clair Obscur — red petals fall for every change (Gommage)" }
+        { name: "vault",        kind: "inline", glyph: ">",   tone: "ok",       nerd: false, desc: "Fallout Pip-Boy — [VAULT-111] with HP and ☢ rads" }
+        { name: "grace",        kind: "inline", ctx: true, glyph: "❖",   tone: "modified", nerd: false, desc: "Elden Ring — HP/FP/stamina bars; YOU DIED on a failed command" }
+        { name: "triforce",     kind: "inline", ctx: true, glyph: "▲",   tone: "modified", nerd: false, desc: "Zelda — ▲ Triforce, ♥ hearts, ◆ rupees" }
+        { name: "doomguy",      kind: "inline", glyph: "»",   tone: "modified", nerd: false, desc: "DOOM status bar — HEALTH / ARMOR / AMMO and the Doomguy face" }
+        { name: "spaceship",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "spaceship — path on  branch [flags] via toolchain, two-line" }
+        { name: "p10k-lean",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "powerlevel10k lean — path + colored git state, two-line" }
+        { name: "fish",         kind: "inline", ctx: true, glyph: ">",   tone: "ok",       nerd: false, desc: "fish informative — user@host ~/path (branch|✚2…1)" }
+        { name: "steeef",       kind: "inline", glyph: "$",   tone: "ok",       nerd: false, desc: "oh-my-zsh steeef — user at host in ~/path [branch●]" }
+        { name: "fino",         kind: "inline", glyph: "○",   tone: "ok",       nerd: false, desc: "oh-my-zsh fino — ╭─ user at host in ~/path on git:branch ✗ / ╰─○" }
+        { name: "powerline2l",  kind: "blocks", nl: true, glyph: "❯", tone: "ok", nerd: true, desc: "Nerd-Font powerline segments, prompt on its own line", shape: "arrow", segs: ["user" "path" "git" "lang"] }
+        { name: "pills2l",      kind: "blocks", nl: true, glyph: "❯", tone: "ok", nerd: true, desc: "Nerd-Font pills with the prompt on its own line", shape: "pill", segs: ["status" "path" "git" "lang"] }
         { name: "boxed",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "two-line box-drawing with a ● clean/dirty marker" }
         { name: "mario",        kind: "inline", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line 🍄 overworld — ▣ ◆ ⚑ ◉ ▄" }
         { name: "arcade",       kind: "inline", glyph: "▮▮",  tone: "modified", nerd: false, desc: "retro all-caps ▶ 1UP score line" }
@@ -1885,6 +1962,36 @@ def render-blocks [shape: string, ids: list<string>] {
 
 # Left prompt: the style's layout, plus the user's enabled context modules
 # as a tail for single-line styles (blocks styles fold them in as segments).
+# ── helpers for the game / framework styles ──────────────────
+# Number of changed paths (conflicts count triple — they hurt the most).
+def dirty-count [g: record] {
+    if not $g.present { return 0 }
+    $g.staged + $g.modified + $g.untracked + ($g.conflict * 3)
+}
+# Compact flag string, spaceship-style: =conflict $stash +staged !modified ?untracked ⇡ahead ⇣behind.
+def git-flags [g: record] {
+    if not $g.present { return "" }
+    mut t = ""
+    if $g.conflict > 0 { $t = $t + "=" }
+    if $g.stash > 0 { $t = $t + "$" }
+    if $g.staged > 0 { $t = $t + "+" }
+    if $g.modified > 0 { $t = $t + "!" }
+    if $g.untracked > 0 { $t = $t + "?" }
+    if $g.ahead > 0 { $t = $t + "⇡" }
+    if $g.behind > 0 { $t = $t + "⇣" }
+    $t
+}
+# A 5-cell resource bar:  ▰▰▰▱▱
+def bar5 [filled: int, color: string] {
+    let f = ([([$filled 0] | math max) 5] | math min)
+    let on = (if $f > 0 { 1..$f | each { "▰" } | str join "" } else { "" })
+    let off = (if $f < 5 { 1..(5 - $f) | each { "▱" } | str join "" } else { "" })
+    $"(ansi {fg: $color})($on)(ansi {fg: $env.THEME_PALETTE.sep})($off)(ansi reset)"
+}
+def repeat-str [s: string, n: int] {
+    if $n < 1 { "" } else { 1..$n | each { $s } | str join "" }
+}
+
 def left-prompt-core [] {
     let left = (render-left)
     let d = (style-def ($env.PROMPT_STYLE? | default "full"))
@@ -1902,7 +2009,10 @@ def render-left [] {
 
     # Data-driven styles: render straight from the registry row.
     let def = (style-def $style)
-    if $def.kind == "blocks" { return (render-blocks $def.shape $def.segs) }
+    if $def.kind == "blocks" {
+        let out = (render-blocks $def.shape $def.segs)
+        return (if ($def.nl? | default false) { $"($out)\n" } else { $out })
+    }
 
     match $style {
         "minimal" => {
@@ -1996,28 +2106,32 @@ def render-left [] {
             $"(ansi {fg: $p.ahead attr: b})☁(ansi reset)  (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
         }
         "mario" => {
-            # Two-line overworld: ▣ ?-block · ◆ hero · ⚑ flag · ◉ coins · ▲▼ pipes
-            # · ✖ conflicts · ⬢ stash · ★ when clean, on a ▄ brick ground.
+            # NES HUD on top, brick ground with the hero running on it below:
+            #   MARIO ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲2 ▼1 ✖1 ⬢1
+            #   ▀▄▀▄▀▄◆▶
+            # ◉ coins = changed files · ⚑ flag = branch · ▲▼ = pipes (ahead/behind)
+            # ✖ = Goomba (conflict) · ⬢ = mushroom (stash) · ★ = starman (clean)
             let g = (git-info)
-            let block = $"(ansi {fg: $p.modified attr: b})▣(ansi reset)"
-            let hero  = $"(ansi {fg: $p.err attr: b})◆(ansi reset)"
-            let dir   = $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)"
+            let rs = (ansi reset)
+            let coins = (if $g.present { $g.staged + $g.modified + $g.untracked } else { 0 })
+            let coin_txt = ($coins | into string | fill --alignment right --character "0" --width 2)
+            let depth = (($full_dir | path split | length) | into string)
+            let world = $"($depth)-($coins + 1)"
+            let hud_name = $"(ansi {fg: $p.err attr: b})MARIO($rs)"
+            let hud_coin = $"(ansi {fg: $p.modified attr: b})◉×($coin_txt)($rs)"
+            let hud_world = $"(ansi {fg: $p.sep})WORLD(ansi {fg: $p.path attr: b}) ($world)($rs)"
+            let dir = $"(ansi {fg: $p.path attr: b})($full_dir)($rs)"
             let git_txt = if $g.present {
-                mut segs = [$"(ansi {fg: $p.ok attr: b})⚑ ($g.head)(ansi reset)"]
-                let n = ($g.staged + $g.modified + $g.untracked)
-                if $n > 0 {
-                    $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})◉×($n)(ansi reset)")
-                } else {
-                    $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})★(ansi reset)")
-                }
-                if $g.ahead    > 0 { $segs = ($segs | append $"(ansi {fg: $p.ok})▲($g.ahead)(ansi reset)") }
-                if $g.behind   > 0 { $segs = ($segs | append $"(ansi {fg: $p.behind})▼($g.behind)(ansi reset)") }
-                if $g.conflict > 0 { $segs = ($segs | append $"(ansi {fg: $p.err attr: b})✖($g.conflict)(ansi reset)") }
-                if $g.stash    > 0 { $segs = ($segs | append $"(ansi {fg: $p.stash})⬢($g.stash)(ansi reset)") }
-                $"  ($segs | str join '  ')"
+                mut segs = [$"(ansi {fg: $p.ok attr: b})⚑ ($g.head)($rs)"]
+                if $coins == 0 and $g.conflict == 0 { $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})★($rs)") }
+                if $g.ahead    > 0 { $segs = ($segs | append $"(ansi {fg: $p.ok})▲($g.ahead)($rs)") }
+                if $g.behind   > 0 { $segs = ($segs | append $"(ansi {fg: $p.behind})▼($g.behind)($rs)") }
+                if $g.conflict > 0 { $segs = ($segs | append $"(ansi {fg: $p.err attr: b})✖($g.conflict)($rs)") }
+                if $g.stash    > 0 { $segs = ($segs | append $"(ansi {fg: $p.stash})⬢($g.stash)($rs)") }
+                $"  ($segs | str join ' ')"
             } else { "" }
-            let ground = $"(ansi {fg: $p.host})▄▄▄(ansi reset)"
-            $"($block) ($hero) ($dir)($git_txt)\n($ground)"
+            let ground = $"(ansi {fg: $p.host})▀▄▀▄▀▄(ansi {fg: $p.err attr: b})◆($rs)"
+            $"($hud_name) ($hud_coin)  ($hud_world)  ($dir)($git_txt)\n($ground)"
         }
         "arcade" => {
             # retro all-caps score/1UP vibe
@@ -2043,6 +2157,146 @@ def render-left [] {
             let l1 = $"(ansi {fg: $p.sep})╭─($bolt)(ansi {fg: $p.sep})─($uh)(ansi {fg: $p.sep})─($dir)(ansi reset)($git_txt)"
             let l2 = $"(ansi {fg: $p.sep})╰─(ansi reset)"
             $"($l1)\n($l2)"
+        }
+        "expedition33" => {
+            # Clair Obscur: Expedition 33 — gold Belle Époque ornaments.
+            #   ❖ staged · ✶ modified (Gommage) · ✧ untracked · ✖ conflict · ❦ stash · ✦ clean
+            let g = (git-info)
+            let rs = (ansi reset)
+            let gold = (ansi {fg: $p.user})
+            let git_txt = if $g.present {
+                mut parts = []
+                if $g.ahead    > 0 { $parts = ($parts | append $"(ansi {fg: $p.ahead})⇡($g.ahead)($rs)") }
+                if $g.behind   > 0 { $parts = ($parts | append $"(ansi {fg: $p.behind})⇣($g.behind)($rs)") }
+                if $g.staged   > 0 { $parts = ($parts | append $"(ansi {fg: $p.ok})❖($g.staged)($rs)") }
+                if $g.modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.err attr: b})✶($g.modified)($rs)") }
+                if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.ahead})✧($g.untracked)($rs)") }
+                if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.err attr: b})✖($g.conflict)($rs)") }
+                if $g.stash    > 0 { $parts = ($parts | append $"(ansi {fg: $p.stash})❦($g.stash)($rs)") }
+                let st = (if ($parts | is-empty) { $"(ansi {fg: $p.ahead})✦($rs)" } else { $parts | str join " " })
+                $" ($gold)⚜ (ansi {fg: $p.git attr: b})($g.head)($rs) ($st)"
+            } else { "" }
+            let l1 = $"($gold)╭─❖ (ansi {fg: $p.user attr: b})(prompt-user)($gold) ✦ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
+            $"($l1)\n($gold)╰─($rs)"
+        }
+        "gommage" => {
+            # Every changed file is a petal on the wind.
+            let g = (git-info)
+            let rs = (ansi reset)
+            let n = (if $g.present { $g.staged + $g.modified + $g.untracked + $g.conflict } else { 0 })
+            let git_txt = if $g.present {
+                let tail = (if $n > 0 { $"(ansi {fg: $p.err})(repeat-str '✿' ([$n 6] | math min))($rs)" } else { $"(ansi {fg: $p.sep})✧($rs)" })
+                $" (ansi {fg: $p.err})❀($rs) (ansi {fg: $p.git attr: b})($g.head)($rs) ($tail)"
+            } else { "" }
+            $"(ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
+        }
+        "vault" => {
+            # Fallout Pip-Boy: HP drops with every change, ☢ for conflicts.
+            let g = (git-info)
+            let rs = (ansi reset)
+            let hp = (100 - ([((dirty-count $g) * 5) 95] | math min))
+            let hpc = (if $hp >= 70 { $p.ok } else if $hp >= 40 { $p.modified } else { $p.err })
+            let rad = (if $g.present and $g.conflict > 0 { $" (ansi {fg: $p.err attr: b})☢($g.conflict)($rs)" } else { "" })
+            let br = (if $g.present { $" (ansi {fg: $p.git})[($g.head)]($rs)" } else { "" })
+            $"(ansi {fg: $p.ok attr: b})[VAULT-111]($rs) (ansi {fg: $p.user})(prompt-user)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs) (ansi {fg: $hpc attr: b})HP ($hp)/100($rs)($rad)($br)"
+        }
+        "grace" => {
+            # Elden Ring: ♥ HP · ✦ FP · ⚡ stamina. A failed command is YOU DIED.
+            let g = (git-info)
+            let rs = (ansi reset)
+            let n = (dirty-count $g)
+            let died = (($env.LAST_EXIT_CODE? | default 0) != 0)
+            let gold = (ansi {fg: $p.user})
+            let git_txt = (if $g.present { $" ($gold)❖ (ansi {fg: $p.git attr: b})($g.head)($rs)" } else { "" })
+            let bars = $"(ansi {fg: $p.err})♥($rs)(bar5 (5 - ([$n 4] | math min)) $p.err) (ansi {fg: $p.path})✦($rs)(bar5 5 $p.path) (ansi {fg: $p.ok})⚡($rs)(bar5 (if $died { 1 } else { 5 }) $p.ok)"
+            let dead = (if $died { $"(ansi {fg: $p.err attr: b})YOU DIED($rs) " } else { "" })
+            $"($dead)($gold)✧ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)  ($bars)"
+        }
+        "triforce" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let empty = ([(((dirty-count $g) + 1) // 2) 3] | math min)
+            let hearts = $"(ansi {fg: $p.err})(repeat-str '♥' (3 - $empty))(ansi {fg: $p.sep})(repeat-str '♡' $empty)($rs)"
+            let rupees = (if $g.present and $g.untracked > 0 { $"  (ansi {fg: $p.ok})◆($g.untracked)($rs)" } else { "" })
+            let git_txt = (if $g.present { $"  (ansi {fg: $p.git attr: b})✦ ($g.head)($rs)" } else { "" })
+            $"(ansi {fg: $p.user attr: b})▲($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)  ($hearts)($rupees)"
+        }
+        "doomguy" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let n = (dirty-count $g)
+            let hp = (100 - ([($n * 5) 100] | math min))
+            let face = (if $hp >= 70 { "☺" } else if $hp >= 30 { "☹" } else { "☠" })
+            let armor = (if $g.present { $g.staged } else { 0 })
+            let ammo = (if $g.present { $g.ahead } else { 0 })
+            let br = (if $g.present { $" (ansi {fg: $p.git})($g.head)($rs)" } else { "" })
+            $"(ansi {fg: $p.err attr: b})HEALTH ($hp)%($rs)  (ansi {fg: $p.ok attr: b})ARMOR ($armor)($rs)  (ansi {fg: $p.modified attr: b})AMMO ($ammo)($rs)  (ansi {fg: $p.user})($face)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($br)"
+        }
+        "spaceship" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let icon = (if ($env.PROMPT_NERD? | default true) { " " } else { "" })
+            let flags = (git-flags $g)
+            let git_txt = if $g.present {
+                let f = (if ($flags | is-empty) { "" } else { $" (ansi {fg: $p.err})[($flags)]($rs)" })
+                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git attr: b})($icon)($g.head)($rs)($f)"
+            } else { "" }
+            let lang = (module-text "lang")
+            let via = (if $lang == null { "" } else { $" (ansi {fg: $p.sep})via($rs) (ansi {fg: $p.modified attr: b})($lang)($rs)" })
+            $"(ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)($via)\n"
+        }
+        "p10k-lean" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let git_txt = if $g.present {
+                let hc = (if $g.conflict > 0 { $p.err } else if $g.clean { $p.ok } else { $p.modified })
+                mut parts = []
+                if $g.ahead    > 0 { $parts = ($parts | append $"(ansi {fg: $p.ahead})⇡($g.ahead)($rs)") }
+                if $g.behind   > 0 { $parts = ($parts | append $"(ansi {fg: $p.behind})⇣($g.behind)($rs)") }
+                if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.err})~($g.conflict)($rs)") }
+                if $g.staged   > 0 { $parts = ($parts | append $"(ansi {fg: $p.ok})+($g.staged)($rs)") }
+                if $g.modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.modified})!($g.modified)($rs)") }
+                if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})?($g.untracked)($rs)") }
+                let tail = (if ($parts | is-empty) { "" } else { $" ($parts | str join ' ')" })
+                $"  (ansi {fg: $hc})($g.head)($rs)($tail)"
+            } else { "" }
+            $"(ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)\n"
+        }
+        "fish" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let git_txt = if $g.present {
+                mut parts = []
+                if $g.staged   > 0 { $parts = ($parts | append $"(ansi {fg: $p.ok})●($g.staged)($rs)") }
+                if $g.modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.modified})✚($g.modified)($rs)") }
+                if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})…($g.untracked)($rs)") }
+                if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.err})✖($g.conflict)($rs)") }
+                let st = (if ($parts | is-empty) { $"(ansi {fg: $p.ok})✔($rs)" } else { $parts | str join "" })
+                $" (ansi {fg: $p.sep})\((ansi {fg: $p.git})($g.head)(ansi {fg: $p.sep})|($st)(ansi {fg: $p.sep})\)($rs)"
+            } else { "" }
+            $"(ansi {fg: $p.user})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(prompt-host)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)"
+        }
+        "steeef" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let git_txt = if $g.present {
+                mut marks = ""
+                if $g.staged   > 0 { $marks = $marks + $"(ansi {fg: $p.ok})●($rs)" }
+                if $g.modified > 0 { $marks = $marks + $"(ansi {fg: $p.err})●($rs)" }
+                if $g.untracked > 0 { $marks = $marks + $"(ansi {fg: $p.modified})●($rs)" }
+                $" (ansi {fg: $p.git attr: b})[($g.head)($marks)(ansi {fg: $p.git attr: b})]($rs)"
+            } else { "" }
+            $"(ansi {fg: $p.git attr: b})(prompt-user)($rs) (ansi {fg: $p.sep})at($rs) (ansi {fg: $p.host attr: b})(prompt-host)($rs) (ansi {fg: $p.sep})in($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)\n"
+        }
+        "fino" => {
+            let g = (git-info)
+            let rs = (ansi reset)
+            let git_txt = if $g.present {
+                let dirty = (if $g.clean { "" } else { $" (ansi {fg: $p.err attr: b})✗($rs)" })
+                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git})git:(ansi {fg: $p.behind attr: b})($g.head)($rs)($dirty)"
+            } else { "" }
+            let l1 = $"(ansi {fg: $p.sep})╭─($rs) (ansi {fg: $p.git attr: b})(prompt-user)($rs) (ansi {fg: $p.sep})at($rs) (ansi {fg: $p.host attr: b})(prompt-host)($rs) (ansi {fg: $p.sep})in($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)"
+            $"($l1)\n(ansi {fg: $p.sep})╰─($rs)"
         }
         _ => {
             let user_host = $"(ansi {fg: $p.user})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(prompt-host)(ansi reset)"
