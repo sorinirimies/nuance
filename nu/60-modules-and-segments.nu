@@ -57,7 +57,7 @@ def tool-version [tool: string, args: list<string>] {
         if $age < 1hr { return (open --raw $f | str trim) }
     }
     if (which $tool | is-empty) { return "" }
-    let out = (do -i { ^$tool ...$args } | complete)
+    let out = (ext $tool ...$args)
     let v = (first-version ($out.stdout + $out.stderr))
     mkdir $dir
     $v | save -f $f
@@ -124,7 +124,7 @@ def battery-percent [] {
         let bats = (glob "/sys/class/power_supply/BAT*/capacity")
         if ($bats | is-empty) { null } else { try { open --raw ($bats | first) | str trim | into int } catch { null } }
     } else if (which pmset | is-not-empty) {
-        (do -i { ^pmset -g batt } | complete | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
+        (ext pmset -g batt | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
     } else { null }
     try { mkdir (nuance-cache-dir); $"($now) ($pct | default 'none')" | save -f $f }
     $pct

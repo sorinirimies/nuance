@@ -1,3 +1,11 @@
+# Run an external command and capture its result — like `^cmd | complete`, but
+# a command that is not installed (e.g. `defaults` on Linux, `git` on a bare
+# box) yields { exit_code: 127 } instead of raising an error.
+def --wrapped ext [cmd: string, ...args: string] {
+    if (which $cmd | is-empty) { return { exit_code: 127, stdout: "", stderr: $"($cmd): command not found" } }
+    do -i { ^$cmd ...$args } | complete
+}
+
 # ── Style registry ───────────────────────────────────────────
 # One row per prompt style = the single source of truth for: the style list,
 # the indicator glyph/color, picker/gallery descriptions, and (for `blocks`
@@ -238,9 +246,9 @@ def git-info [--light] {
     let light = ($light or ($mode == "light"))
 
     if $light {
-        let b = (do -i { git symbolic-ref --short -q HEAD } | complete | get stdout | str trim)
+        let b = (ext git symbolic-ref --short -q HEAD | get stdout | str trim)
         let head = if ($b | is-not-empty) { $b } else {
-            let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
+            let sha = (ext git rev-parse --short HEAD | get stdout | str trim)
             if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
         }
         return { present: true, head: $head, state: $state, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
@@ -252,10 +260,10 @@ def git-info [--light] {
     let base = (["status" "--porcelain=v2" "--branch"] ++ (if $slow { ["-uno"] } else { [] }))
     let t0 = (date now)
     # --show-stash needs git >= 2.35; fall back to counting the stash list.
-    mut r = (do -i { ^git ...($base ++ ["--show-stash"]) } | complete)
+    mut r = (ext git ...($base ++ ["--show-stash"]))
     mut stash_from_list = false
     if $r.exit_code != 0 {
-        $r = (do -i { ^git ...$base } | complete)
+        $r = (ext git ...$base)
         $stash_from_list = true
     }
     if $r.exit_code != 0 { return { present: false } }
@@ -272,7 +280,7 @@ def git-info [--light] {
     let ahead = ($ab | parse -r '\+(?<n>\d+)' | get n.0? | default "0" | into int)
     let behind = ($ab | parse -r '-(?<n>\d+)' | get n.0? | default "0" | into int)
     let stash = if $stash_from_list {
-        (do -i { git stash list } | complete | get stdout | lines | where {|l| $l | is-not-empty } | length)
+        (ext git stash list | get stdout | lines | where {|l| $l | is-not-empty } | length)
     } else {
         (do $hdr "stash" | default "0" | if ($in | is-empty) { 0 } else { $in | into int })
     }
@@ -339,7 +347,7 @@ def prompt-user [] {
     if (($env.PROMPT_USER? | default "") | is-not-empty) { return $env.PROMPT_USER }
     let u = ($env.USER? | default ($env.USERNAME? | default ""))
     if ($u | is-not-empty) { $u } else {
-        let w = (do -i { ^whoami } | complete | get stdout | str trim)
+        let w = (ext whoami | get stdout | str trim)
         if ($w | is-not-empty) { $w } else { "user" }
     }
 }

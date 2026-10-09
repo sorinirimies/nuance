@@ -720,9 +720,9 @@ def --env "nuance modules" [action?: string@"nu-complete nuance module-actions",
 # Returns null when it can't be determined.
 # Detect OS dark mode (macOS `defaults`, GNOME `gsettings`); default dark.
 def os-dark-mode [] {
-    let mac = (do -i { ^defaults read -g AppleInterfaceStyle } | complete)
+    let mac = (ext defaults read -g AppleInterfaceStyle)
     if $mac.exit_code == 0 { return ($mac.stdout | str contains --ignore-case "dark") }
-    let gnome = (do -i { ^gsettings get org.gnome.desktop.interface color-scheme } | complete)
+    let gnome = (ext gsettings get org.gnome.desktop.interface color-scheme)
     if $gnome.exit_code == 0 { return ($gnome.stdout | str contains --ignore-case "dark") }
     true
 }
@@ -806,8 +806,8 @@ def ghostty-map-name [low: string] {
 
 def ghostty-theme-name [] {
     let cfgs = [
-        ($env.HOME | path join ".config" "ghostty" "config")
-        ($env.HOME | path join "Library" "Application Support" "com.mitchellh.ghostty" "config")
+        ($nu.home-dir | path join ".config" "ghostty" "config")
+        ($nu.home-dir | path join "Library" "Application Support" "com.mitchellh.ghostty" "config")
     ]
     let file = ($cfgs | where {|p| $p | path exists } | get 0? )
     if ($file | is-empty) { return null }

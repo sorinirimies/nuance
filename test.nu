@@ -629,6 +629,13 @@ if $golden.exit_code != 0 { $errors = ($errors | append $"golden prompt snapshot
 let built = (^$nu.current-exe scripts/build_prompt.nu --check | complete)
 if $built.exit_code != 0 { $errors = ($errors | append "nushell-prompt.nu is stale — run: just build-prompt") }
 
+# ── external commands that are not installed must not raise ──
+let ext_missing = (ext "definitely-not-a-command-xyz" "--flag")
+let ext_ok = (ext "git" "--version")
+if $ext_missing.exit_code != 127 or ($ext_ok.exit_code != 0) or not ($ext_ok.stdout | str contains "git") { $errors = ($errors | append "ext helper wrong for missing/present commands") }
+let dark_mode = (try { os-dark-mode } catch {|e| $"error: ($e.msg)" })
+if ($dark_mode | describe) != "bool" { $errors = ($errors | append $"os-dark-mode must return a bool on every OS, got: ($dark_mode)") }
+
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
 if ((prompt-host) | is-empty) { $errors = ($errors | append "prompt-host returned empty") }

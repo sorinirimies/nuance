@@ -1530,9 +1530,9 @@ def --env "nuance modules" [action?: string@"nu-complete nuance module-actions",
 # Returns null when it can't be determined.
 # Detect OS dark mode (macOS `defaults`, GNOME `gsettings`); default dark.
 def os-dark-mode [] {
-    let mac = (do -i { ^defaults read -g AppleInterfaceStyle } | complete)
+    let mac = (ext defaults read -g AppleInterfaceStyle)
     if $mac.exit_code == 0 { return ($mac.stdout | str contains --ignore-case "dark") }
-    let gnome = (do -i { ^gsettings get org.gnome.desktop.interface color-scheme } | complete)
+    let gnome = (ext gsettings get org.gnome.desktop.interface color-scheme)
     if $gnome.exit_code == 0 { return ($gnome.stdout | str contains --ignore-case "dark") }
     true
 }
@@ -1616,8 +1616,8 @@ def ghostty-map-name [low: string] {
 
 def ghostty-theme-name [] {
     let cfgs = [
-        ($env.HOME | path join ".config" "ghostty" "config")
-        ($env.HOME | path join "Library" "Application Support" "com.mitchellh.ghostty" "config")
+        ($nu.home-dir | path join ".config" "ghostty" "config")
+        ($nu.home-dir | path join "Library" "Application Support" "com.mitchellh.ghostty" "config")
     ]
     let file = ($cfgs | where {|p| $p | path exists } | get 0? )
     if ($file | is-empty) { return null }
@@ -1823,6 +1823,14 @@ theme-apply $start_theme
 # ─────────────────────────────────────────────────────────────
 
 def prompt-style-path [] { (nuance-config-dir) | path join "prompt-style.txt" }
+# Run an external command and capture its result — like `^cmd | complete`, but
+# a command that is not installed (e.g. `defaults` on Linux, `git` on a bare
+# box) yields { exit_code: 127 } instead of raising an error.
+def --wrapped ext [cmd: string, ...args: string] {
+    if (which $cmd | is-empty) { return { exit_code: 127, stdout: "", stderr: $"($cmd): command not found" } }
+    do -i { ^$cmd ...$args } | complete
+}
+
 # ── Style registry ───────────────────────────────────────────
 # One row per prompt style = the single source of truth for: the style list,
 # the indicator glyph/color, picker/gallery descriptions, and (for `blocks`
@@ -2063,9 +2071,9 @@ def git-info [--light] {
     let light = ($light or ($mode == "light"))
 
     if $light {
-        let b = (do -i { git symbolic-ref --short -q HEAD } | complete | get stdout | str trim)
+        let b = (ext git symbolic-ref --short -q HEAD | get stdout | str trim)
         let head = if ($b | is-not-empty) { $b } else {
-            let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
+            let sha = (ext git rev-parse --short HEAD | get stdout | str trim)
             if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
         }
         return { present: true, head: $head, state: $state, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
@@ -2077,10 +2085,10 @@ def git-info [--light] {
     let base = (["status" "--porcelain=v2" "--branch"] ++ (if $slow { ["-uno"] } else { [] }))
     let t0 = (date now)
     # --show-stash needs git >= 2.35; fall back to counting the stash list.
-    mut r = (do -i { ^git ...($base ++ ["--show-stash"]) } | complete)
+    mut r = (ext git ...($base ++ ["--show-stash"]))
     mut stash_from_list = false
     if $r.exit_code != 0 {
-        $r = (do -i { ^git ...$base } | complete)
+        $r = (ext git ...$base)
         $stash_from_list = true
     }
     if $r.exit_code != 0 { return { present: false } }
@@ -2097,7 +2105,7 @@ def git-info [--light] {
     let ahead = ($ab | parse -r '\+(?<n>\d+)' | get n.0? | default "0" | into int)
     let behind = ($ab | parse -r '-(?<n>\d+)' | get n.0? | default "0" | into int)
     let stash = if $stash_from_list {
-        (do -i { git stash list } | complete | get stdout | lines | where {|l| $l | is-not-empty } | length)
+        (ext git stash list | get stdout | lines | where {|l| $l | is-not-empty } | length)
     } else {
         (do $hdr "stash" | default "0" | if ($in | is-empty) { 0 } else { $in | into int })
     }
@@ -2164,7 +2172,7 @@ def prompt-user [] {
     if (($env.PROMPT_USER? | default "") | is-not-empty) { return $env.PROMPT_USER }
     let u = ($env.USER? | default ($env.USERNAME? | default ""))
     if ($u | is-not-empty) { $u } else {
-        let w = (do -i { ^whoami } | complete | get stdout | str trim)
+        let w = (ext whoami | get stdout | str trim)
         if ($w | is-not-empty) { $w } else { "user" }
     }
 }
@@ -2232,7 +2240,7 @@ def tool-version [tool: string, args: list<string>] {
         if $age < 1hr { return (open --raw $f | str trim) }
     }
     if (which $tool | is-empty) { return "" }
-    let out = (do -i { ^$tool ...$args } | complete)
+    let out = (ext $tool ...$args)
     let v = (first-version ($out.stdout + $out.stderr))
     mkdir $dir
     $v | save -f $f
@@ -2299,7 +2307,7 @@ def battery-percent [] {
         let bats = (glob "/sys/class/power_supply/BAT*/capacity")
         if ($bats | is-empty) { null } else { try { open --raw ($bats | first) | str trim | into int } catch { null } }
     } else if (which pmset | is-not-empty) {
-        (do -i { ^pmset -g batt } | complete | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
+        (ext pmset -g batt | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
     } else { null }
     try { mkdir (nuance-cache-dir); $"($now) ($pct | default 'none')" | save -f $f }
     $pct
