@@ -74,11 +74,8 @@ Light themes on a light terminal background:
 
 **Yours:** anything you `nuance import` \(Ghostty, kitty, Alacritty, base16).
 
-The game-flavoured themes \(`coin-rush`, `sunny-course`, `cave-course`,
-`greenfield`, `phosphor`, `inferno`, `gilded-ruin`, `belle-epoque`, `phantom`,
-`cavern-hush`, `test-chamber`, `ember`, `meadow`, `dojo`, `underworld`, `summit`,
-`rain-noir`, `blocky`, `cyberpunk`) are original, genre-inspired palettes with
-generic names — see the note on trademarks in the README.
+Game-flavoured themes and styles are unofficial, fan-made homages — see the
+note on trademarks in the README.
 
 ---
 
@@ -96,8 +93,8 @@ Cycling a few live:
 |-------|-------------|
 ($style_rows)
 
-Game-inspired looks \(platformer, retro terminal, soulslike, heist, farm sim,
-fighting game, roguelike, sandbox, cyberpunk …):
+Game-inspired looks \(Clair Obscur: Expedition 33, Super Mario, Fallout, Elden
+Ring, Zelda, DOOM, heist, farm sim, fighting game, roguelike, sandbox, cyberpunk …):
 
 ![game looks]\(docs/games.gif)
 

@@ -35,28 +35,25 @@ Light themes on a light terminal background:
 `catppuccin-frappe` · `tokyo-night` · `nord` · `dracula` · `rose-pine` ·
 `rose-pine-moon` · `everforest` · `kanagawa` · `onedark` · `monokai` ·
 `ayu-dark` · `ayu-mirage` · `night-owl` · `github-dark` · `oxocarbon` ·
-`zenburn` · `solarized` · `coin-rush` · `cyberpunk` ·
+`zenburn` · `solarized` · `super-mario` · `cyberpunk` ·
 `tokyo-night-storm` · `tokyo-night-moon` · `gruvbox-material` ·
 `nightfox` · `kanagawa-dragon` · `flexoki` · `melange` · `nightfly` ·
 `material-palenight` · `tomorrow-night` · `snazzy` · `iceberg` ·
 `synthwave-84` · `cobalt2` · `modus-vivendi` · `horizon` · `sonokai` ·
-`belle-epoque` · `cave-course` · `phosphor` · `gilded-ruin` ·
-`greenfield` · `inferno` · `phantom` · `cavern-hush` · `test-chamber` ·
+`clair-obscur` · `mario-underground` · `pip-boy` · `tarnished` ·
+`hyrule` · `doom` · `phantom` · `cavern-hush` · `test-chamber` ·
 `ember` · `dojo` · `underworld` · `summit` · `rain-noir` · `blocky`
 
 **Light (15):**
 `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
 `solarized-light` · `tokyo-night-day` · `gruvbox-light` · `dawnfox` ·
 `kanagawa-lotus` · `flexoki-light` · `one-light` · `papercolor-light` ·
-`modus-operandi` · `belle-epoque-canvas` · `sunny-course` · `meadow`
+`modus-operandi` · `clair-obscur-canvas` · `mario-overworld` · `meadow`
 
 **Yours:** anything you `nuance import` (Ghostty, kitty, Alacritty, base16).
 
-The game-flavoured themes (`coin-rush`, `sunny-course`, `cave-course`,
-`greenfield`, `phosphor`, `inferno`, `gilded-ruin`, `belle-epoque`, `phantom`,
-`cavern-hush`, `test-chamber`, `ember`, `meadow`, `dojo`, `underworld`, `summit`,
-`rain-noir`, `blocky`, `cyberpunk`) are original, genre-inspired palettes with
-generic names — see the note on trademarks in the README.
+Game-flavoured themes and styles are unofficial, fan-made homages — see the
+note on trademarks in the README.
 
 ---
 
@@ -94,12 +91,12 @@ Cycling a few live:
 | `pills` | Nerd-Font rounded pills for user, path and git |
 | `pastel` | Nerd-Font powerline: user, path, git + toolchain (rust/node/python/go) |
 | `devbar` | Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs |
-| `ornate` | Belle Époque two-liner — gold ornaments `❖ ✦ ⚜`, `✶` marks for changed files |
-| `petals` | a red `✿` petal falls for every changed file |
-| `shelter` | retro terminal — `[SHELTER-101] … HP 75/100 ☢` |
-| `sanctum` | HP / FP / stamina bars; FALLEN after a failed command |
-| `trifold` | `▲` crest, `♥♥♡` hearts, `◆` gems |
-| `marine` | FPS status bar — `HEALTH 75%  ARMOR 0  AMMO 3  ☺` |
+| `expedition33` | Clair Obscur: Expedition 33 — Belle Époque two-liner, gold ornaments, Gommage marks |
+| `gommage` | Clair Obscur — a red `✿` petal falls for every changed file (Gommage) |
+| `vault` | Fallout Pip-Boy — `[VAULT-111] … HP 75/100 ☢` |
+| `grace` | Elden Ring — HP / FP / stamina bars; YOU DIED on a failed command |
+| `triforce` | Zelda — `▲` Triforce, `♥♥♡` hearts, `◆` rupees |
+| `doomguy` | DOOM status bar — `HEALTH 75%  ARMOR 0  AMMO 3  ☺` |
 | `spaceship` | spaceship — path on  branch [flags] via toolchain, two-line |
 | `p10k-lean` | powerlevel10k lean — path + colored git state, two-line |
 | `fish` | fish informative — user@host ~/path (branch|✚2…1) |
@@ -118,13 +115,13 @@ Cycling a few live:
 | `skillcheck` | RPG skill checks — `[Perception: Success]`, `[Logic: Medium 3]`, `[Volition: Failure]` |
 | `hotbar` | sandbox HUD — `♥♥♥♥♡ ▕▮▮▯▯▯▏ ~/dir ⚒ main` |
 | `boxed` | two-line box-drawing with a ● clean/dirty marker |
-| `hud-run` | NES-style HUD: `PLAYER ◉×03  WORLD 3-4  ~/dir  ⚑ branch`, then a brick ground with the `◆` hero |
+| `mario` | two-line NES HUD: `MARIO ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲▼✖⬢★`, then a brick ground with the `◆` hero |
 | `arcade` | retro all-caps ▶ 1UP score line |
 | `8bit` | pixel ░▒▓ gradient separators |
 | `cyberpunk` | two-line neon box-drawing with ⚡ and ▶▶▶ |
 
-Game-inspired looks (platformer, retro terminal, soulslike, heist, farm sim,
-fighting game, roguelike, sandbox, cyberpunk …):
+Game-inspired looks (Clair Obscur: Expedition 33, Super Mario, Fallout, Elden
+Ring, Zelda, DOOM, heist, farm sim, fighting game, roguelike, sandbox, cyberpunk …):
 
 ![game looks](docs/games.gif)
 
@@ -166,8 +163,8 @@ A **look** is a curated theme + style pairing.
 | `bira` | nord | bira |
 | `af-magic` | dracula | af-magic |
 | `cloud` | catppuccin-frappe | cloud |
-| `coin-rush` | coin-rush | hud-run |
-| `arcade` | coin-rush | arcade |
+| `super-mario` | super-mario | mario |
+| `arcade` | super-mario | arcade |
 | `8bit` | gruvbox | 8bit |
 | `dracula-agnoster` | dracula | agnoster |
 | `tokyo-skyline` | tokyo-night | skyline |
@@ -184,15 +181,15 @@ A **look** is a curated theme + style pairing.
 | `melange-arrow` | melange | arrow |
 | `snazzy-rainbow` | snazzy | rainbow |
 | `modus-pure` | modus-vivendi | pure |
-| `belle-epoque` | belle-epoque | ornate |
-| `petals` | belle-epoque | petals |
-| `belle-epoque-canvas` | belle-epoque-canvas | ornate |
-| `sunny-run` | sunny-course | hud-run |
-| `cave-run` | cave-course | hud-run |
-| `shelter-101` | phosphor | shelter |
-| `gilded-ruin` | gilded-ruin | sanctum |
-| `greenfield` | greenfield | trifold |
-| `inferno` | inferno | marine |
+| `expedition-33` | clair-obscur | expedition33 |
+| `gommage` | clair-obscur | gommage |
+| `canvas-33` | clair-obscur-canvas | expedition33 |
+| `mario-world` | mario-overworld | mario |
+| `mario-underground` | mario-underground | mario |
+| `vault-111` | pip-boy | vault |
+| `tarnished` | tarnished | grace |
+| `hyrule` | hyrule | triforce |
+| `doom` | doom | doomguy |
 | `spaceship-nord` | nord | spaceship |
 | `p10k-tokyo` | tokyo-night | p10k-lean |
 | `fish-gruvbox` | gruvbox | fish |

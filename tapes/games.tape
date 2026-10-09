@@ -1,4 +1,4 @@
-# Game-flavoured looks: heist, retro terminal, platformer, soulslike, roguelike, fighting game, sandbox, Belle Époque.
+# Game-inspired looks: Clair Obscur: Expedition 33, Super Mario, Fallout, Elden Ring, Zelda, DOOM, plus heist, farm sim, fighting game, roguelike, sandbox, cyberpunk.
 Output docs/games.gif
 
 Set Shell "nu"
@@ -23,19 +23,19 @@ Sleep 300ms
 Show
 
 Sleep 600ms
-Type "look belle-epoque"
+Type "look expedition-33"
 Enter
 Sleep 1.6s
-Type "look petals"
+Type "look gommage"
 Enter
 Sleep 1.6s
-Type "look cave-run"
+Type "look mario-underground"
 Enter
 Sleep 1.6s
-Type "look shelter-101"
+Type "look vault-111"
 Enter
 Sleep 1.6s
-Type "look gilded-ruin"
+Type "look tarnished"
 Enter
 Sleep 1.6s
 Type "^false"
@@ -71,10 +71,10 @@ Sleep 1.6s
 Type "look blocky"
 Enter
 Sleep 1.6s
-Type "look greenfield"
+Type "look hyrule"
 Enter
 Sleep 1.6s
-Type "look inferno"
+Type "look doom"
 Enter
 Sleep 1.6s
 Type "look cyberpunk"

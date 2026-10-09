@@ -389,8 +389,8 @@ const ZENBURN = {
     yellow: "#f0dfaf", green: "#7f9f7f", cyan: "#93e0e3", blue: "#8cd0d3"
     magenta: "#dc8cc3", purple: "#dc8cc3", bg: "#3f3f3f"
 }
-# Coin rush — vivid red / coin-gold / pipe-green / sky-blue on night bg.
-const COIN_RUSH = {
+# Super Mario — vivid red / coin-gold / luigi-green / sky-blue on night bg.
+const SUPER_MARIO = {
     fg: "#fdfdf5", gray: "#8a7f9a", red: "#ff3b30", orange: "#ff9c1a"
     yellow: "#ffd21e", green: "#3fca3f", cyan: "#49c6e8", blue: "#1aa5e6"
     magenta: "#ff77d4", purple: "#8a6be0", bg: "#0f0b24"
@@ -524,50 +524,50 @@ const EXTRA_THEMES = {
         yellow: "#e7c664", green: "#9ed072", cyan: "#76cce0", blue: "#7ec8e3"
         magenta: "#b39df3", purple: "#b39df3", bg: "#2c2e34"
     }
-    # Belle Époque night: ink-black blue, parchment, gold, crimson, pale cyan.
-    "belle-epoque": {
+    # Clair Obscur: Expedition 33 — Belle Époque night: ink-black blue, parchment, gold, Gommage crimson, Lumina cyan.
+    "clair-obscur": {
         fg: "#e9dfc7", gray: "#5d6178", red: "#d4343f", orange: "#d98a3d"
         yellow: "#e3b95a", green: "#8fae8b", cyan: "#7fd0e0", blue: "#4a78c2"
         magenta: "#c9708a", purple: "#8a6bbf", bg: "#0b0d17"
     }
-    # Belle Époque canvas: parchment ground, dark ink, oil-paint reds and golds (light).
-    "belle-epoque-canvas": {
+    # Clair Obscur — the Paintress's canvas: parchment ground, dark ink, oil-paint reds and golds (light).
+    "clair-obscur-canvas": {
         fg: "#2b2433", gray: "#8a7f72", red: "#a3212c", orange: "#b4601f"
         yellow: "#8c6a12", green: "#4d6b4a", cyan: "#2a6f80", blue: "#2a4f8f"
         magenta: "#8f3b58", purple: "#5e3f8c", bg: "#efe4cc"
     }
-    # Sunny platformer course — daytime sky, pipe green, plumber red (light).
-    "sunny-course": {
+    # Super Mario overworld — daytime sky, pipe green, Mario red (light).
+    "mario-overworld": {
         fg: "#14173d", gray: "#5b6a8a", red: "#c4161c", orange: "#b85c00"
         yellow: "#8a6a00", green: "#1c7a2a", cyan: "#00738f", blue: "#0b4fa8"
         magenta: "#a1307a", purple: "#5a3da8", bg: "#a6d8ff"
     }
-    # Cave platformer course — black cave, blue bricks, coin gold.
-    "cave-course": {
+    # Super Mario underground — black cave, blue bricks, coin gold.
+    "mario-underground": {
         fg: "#e8f0ff", gray: "#5a6a9a", red: "#ff4d3d", orange: "#f89b3a"
         yellow: "#fcd23a", green: "#3fd16a", cyan: "#3ee0e8", blue: "#3b7bff"
         magenta: "#ff6fc8", purple: "#8f7bff", bg: "#02030f"
     }
-    # Phosphor terminal — green monochrome (amber for alerts).
-    "phosphor": {
+    # Fallout Pip-Boy — phosphor green terminal (amber for alerts).
+    "pip-boy": {
         fg: "#46ff90", gray: "#1f8f55", red: "#ff8a3d", orange: "#c8ff4d"
         yellow: "#e6ff7a", green: "#3dff8a", cyan: "#6dffd0", blue: "#29d97a"
         magenta: "#9dffb0", purple: "#7fe0a0", bg: "#031208"
     }
-    # Gilded ruin — grace-gold on gloom.
-    "gilded-ruin": {
+    # Elden Ring — Site-of-Grace gold on the Lands Between's gloom.
+    "tarnished": {
         fg: "#e6d8b0", gray: "#6f654f", red: "#a63a2f", orange: "#c77f2e"
         yellow: "#e3b24a", green: "#7a8c52", cyan: "#7fa8a0", blue: "#5d7690"
         magenta: "#9c5f6e", purple: "#77608f", bg: "#0e0c09"
     }
-    # Greenfield — meadow green, crest gold, shrine blue.
-    "greenfield": {
+    # Zelda — Hyrule field green, Triforce gold, Sheikah blue.
+    "hyrule": {
         fg: "#e8e2c4", gray: "#5f7060", red: "#d6453a", orange: "#e08a2c"
         yellow: "#f2d04a", green: "#6fbf5b", cyan: "#5ed1c7", blue: "#4aa3d6"
         magenta: "#c06fa8", purple: "#8a78c8", bg: "#0f1a14"
     }
-    # Inferno — hellfire red/orange, armor green, rusted steel.
-    "inferno": {
+    # DOOM — hellfire red/orange, armor green, rusted steel.
+    "doom": {
         fg: "#d9cfc4", gray: "#6a5f58", red: "#e5251c", orange: "#ff7a1a"
         yellow: "#ffc21a", green: "#4aa83a", cyan: "#3aa5a0", blue: "#4a6ea8"
         magenta: "#b0407a", purple: "#7a4a9a", bg: "#120c0b"
@@ -789,28 +789,9 @@ def theme-get [name: string] {
     { color_config: $t.color_config, palette: (finish-palette $t.palette) }
 }
 
-# ── Legacy names ─────────────────────────────────────────────
-# Themes, styles and looks were renamed to generic names (no game trademarks
-# in the names). Old names still work: saved state, `theme X`, `look X`,
-# `.nuance` files … are mapped to the new ones on read.
-def legacy-names [] {
-    {
-        themes: { "super-mario": "coin-rush", "mario-overworld": "sunny-course", "mario-underground": "cave-course", "hyrule": "greenfield", "pip-boy": "phosphor", "doom": "inferno", "tarnished": "gilded-ruin", "clair-obscur": "belle-epoque", "clair-obscur-canvas": "belle-epoque-canvas" }
-        styles: { "mario": "hud-run", "triforce": "trifold", "vault": "shelter", "doomguy": "marine", "grace": "sanctum", "expedition33": "ornate", "gommage": "petals" }
-        looks: { "super-mario": "coin-rush", "mario-world": "sunny-run", "mario-underground": "cave-run", "hyrule": "greenfield", "vault-111": "shelter-101", "doom": "inferno", "tarnished": "gilded-ruin", "expedition-33": "belle-epoque", "gommage": "petals", "canvas-33": "belle-epoque-canvas" }
-    }
-}
-def resolve-legacy [kind: string, name: any, current: list<string>] {
-    if ($name | describe) != "string" or $name in $current { return $name }
-    legacy-names | get $kind | get -o $name | default $name
-}
-def resolve-theme [name: any] { resolve-legacy "themes" $name (theme-list) }
-def resolve-style [name: any] { resolve-legacy "styles" $name (prompt-styles) }
-def resolve-look [name: any] { resolve-legacy "looks" $name (presets | get name) }
-
 # ── Public API ────────────────────────────────────────────────
 def theme-list-builtin [] {
-    ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "coin-rush" "cyberpunk"]
+    ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "super-mario" "cyberpunk"]
 }
 
 # ── User themes (nuance import …) ─────────────────────────────
@@ -865,7 +846,7 @@ def theme-get-raw [name: string] {
         "github-light" => { color_config: (basic-color-config $GITHUB_LIGHT) palette: (basic-prompt-palette $GITHUB_LIGHT) }
         "oxocarbon"   => { color_config: (basic-color-config $OXOCARBON)   palette: (basic-prompt-palette $OXOCARBON) }
         "zenburn"     => { color_config: (basic-color-config $ZENBURN)     palette: (basic-prompt-palette $ZENBURN) }
-        "coin-rush" => { color_config: (basic-color-config $COIN_RUSH) palette: (basic-prompt-palette $COIN_RUSH) }
+        "super-mario" => { color_config: (basic-color-config $SUPER_MARIO) palette: (basic-prompt-palette $SUPER_MARIO) }
         "solarized"       => { color_config: (basic-color-config $SOLARIZED)       palette: (basic-prompt-palette $SOLARIZED) }
         "solarized-light" => { color_config: (basic-color-config $SOLARIZED_LIGHT) palette: (basic-prompt-palette $SOLARIZED_LIGHT) }
         _ if ($name in ($EXTRA_THEMES | columns)) => {
@@ -944,7 +925,7 @@ def nuance-cli-available [] { (which nuance | is-not-empty) }
 # is what makes the change visible immediately in the shell you're
 # actually sitting in, instead of only the next new one.
 def --env reload-theme [] {
-    let saved = (resolve-theme (try { open (theme-state-path) | str trim } catch { "auto" }))
+    let saved = (try { open (theme-state-path) | str trim } catch { "auto" })
     let name = (
         if ($saved in (theme-list)) { $saved }
         else {
@@ -956,7 +937,7 @@ def --env reload-theme [] {
 }
 
 def --env reload-style [] {
-    let saved = (resolve-style (try { open (prompt-style-path) | str trim } catch { "full" }))
+    let saved = (try { open (prompt-style-path) | str trim } catch { "full" })
     $env.PROMPT_STYLE = (if ($saved in (prompt-styles)) { $saved } else { "full" })
 }
 
@@ -988,7 +969,6 @@ def --env theme [name?: string] {
     } else { $name }
     if ($choice | is-empty) { return }
     if ($choice == "__sync__") { theme-sync; return }
-    let choice = (resolve-theme $choice)
     if ($choice not-in (theme-list)) {
         print $"(ansi red)unknown theme:(ansi reset) ($choice)"
         print $"available: (theme-list | str join ', ')"
@@ -1044,8 +1024,8 @@ def presets [] {
         { name: "bira",             theme: "nord",                  style: "bira" }
         { name: "af-magic",         theme: "dracula",               style: "af-magic" }
         { name: "cloud",            theme: "catppuccin-frappe",      style: "cloud" }
-        { name: "coin-rush",      theme: "coin-rush",           style: "hud-run" }
-        { name: "arcade",           theme: "coin-rush",           style: "arcade" }
+        { name: "super-mario",      theme: "super-mario",           style: "mario" }
+        { name: "arcade",           theme: "super-mario",           style: "arcade" }
         { name: "8bit",             theme: "gruvbox",               style: "8bit" }
         { name: "dracula-agnoster", theme: "dracula",               style: "agnoster" }
         { name: "tokyo-skyline",    theme: "tokyo-night",           style: "skyline" }
@@ -1062,15 +1042,15 @@ def presets [] {
         { name: "melange-arrow", theme: "melange", style: "arrow" }
         { name: "snazzy-rainbow", theme: "snazzy", style: "rainbow" }
         { name: "modus-pure", theme: "modus-vivendi", style: "pure" }
-        { name: "belle-epoque", theme: "belle-epoque", style: "ornate" }
-        { name: "petals", theme: "belle-epoque", style: "petals" }
-        { name: "belle-epoque-canvas", theme: "belle-epoque-canvas", style: "ornate" }
-        { name: "sunny-run", theme: "sunny-course", style: "hud-run" }
-        { name: "cave-run", theme: "cave-course", style: "hud-run" }
-        { name: "shelter-101", theme: "phosphor", style: "shelter" }
-        { name: "gilded-ruin", theme: "gilded-ruin", style: "sanctum" }
-        { name: "greenfield", theme: "greenfield", style: "trifold" }
-        { name: "inferno", theme: "inferno", style: "marine" }
+        { name: "expedition-33", theme: "clair-obscur", style: "expedition33" }
+        { name: "gommage", theme: "clair-obscur", style: "gommage" }
+        { name: "canvas-33", theme: "clair-obscur-canvas", style: "expedition33" }
+        { name: "mario-world", theme: "mario-overworld", style: "mario" }
+        { name: "mario-underground", theme: "mario-underground", style: "mario" }
+        { name: "vault-111", theme: "pip-boy", style: "vault" }
+        { name: "tarnished", theme: "tarnished", style: "grace" }
+        { name: "hyrule", theme: "hyrule", style: "triforce" }
+        { name: "doom", theme: "doom", style: "doomguy" }
         { name: "spaceship-nord", theme: "nord", style: "spaceship" }
         { name: "p10k-tokyo", theme: "tokyo-night", style: "p10k-lean" }
         { name: "fish-gruvbox", theme: "gruvbox", style: "fish" }
@@ -1138,7 +1118,6 @@ def --env look [name?: string] {
         if ($pick | is-empty) { "" } else { ($items | where label == $pick | get 0?).key? | default "" }
     } else { $name }
     if ($choice | is-empty) { return }
-    let choice = (resolve-look $choice)
     let row = ($ps | where name == $choice | get 0?)
     if ($row | is-empty) {
         print $"(ansi red)unknown look:(ansi reset) ($choice)"
@@ -1260,8 +1239,6 @@ def "nuance here" [theme?: string, style?: string] {
         if ($f | path exists) { rm -f $f; print $"(ansi green_bold)✓(ansi reset) removed ($f)" } else { print "nothing to clear" }
         return
     }
-    let theme = (resolve-theme $theme)
-    let style = (if $style == null { null } else { resolve-style $style })
     if $theme not-in (theme-list) { print $"(ansi red)unknown theme:(ansi reset) ($theme)"; return }
     if $style != null and $style not-in (prompt-styles) { print $"(ansi red)unknown style:(ansi reset) ($style)"; return }
     let cfg = ({ theme: $theme } | merge (if $style != null { { style: $style } } else { {} }))
@@ -1447,6 +1424,7 @@ def ghostty-map-name [low: string] {
     } else if ($low | str contains --ignore-case "oxocarbon") { "oxocarbon"
     } else if ($low | str contains --ignore-case "zenburn") { "zenburn"
     } else if (($low | str contains --ignore-case "solarized") and ($low | str contains --ignore-case "light")) { "solarized-light"
+    } else if ($low | str contains --ignore-case "mario") { "super-mario"
     } else if ($low | str contains --ignore-case "solarized") { "solarized"
     } else { null }
 }
@@ -1647,7 +1625,7 @@ def --env theme-sync [] { nuance sync theme }
 # Startup theme selection:
 #   • a pinned theme (a saved theme name) wins — keeps e.g. cyberpunk
 #   • "auto" / no pin / invalid → follow Ghostty, else fall back to gruvbox
-let saved_theme = (resolve-theme (try { open (theme-state-path) | str trim } catch { "auto" }))
+let saved_theme = (try { open (theme-state-path) | str trim } catch { "auto" })
 let start_theme = (
     if ($saved_theme in (theme-list)) { $saved_theme }
     else {
@@ -1700,12 +1678,12 @@ def style-defs [] {
         { name: "pills",        kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font rounded pills for user, path and git", shape: "pill", segs: ["user" "path" "git"] }
         { name: "pastel",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font powerline: user, path, git + toolchain (rust/node/python/go)", shape: "arrow", segs: ["user" "path" "git" "lang"] }
         { name: "devbar",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs", shape: "pill", segs: ["status" "ssh" "path" "git" "lang" "jobs"] }
-        { name: "ornate", kind: "inline", glyph: "❧",   tone: "modified", nerd: false, desc: "Belle Époque two-liner — gold ornaments `❖ ✦ ⚜`, `✶` marks for changed files" }
-        { name: "petals",      kind: "inline", ctx: true, glyph: "✿",   tone: "git",      nerd: false, desc: "a red `✿` petal falls for every changed file" }
-        { name: "shelter",        kind: "inline", right: "none", glyph: ">",   tone: "ok",       nerd: false, desc: "retro terminal — `[SHELTER-101] … HP 75/100 ☢`" }
-        { name: "sanctum",        kind: "inline", right: "none", ctx: true, glyph: "❖",   tone: "modified", nerd: false, desc: "HP / FP / stamina bars; FALLEN after a failed command" }
-        { name: "trifold",     kind: "inline", ctx: true, glyph: "▲",   tone: "modified", nerd: false, desc: "`▲` crest, `♥♥♡` hearts, `◆` gems" }
-        { name: "marine",      kind: "inline", right: "none", glyph: "»",   tone: "modified", nerd: false, desc: "FPS status bar — `HEALTH 75%  ARMOR 0  AMMO 3  ☺`" }
+        { name: "expedition33", kind: "inline", glyph: "❧",   tone: "modified", nerd: false, desc: "Clair Obscur: Expedition 33 — Belle Époque two-liner, gold ornaments, Gommage marks" }
+        { name: "gommage",      kind: "inline", ctx: true, glyph: "✿",   tone: "git",      nerd: false, desc: "Clair Obscur — a red `✿` petal falls for every changed file (Gommage)" }
+        { name: "vault",        kind: "inline", right: "none", glyph: ">",   tone: "ok",       nerd: false, desc: "Fallout Pip-Boy — `[VAULT-111] … HP 75/100 ☢`" }
+        { name: "grace",        kind: "inline", right: "none", ctx: true, glyph: "❖",   tone: "modified", nerd: false, desc: "Elden Ring — HP / FP / stamina bars; YOU DIED on a failed command" }
+        { name: "triforce",     kind: "inline", ctx: true, glyph: "▲",   tone: "modified", nerd: false, desc: "Zelda — `▲` Triforce, `♥♥♡` hearts, `◆` rupees" }
+        { name: "doomguy",      kind: "inline", right: "none", glyph: "»",   tone: "modified", nerd: false, desc: "DOOM status bar — `HEALTH 75%  ARMOR 0  AMMO 3  ☺`" }
         { name: "spaceship",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "spaceship — path on  branch [flags] via toolchain, two-line" }
         { name: "p10k-lean",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "powerlevel10k lean — path + colored git state, two-line" }
         { name: "fish",         kind: "inline", ctx: true, glyph: ">",   tone: "ok",       nerd: false, desc: "fish informative — user@host ~/path (branch|✚2…1)" }
@@ -1724,7 +1702,7 @@ def style-defs [] {
         { name: "skillcheck",   kind: "inline", glyph: "▸",   tone: "ok",       nerd: false, desc: "RPG skill checks — `[Perception: Success]`, `[Logic: Medium 3]`, `[Volition: Failure]`" }
         { name: "hotbar",       kind: "inline", glyph: "⚒",   tone: "ok",       nerd: false, desc: "sandbox HUD — `♥♥♥♥♡ ▕▮▮▯▯▯▏ ~/dir ⚒ main`" }
         { name: "boxed",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "two-line box-drawing with a ● clean/dirty marker" }
-        { name: "hud-run",        kind: "inline", right: "none", glyph: "▶",   tone: "ok",       nerd: false, desc: "NES-style HUD: `PLAYER ◉×03  WORLD 3-4  ~/dir  ⚑ branch`, then a brick ground with the `◆` hero" }
+        { name: "mario",        kind: "inline", right: "none", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line NES HUD: `MARIO ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲▼✖⬢★`, then a brick ground with the `◆` hero" }
         { name: "arcade",       kind: "inline", glyph: "▮▮",  tone: "modified", nerd: false, desc: "retro all-caps ▶ 1UP score line" }
         { name: "8bit",         kind: "inline", glyph: "█",   tone: "modified", nerd: false, desc: "pixel ░▒▓ gradient separators" }
         { name: "cyberpunk",    kind: "inline", glyph: "▶▶▶", tone: "git",      nerd: false, desc: "two-line neon box-drawing with ⚡ and ▶▶▶" }
@@ -1748,7 +1726,7 @@ def escape-esc [s: string] { $s | str replace --all (char --unicode "1b") '\u001
 $env.PROMPT_NERD = true
 
 # Load saved layout (default: full).
-let saved_style = (resolve-style (try { open (prompt-style-path) | str trim } catch { "full" }))
+let saved_style = (try { open (prompt-style-path) | str trim } catch { "full" })
 $env.PROMPT_STYLE = (if ($saved_style in (prompt-styles)) { $saved_style } else { "full" })
 
 # Render one style name into a labelled preview line: "name  →  <live prompt>".
@@ -1786,7 +1764,6 @@ def --env prompt-style [name?: string] {
         }
     } else { $name }
     if ($choice | is-empty) { return }
-    let choice = (resolve-style $choice)
     if ($choice not-in (prompt-styles)) {
         print $"(ansi red)unknown style:(ansi reset) ($choice)"
         print $"available: (prompt-styles | str join ', ')"
@@ -2314,9 +2291,9 @@ def render-left [] {
             let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
             $"(ansi {fg: $p.ahead attr: b})☁(ansi reset)  (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
         }
-        "hud-run" => {
+        "mario" => {
             # NES HUD on top, brick ground with the hero running on it below:
-            #   PLAYER ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲2 ▼1 ✖1 ⬢1
+            #   MARIO ◉×03  WORLD 3-4  ~/dir  ⚑ branch ▲2 ▼1 ✖1 ⬢1
             #   ▀▄▀▄▀▄◆▶
             # ◉ coins = changed files · ⚑ flag = branch · ▲▼ = pipes (ahead/behind)
             # ✖ = Goomba (conflict) · ⬢ = mushroom (stash) · ★ = starman (clean)
@@ -2326,7 +2303,7 @@ def render-left [] {
             let coin_txt = ($coins | into string | fill --alignment right --character "0" --width 2)
             let depth = (($full_dir | path split | length) | into string)
             let world = $"($depth)-($coins + 1)"
-            let hud_name = $"(ansi {fg: $p.err attr: b})PLAYER($rs)"
+            let hud_name = $"(ansi {fg: $p.err attr: b})MARIO($rs)"
             let hud_coin = $"(ansi {fg: $p.modified attr: b})◉×($coin_txt)($rs)"
             let hud_world = $"(ansi {fg: $p.sep})WORLD(ansi {fg: $p.path attr: b}) ($world)($rs)"
             let dir = $"(ansi {fg: $p.path attr: b})($full_dir)($rs)"
@@ -2367,9 +2344,9 @@ def render-left [] {
             let l2 = $"(ansi {fg: $p.sep})╰─(ansi reset)"
             $"($l1)\n($l2)"
         }
-        "ornate" => {
-            # Belle Époque — gold ornaments.
-            #   ❖ staged · ✶ modified · ✧ untracked · ✖ conflict · ❦ stash · ✦ clean
+        "expedition33" => {
+            # Clair Obscur: Expedition 33 — gold Belle Époque ornaments.
+            #   ❖ staged · ✶ modified (Gommage) · ✧ untracked · ✖ conflict · ❦ stash · ✦ clean
             let g = (git-info)
             let rs = (ansi reset)
             let gold = (ansi {fg: $p.user})
@@ -2388,7 +2365,7 @@ def render-left [] {
             let l1 = $"($gold)╭─❖ (ansi {fg: $p.user attr: b})(prompt-user)($gold) ✦ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
             $"($l1)\n($gold)╰─($rs)"
         }
-        "petals" => {
+        "gommage" => {
             # Every changed file is a petal on the wind.
             let g = (git-info)
             let rs = (ansi reset)
@@ -2399,18 +2376,18 @@ def render-left [] {
             } else { "" }
             $"(ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
         }
-        "shelter" => {
-            # Retro terminal: HP drops with every change, ☢ for conflicts.
+        "vault" => {
+            # Fallout Pip-Boy: HP drops with every change, ☢ for conflicts.
             let g = (git-info)
             let rs = (ansi reset)
             let hp = (100 - ([((dirty-count $g) * 5) 95] | math min))
             let hpc = (if $hp >= 70 { $p.ok } else if $hp >= 40 { $p.modified } else { $p.err })
             let rad = (if $g.present and $g.conflict > 0 { $" (ansi {fg: $p.err attr: b})☢($g.conflict)($rs)" } else { "" })
             let br = (if $g.present { $" (ansi {fg: $p.git})[(git-head $g)]($rs)" } else { "" })
-            $"(ansi {fg: $p.ok attr: b})[SHELTER-101]($rs) (ansi {fg: $p.user})(prompt-user)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs) (ansi {fg: $hpc attr: b})HP ($hp)/100($rs)($rad)($br)"
+            $"(ansi {fg: $p.ok attr: b})[VAULT-111]($rs) (ansi {fg: $p.user})(prompt-user)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs) (ansi {fg: $hpc attr: b})HP ($hp)/100($rs)($rad)($br)"
         }
-        "sanctum" => {
-            # ♥ HP · ✦ FP · ⚡ stamina. A failed command is FALLEN.
+        "grace" => {
+            # Elden Ring: ♥ HP · ✦ FP · ⚡ stamina. A failed command is YOU DIED.
             let g = (git-info)
             let rs = (ansi reset)
             let n = (dirty-count $g)
@@ -2418,10 +2395,10 @@ def render-left [] {
             let gold = (ansi {fg: $p.user})
             let git_txt = (if $g.present { $" ($gold)❖ (ansi {fg: $p.git attr: b})(git-head $g)($rs)" } else { "" })
             let bars = $"(ansi {fg: $p.err})♥($rs)(bar5 (5 - ([$n 4] | math min)) $p.err) (ansi {fg: $p.path})✦($rs)(bar5 5 $p.path) (ansi {fg: $p.ok})⚡($rs)(bar5 (if $died { 1 } else { 5 }) $p.ok)"
-            let dead = (if $died { $"(ansi {fg: $p.err attr: b})FALLEN($rs) " } else { "" })
+            let dead = (if $died { $"(ansi {fg: $p.err attr: b})YOU DIED($rs) " } else { "" })
             $"($dead)($gold)✧ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)  ($bars)"
         }
-        "trifold" => {
+        "triforce" => {
             let g = (git-info)
             let rs = (ansi reset)
             let empty = ([(((dirty-count $g) + 1) // 2) 3] | math min)
@@ -2430,7 +2407,7 @@ def render-left [] {
             let git_txt = (if $g.present { $"  (ansi {fg: $p.git attr: b})✦ (git-head $g)($rs)" } else { "" })
             $"(ansi {fg: $p.user attr: b})▲($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)  ($hearts)($rupees)"
         }
-        "marine" => {
+        "doomguy" => {
             let g = (git-info)
             let rs = (ansi reset)
             let n = (dirty-count $g)
@@ -2665,11 +2642,11 @@ def dir-override [] {
     let cfg = (try { open --raw $f | from toml } catch { null })
     if $cfg == null { return null }
     mut e = {}
-    let t = (resolve-theme ($cfg.theme? | default ""))
+    let t = ($cfg.theme? | default "")
     if ($t | describe) == "string" and $t in (theme-list) {
         $e = ($e | insert THEME_PALETTE (theme-get $t).palette | insert THEME_NAME $t)
     }
-    let st = (resolve-style ($cfg.style? | default ""))
+    let st = ($cfg.style? | default "")
     if ($st | describe) == "string" and $st in (prompt-styles) { $e = ($e | insert PROMPT_STYLE $st) }
     if ($e | is-empty) { null } else { $e }
 }

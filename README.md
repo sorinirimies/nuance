@@ -109,22 +109,20 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 - **Styles** are prompt *layouts* (minimal, powerline, two-line, oh-my-zsh
   classics like `robbyrussell`/`ys`/`steeef`/`fino`, framework clones
   `spaceship`/`p10k-lean`/`fish`, …), independent of the colors.
-- **Game-flavoured looks** turn git state into a game mechanic, with original
-  genre-inspired palettes and generic names:
-  `hud-run` (NES-style HUD + brick ground), `shelter` (retro terminal HP/☢),
-  `sanctum` (HP/FP/stamina bars, FALLEN on failure), `heist` (ALERT/ALL CLEAR),
-  `vessel` (mask health), `portals`, `bonfire`, `farmstead`, `versus`
-  (fighting-game health bar), `boons`, `climb`, `skillcheck`, `hotbar`,
-  `marine` (FPS status bar), `trifold`, `ornate`/`petals` (Belle Époque), and
-  `cyberpunk`. Try `look phantom`, `look ember`, `look cave-run`, …
+- **Game-inspired looks** turn git state into a game mechanic:
+  Clair Obscur: Expedition 33 (`expedition33`, `gommage`), Super Mario (`mario`
+  HUD), Fallout (`vault`), Elden Ring (`grace`), Zelda (`triforce`), DOOM
+  (`doomguy`), plus `heist`, `vessel`, `portals`, `bonfire`, `farmstead`,
+  `versus`, `boons`, `climb`, `skillcheck`, `hotbar` and `cyberpunk`. Try
+  `look expedition-33`, `look mario-underground`, `look phantom`, `look ember`, …
 
   ![game looks](docs/games.gif)
 
-  > **Trademarks.** nuance is not affiliated with or endorsed by any game
-  > publisher or studio. The game-flavoured themes and styles are original,
-  > genre-inspired designs (colors, Unicode glyphs, git-state mappings); they
-  > use no game names, logos, art or text. Earlier names (`mario`, `hyrule`,
-  > `doom`, …) were renamed — old names still resolve to the new ones.
+  > **Trademarks.** nuance is an unofficial fan project and is not affiliated
+  > with or endorsed by any game publisher or studio. Game names are
+  > trademarks of their respective owners. The themes and styles are original
+  > palettes and layouts (colors, Unicode glyphs, git-state mappings); no game
+  > art, logos, fonts or text assets are used.
 - A **look** pins a theme + style together and overrides Ghostty auto-follow.
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
