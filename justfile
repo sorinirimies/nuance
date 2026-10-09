@@ -378,6 +378,10 @@ sync-all-gitea:
         echo "✅ All Gitea instances force-synced with GitHub."
     fi
 
+# Regenerate GALLERY.md from the theme/style/look registries
+gallery:
+    nu scripts/gen_gallery.nu
+
 # ── Demos (VHS tapes → docs/*.gif) ────────────────────────────────────────────
 
 # Regenerate one demo GIF (usage: just tape welcome)

@@ -2,8 +2,8 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
-![themes](https://img.shields.io/badge/themes-59-cba6f7)
-![styles](https://img.shields.io/badge/prompt%20styles-40-89b4fa)
+![themes](https://img.shields.io/badge/themes-69-cba6f7)
+![styles](https://img.shields.io/badge/prompt%20styles-50-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 ![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
@@ -11,7 +11,7 @@
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
-single drop-in file. Switch between **59 color themes** and **40 prompt
+single drop-in file. Switch between **69 color themes** and **50 prompt
 styles**, combine them into named **looks**, and optionally let the shell
 **follow your terminal's theme** automatically. macOS · Linux · WSL.
 
@@ -108,15 +108,23 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 - **Themes** recolor syntax highlighting, tables **and** the prompt.
 - **Styles** are prompt *layouts* (minimal, powerline, two-line, oh-my-zsh
   classics like `robbyrussell`/`ys`/`steeef`/`fino`, framework clones
-  `spaceship`/`p10k-lean`/`fish`, and **game-inspired** ones — Clair Obscur:
-  Expedition 33 (`expedition33`, `gommage`), Super Mario (`mario` HUD), Fallout
-  (`vault`), Elden Ring (`grace`), Zelda (`triforce`), DOOM (`doomguy`),
-  `cyberpunk`, …), independent of the colors.
-- **Game looks** pair a style with a matching theme: `expedition-33`,
-  `gommage`, `canvas-33`, `mario-world`, `mario-underground`, `vault-111`,
-  `tarnished`, `hyrule`, `doom`, `cyberpunk`.
+  `spaceship`/`p10k-lean`/`fish`, …), independent of the colors.
+- **Game-flavoured looks** turn git state into a game mechanic, with original
+  genre-inspired palettes and generic names:
+  `hud-run` (NES-style HUD + brick ground), `shelter` (retro terminal HP/☢),
+  `sanctum` (HP/FP/stamina bars, FALLEN on failure), `heist` (ALERT/ALL CLEAR),
+  `vessel` (mask health), `portals`, `bonfire`, `farmstead`, `versus`
+  (fighting-game health bar), `boons`, `climb`, `skillcheck`, `hotbar`,
+  `marine` (FPS status bar), `trifold`, `ornate`/`petals` (Belle Époque), and
+  `cyberpunk`. Try `look phantom`, `look ember`, `look cave-run`, …
 
   ![game looks](docs/games.gif)
+
+  > **Trademarks.** nuance is not affiliated with or endorsed by any game
+  > publisher or studio. The game-flavoured themes and styles are original,
+  > genre-inspired designs (colors, Unicode glyphs, git-state mappings); they
+  > use no game names, logos, art or text. Earlier names (`mario`, `hyrule`,
+  > `doom`, …) were renamed — old names still resolve to the new ones.
 - A **look** pins a theme + style together and overrides Ghostty auto-follow.
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
@@ -202,7 +210,7 @@ macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `cargo test` (the `nuance` CLI/TUI, 48 unit + integration tests):
 
 ```sh
-nu test.nu       # ✓ all checks passed — 59 themes, 40 styles, 62 looks
+nu test.nu       # ✓ all checks passed — 69 themes, 50 styles, 72 looks
 cargo test       # ✓ 48 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 

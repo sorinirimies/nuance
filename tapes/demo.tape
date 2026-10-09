@@ -47,6 +47,6 @@ Sleep 2.2s
 Type "look dracula-agnoster"
 Enter
 Sleep 2.2s
-Type "look super-mario"
+Type "look coin-rush"
 Enter
 Sleep 2.4s

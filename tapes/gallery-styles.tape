@@ -8,7 +8,7 @@ Set Shell "nu"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 16
 Set Width 1100
-Set Height 3300
+Set Height 4200
 Set Padding 22
 Set LineHeight 1.2
 

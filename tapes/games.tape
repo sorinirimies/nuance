@@ -1,11 +1,11 @@
-# Game-inspired looks: Clair Obscur: Expedition 33, Super Mario (underground), Fallout, Elden Ring, Zelda, DOOM, Cyberpunk.
+# Game-flavoured looks: heist, retro terminal, platformer, soulslike, roguelike, fighting game, sandbox, Belle Époque.
 Output docs/games.gif
 
 Set Shell "nu"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 20
 Set Width 1200
-Set Height 900
+Set Height 1100
 Set Padding 24
 Set LineHeight 1.2
 Set TypingSpeed 45ms
@@ -23,30 +23,61 @@ Sleep 300ms
 Show
 
 Sleep 600ms
-Type "look expedition-33"
+Type "look belle-epoque"
 Enter
-Sleep 2s
-Type "look gommage"
+Sleep 1.6s
+Type "look petals"
 Enter
-Sleep 2s
-Type "look mario-underground"
+Sleep 1.6s
+Type "look cave-run"
 Enter
-Sleep 2s
-Type "look vault-111"
+Sleep 1.6s
+Type "look shelter-101"
 Enter
-Sleep 2s
-Type "look tarnished"
+Sleep 1.6s
+Type "look gilded-ruin"
 Enter
-Sleep 1.5s
+Sleep 1.6s
 Type "^false"
 Enter
-Sleep 2s
-Type "look hyrule"
+Sleep 1.6s
+Type "look phantom"
 Enter
-Sleep 2s
-Type "look doom"
+Sleep 1.6s
+Type "look cavern"
 Enter
-Sleep 2s
+Sleep 1.6s
+Type "look test-chamber"
+Enter
+Sleep 1.6s
+Type "look ember"
+Enter
+Sleep 1.6s
+Type "look farmstead"
+Enter
+Sleep 1.6s
+Type "look dojo"
+Enter
+Sleep 1.6s
+Type "look underworld"
+Enter
+Sleep 1.6s
+Type "look summit"
+Enter
+Sleep 1.6s
+Type "look rain-noir"
+Enter
+Sleep 1.6s
+Type "look blocky"
+Enter
+Sleep 1.6s
+Type "look greenfield"
+Enter
+Sleep 1.6s
+Type "look inferno"
+Enter
+Sleep 1.6s
 Type "look cyberpunk"
 Enter
-Sleep 2.4s
+Sleep 1.6s
+Sleep 1s

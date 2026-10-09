@@ -44,7 +44,7 @@ if ((prompt-styles | length) != (prompt-styles | uniq | length)) { $errors = ($e
 
 # ── theme quality: valid hex, readable text, AA ink on every segment ──
 # (color math lives in nushell-prompt.nu: contrast / ink-on / finish-palette)
-let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi clair-obscur-canvas mario-overworld]
+let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi belle-epoque-canvas sunny-course meadow]
 for t in (theme-list) {
     let p = (theme-get $t).palette
     for k in ($p | columns | where {|c| $c not-in [light inks] }) {
@@ -81,7 +81,7 @@ if ((hex-rgb "#0b0221") != [11.0 2.0 33.0]) { $errors = ($errors | append "hex-r
 let sdefs = (style-defs)
 for d in $sdefs {
     if ($d.kind not-in [inline blocks]) { $errors = ($errors | append $"style '($d.name)': bad kind '($d.kind)'") }
-    if ($d.tone not-in [ok git modified]) { $errors = ($errors | append $"style '($d.name)': bad tone '($d.tone)'") }
+    if ($d.tone not-in (palette-text-roles)) { $errors = ($errors | append $"style '($d.name)': bad tone '($d.tone)'") }
     if ($d.desc | is-empty) { $errors = ($errors | append $"style '($d.name)': empty desc") }
     if $d.kind == "blocks" {
         if ($d.shape not-in [arrow slant pill]) { $errors = ($errors | append $"style '($d.name)': bad shape '($d.shape)'") }
@@ -246,24 +246,43 @@ if ((bar5 3 "#ffffff" | ansi strip) != "▰▰▰▱▱") { $errors = ($errors |
 if ((bar5 9 "#ffffff" | ansi strip) != "▰▰▰▰▰") or ((bar5 -2 "#ffffff" | ansi strip) != "▱▱▱▱▱") { $errors = ($errors | append "bar5 should clamp to 0..5") }
 if ((repeat-str "✿" 3) != "✿✿✿") or ((repeat-str "x" 0) != "") { $errors = ($errors | append "repeat-str wrong") }
 $env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
-theme-apply "clair-obscur"
+theme-apply "belle-epoque"
 let game_checks = [
-    ["mario" $dirty_g 0 ["MARIO" "◉×06" "WORLD" "⚑ main" "▲1" "▀▄▀▄▀▄◆"]]
-    ["mario" $clean_g 0 ["◉×00" "★"]]
-    ["gommage" $dirty_g 0 ["✿✿✿✿✿✿" "main"]]
-    ["gommage" $clean_g 0 ["✧"]]
-    ["vault" $dirty_g 0 ["[VAULT-111]" "HP 70/100" "[main]"]]
-    ["grace" $dirty_g 0 ["♥▰▱▱▱▱" "✦▰▰▰▰▰"]]
-    ["grace" $clean_g 1 ["YOU DIED" "⚡▰▱▱▱▱"]]
-    ["triforce" $dirty_g 0 ["▲" "♡♡♡" "◆3"]]
-    ["doomguy" $dirty_g 0 ["HEALTH 70%" "ARMOR 1" "AMMO 1" "☺"]]
-    ["expedition33" $dirty_g 0 ["╭─❖" "⚜" "main" "⇡1" "❖1" "✶2" "✧3"]]
-    ["expedition33" $clean_g 0 ["✦"]]
+    ["hud-run" $dirty_g 0 ["PLAYER" "◉×06" "WORLD" "⚑ main" "▲1" "▀▄▀▄▀▄◆"]]
+    ["hud-run" $clean_g 0 ["◉×00" "★"]]
+    ["petals" $dirty_g 0 ["✿✿✿✿✿✿" "main"]]
+    ["petals" $clean_g 0 ["✧"]]
+    ["shelter" $dirty_g 0 ["[SHELTER-101]" "HP 70/100" "[main]"]]
+    ["sanctum" $dirty_g 0 ["♥▰▱▱▱▱" "✦▰▰▰▰▰"]]
+    ["sanctum" $clean_g 1 ["FALLEN" "⚡▰▱▱▱▱"]]
+    ["trifold" $dirty_g 0 ["▲" "♡♡♡" "◆3"]]
+    ["marine" $dirty_g 0 ["HEALTH 70%" "ARMOR 1" "AMMO 1" "☺"]]
+    ["ornate" $dirty_g 0 ["╭─❖" "⚜" "main" "⇡1" "❖1" "✶2" "✧3"]]
+    ["ornate" $clean_g 0 ["✦"]]
     ["spaceship" $dirty_g 0 ["on" "main" "[+!?⇡]"]]
     ["p10k-lean" $dirty_g 0 ["main" "⇡1" "+1" "!2" "?3"]]
     ["fish" $dirty_g 0 ["sorin@nuance" "(main|" "●1" "✚2" "…3"]]
     ["steeef" $dirty_g 0 ["sorin at nuance in" "[main●●●]"]]
     ["fino" $dirty_g 0 ["╭─" "git:main" "✗" "╰─"]]
+    ["heist" $dirty_g 0 ["◢" "main" "◥" "ALERT ×6"]]
+    ["heist" $clean_g 0 ["ALL CLEAR"]]
+    ["vessel" $dirty_g 0 ["●○○○○" "◐1" "◈3"]]
+    ["portals" $dirty_g 0 ["◖" "◗" "⇄" "◖main◗" "Δ3"]]
+    ["portals" $clean_g 1 ["TEST FAILED"]]
+    ["bonfire" $clean_g 0 ["♨" "lit"]]
+    ["bonfire" $dirty_g 0 ["embers ×6" "⟨main⟩"]]
+    ["bonfire" $clean_g 1 ["FALLEN"]]
+    ["farmstead" $dirty_g 0 ["☀" "⌂" "⚘ main" "❀"]]
+    ["versus" $dirty_g 0 ["1P" "▰▰▱▱▱▱▱▱" "main"]]
+    ["versus" $clean_g 0 ["FIGHT!"]]
+    ["versus" $clean_g 1 ["K.O."]]
+    ["boons" $dirty_g 0 ["❦" "♆ main" "✦×1" "⚔×2" "◇×3"]]
+    ["climb" $dirty_g 0 ["⛰" "»·" "✿×3"]]
+    ["climb" $clean_g 0 ["»»"]]
+    ["skillcheck" $clean_g 0 ["[Perception: Success]"]]
+    ["skillcheck" $dirty_g 0 ["[Logic: Medium 6]"]]
+    ["skillcheck" $clean_g 1 ["[Volition: Failure]"]]
+    ["hotbar" $dirty_g 0 ["♥♥♡♡♡" "▕▮▮▮▮▮▏" "⚒ main"]]
 ]
 for c in $game_checks {
     let out = (with-env { NUANCE_GIT: $c.1, LAST_EXIT_CODE: $c.2, PROMPT_STYLE: $c.0 } { left-prompt-core | ansi strip })
@@ -272,7 +291,7 @@ for c in $game_checks {
     }
 }
 # styles that promise two lines really have two (and the ground/rule on the second)
-for s in [mario expedition33 fino spaceship p10k-lean steeef powerline2l pills2l] {
+for s in [hud-run ornate fino spaceship p10k-lean steeef powerline2l pills2l] {
     let raw = (with-env { NUANCE_GIT: $clean_g, PROMPT_STYLE: $s } { left-prompt-core })
     if not ($raw | str contains (char nl)) { $errors = ($errors | append $"style '($s)' should render on 2 lines") }
 }
@@ -412,13 +431,34 @@ let nf_on = (with-env { PROMPT_NERD: true, PROMPT_STYLE: "powerline", NUANCE_GIT
 if not ($nf_off | str contains ">") or ($nf_off | str contains (char --unicode e0b0)) { $errors = ($errors | append $"powerline should use '>' without Nerd Font: ($nf_off)") }
 if not ($nf_pill | str contains "(") or not ($nf_pill | str contains ")") { $errors = ($errors | append "capsule should use parentheses without Nerd Font") }
 if not ($nf_on | str contains (char --unicode e0b0)) { $errors = ($errors | append "powerline lost its glyph with Nerd Font on") }
-for s in [mario vault grace doomguy] {
+for s in [hud-run shelter sanctum marine] {
     let r = (with-env { PROMPT_STYLE: $s } { right-prompt-core })
     if $r != "" { $errors = ($errors | append $"style '($s)' should hide the right prompt") }
 }
 let r_full = (with-env { PROMPT_STYLE: "full" } { right-prompt-core })
 if ($r_full | is-empty) { $errors = ($errors | append "right prompt vanished for `full`") }
 hide-env PROMPT_USER PROMPT_HOST
+
+# ── legacy names (renamed to generic names) still resolve ──
+let lg = (legacy-names)
+for k in [[themes (theme-list)] [styles (prompt-styles)] [looks (presets | get name)]] {
+    let m = ($lg | get $k.0)
+    for old in ($m | columns) {
+        let target = ($m | get $old)
+        if ($target not-in $k.1) { $errors = ($errors | append $"legacy ($k.0) alias '($old)' -> '($target)' points at nothing") }
+    }
+}
+let rz = [(resolve-theme "doom") (resolve-theme "gruvbox") (resolve-style "mario") (resolve-style "full") (resolve-look "vault-111") (resolve-theme 5)]
+if ($rz != ["inferno" "gruvbox" "hud-run" "full" "shelter-101" 5]) { $errors = ($errors | append $"resolve-* wrong: ($rz | to nuon)") }
+
+# ── generated docs stay in sync with the registries ──
+let gal = (^nu scripts/gen_gallery.nu --check | complete)
+if $gal.exit_code != 0 { $errors = ($errors | append "GALLERY.md is stale — run: nu scripts/gen_gallery.nu (just gallery)") }
+let readme = (open --raw README.md)
+let counts = $"((theme-list-builtin) ++ ($EXTRA_THEMES | columns) | length) themes, (prompt-styles | length) styles, (presets | length) looks"
+if not ($readme | str contains $counts) { $errors = ($errors | append $"README.md count line is stale — expected '($counts)'") }
+if not ($readme | str contains $"themes-((theme-list-builtin) ++ ($EXTRA_THEMES | columns) | length)") { $errors = ($errors | append "README themes badge is stale") }
+if not ($readme | str contains $"prompt%20styles-(prompt-styles | length)") { $errors = ($errors | append "README styles badge is stale") }
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
@@ -502,7 +542,7 @@ for row in $l_items {
 }
 
 # ── ghostty keyword mapping ──
-let gmap = { "Gruvbox Dark Hard": "gruvbox", "Catppuccin Mocha": "catppuccin-mocha", "Dracula": "dracula", "Tokyo Night": "tokyo-night", "Nord": "nord", "Solarized Light": "solarized-light", "Ayu Mirage": "ayu-mirage", "Super Mario": "super-mario" }
+let gmap = { "Gruvbox Dark Hard": "gruvbox", "Catppuccin Mocha": "catppuccin-mocha", "Dracula": "dracula", "Tokyo Night": "tokyo-night", "Nord": "nord", "Solarized Light": "solarized-light", "Ayu Mirage": "ayu-mirage" }
 for row in ($gmap | transpose k v) {
     let got = (ghostty-map-name $row.k)
     if ($got != $row.v) { $errors = ($errors | append $"ghostty map '($row.k)' -> '($got)' (want '($row.v)')") }
