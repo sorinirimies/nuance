@@ -334,24 +334,24 @@ cd ..
 # ahead / behind via a bare remote and two clones
 cd $gtmp
 ^git init -q --bare -b main remote.git
-^git clone -q remote.git c1 e> /dev/null
-^git clone -q remote.git c2 e> /dev/null
+^git clone -q remote.git c1 e>| ignore
+^git clone -q remote.git c2 e>| ignore
 cd c1
 "x\n" | save x
 ^git add x
 ^git ...$gid commit -q -m x
-^git push -q origin main e> /dev/null
+^git push -q origin main e>| ignore
 cd ../c2
-^git pull -q origin main e> /dev/null
+^git pull -q origin main e>| ignore
 "y\n" | save y
 ^git add y
 ^git ...$gid commit -q -m y
-^git push -q origin main e> /dev/null
+^git push -q origin main e>| ignore
 cd ../c1
 "z\n" | save z
 ^git add z
 ^git ...$gid commit -q -m z
-^git fetch -q origin e> /dev/null
+^git fetch -q origin e>| ignore
 let g_div = (git-info)
 # merge conflict
 cd $gtmp
@@ -367,11 +367,11 @@ cd mc
 ^git checkout -q main
 "main\n" | save -f f
 ^git ...$gid commit -q -am main
-^git ...$gid merge other e> /dev/null | ignore
+^git ...$gid merge other e>| ignore | ignore
 let g_conflict = (git-info)
 # linked worktree: .git is a *file*
 cd ../repo
-^git ...$gid worktree add -q ../wt -b wtb e> /dev/null
+^git ...$gid worktree add -q ../wt -b wtb e>| ignore
 cd ../wt
 let g_wt = (git-info)
 let wt_gd = (git-dir-find)
