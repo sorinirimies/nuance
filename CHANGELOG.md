@@ -5,6 +5,15 @@ All notable changes to this project are documented here — generated with
 
 ## [unreleased]
 
+### 💼 Other
+
+- Test: portable stderr redirects (Windows)
+- Feat: 72 themes (everforest-light, ayu-light, duskfox); fix import-here demo
+
+- three new themes: everforest-light, ayu-light (light), duskfox; THIRD_PARTY credits updated; GALLERY/README counts, golden snapshots and the theme gallery GIF regenerated
+- import-here.tape: no more wrapped commands (compact base style), shows the imported theme recoloring syntax highlighting, and resets the pinned theme reliably (it used to leave current-theme.txt pinned to the imported theme)
+## [0.6.0] - 2026-10-09
+
 ### 🐛 Bug Fixes
 
 - Fix(docs): re-record doctor/picker/welcome/transient/modules GIFs; doctor shows ~ paths
@@ -14,6 +23,12 @@ All notable changes to this project are documented here — generated with
 - welcome.tape/transient.tape no longer print the hostname / absolute working directory
 - modules.tape: shorter comments so they don't wrap
 - tests for tilde() and for doctor not leaking the home directory
+- Fix: external commands that are not installed no longer raise (os-dark-mode on Linux, git/whoami); $nu.home-dir instead of $env.HOME
+
+- new ext helper (like ^cmd | complete, but exit_code 127 when the command is missing); used for git, defaults, gsettings, pmset, whoami and toolchain probes
+- nuance appearance / os-dark-mode crashed on Linux (found by GitHub CI)
+- ghostty config lookup uses $nu.home-dir (Windows has no $env.HOME)
+- tests for ext and os-dark-mode
 
 ### 💼 Other
 
@@ -47,6 +62,11 @@ All notable changes to this project are documented here — generated with
 - golden snapshots (tests/golden/prompts.txt, scripts/golden.nu) of ~1300 rendered prompts; many new tests; state/cache dirs overridable (NUANCE_CONFIG_DIR/CACHE_DIR) so tests never touch real config
 - CI: nushell nightly job (allowed to fail) on Gitea + GitHub, experimental Windows job on GitHub
 - THIRD_PARTY.md credits, README docs, new tapes/GIFs (toolbox; doctor/modules re-recorded)
+- Chore: bump version to 0.6.0
+
+### 📚 Documentation
+
+- Docs: regenerate CHANGELOG
 
 ### ◀️ Revert
 
