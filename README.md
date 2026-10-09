@@ -2,7 +2,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-blue)
 ![nushell](https://img.shields.io/badge/nushell-%E2%89%A50.101-4E9A06)
-![themes](https://img.shields.io/badge/themes-69-cba6f7)
+![themes](https://img.shields.io/badge/themes-72-cba6f7)
 ![styles](https://img.shields.io/badge/prompt%20styles-50-89b4fa)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
@@ -11,7 +11,7 @@
 
 **nuance** *(nu + nuance — the subtle differences between colors)* is a
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
-single drop-in file. Switch between **69 color themes** and **50 prompt
+single drop-in file. Switch between **72 color themes** and **50 prompt
 styles**, combine them into named **looks**, and optionally let the shell
 **follow your terminal's theme** automatically. macOS · Linux · WSL.
 
@@ -248,7 +248,7 @@ Nushell **0.111**, **0.114** and nightly) and `cargo test` (the `nuance` CLI/TUI
 57 unit + integration tests):
 
 ```sh
-nu test.nu       # ✓ all checks passed — 69 themes, 50 styles, 72 looks
+nu test.nu       # ✓ all checks passed — 72 themes, 50 styles, 72 looks
 cargo test       # ✓ 57 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 

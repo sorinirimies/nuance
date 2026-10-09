@@ -18,18 +18,18 @@ prompt; no code from these projects is included.
 | `nord` | [nordtheme/nord](https://github.com/nordtheme/nord) | Arctic Ice Studio / Sven Greb | MIT |
 | `dracula` | [dracula/dracula-theme](https://github.com/dracula/dracula-theme) | Zeno Rocha et al. | MIT |
 | `rose-pine`, `-moon`, `-dawn` | [rose-pine/rose-pine-theme](https://github.com/rose-pine/rose-pine-theme) | Rosé Pine | MIT |
-| `everforest` | [sainnhe/everforest](https://github.com/sainnhe/everforest) | sainnhe | MIT |
+| `everforest`, `everforest-light` | [sainnhe/everforest](https://github.com/sainnhe/everforest) | sainnhe | MIT |
 | `sonokai` | [sainnhe/sonokai](https://github.com/sainnhe/sonokai) | sainnhe | MIT |
 | `kanagawa`, `-dragon`, `-lotus` | [rebelot/kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) | rebelot | MIT |
 | `onedark`, `one-light` | [joshdick/onedark.vim](https://github.com/joshdick/onedark.vim) / Atom One | Joshua Dick / GitHub | MIT |
 | `monokai` | Monokai | Wimer Hazenberg | inspired by (no explicit licence) |
-| `ayu-dark`, `ayu-mirage` | [ayu-theme/ayu-colors](https://github.com/ayu-theme/ayu-colors) | Ike Ku | MIT |
+| `ayu-dark`, `ayu-mirage`, `ayu-light` | [ayu-theme/ayu-colors](https://github.com/ayu-theme/ayu-colors) | Ike Ku | MIT |
 | `night-owl` | [sdras/night-owl-vscode-theme](https://github.com/sdras/night-owl-vscode-theme) | Sarah Drasner | MIT |
 | `github-dark`, `github-light` | [primer/github-vscode-theme](https://github.com/primer/github-vscode-theme) | GitHub | MIT |
 | `oxocarbon` | IBM Carbon design system / [nyoom-engineering/oxocarbon](https://github.com/nyoom-engineering/oxocarbon) | IBM / nyoom-engineering | inspired by |
 | `zenburn` | Zenburn | Jani Nurminen | inspired by |
 | `solarized`, `solarized-light` | [altercation/solarized](https://github.com/altercation/solarized) | Ethan Schoonover | MIT |
-| `nightfox`, `dawnfox` | [EdenEast/nightfox.nvim](https://github.com/EdenEast/nightfox.nvim) | EdenEast | MIT |
+| `nightfox`, `dawnfox`, `duskfox` | [EdenEast/nightfox.nvim](https://github.com/EdenEast/nightfox.nvim) | EdenEast | MIT |
 | `flexoki`, `flexoki-light` | [kepano/flexoki](https://github.com/kepano/flexoki) | Steph Ango | MIT |
 | `melange` | [savq/melange-nvim](https://github.com/savq/melange-nvim) | savq | MIT |
 | `nightfly` | [bluz71/vim-nightfly-colors](https://github.com/bluz71/vim-nightfly-colors) | bluz71 | MIT |

@@ -19,7 +19,7 @@ Type "$env.PROMPT_HOST = 'nuance'"
 Enter
 Type "$env.NUANCE_THEMES_DIR = (mktemp -d)"
 Enter
-Type "$env.PROMPT_STYLE = 'powerline'; mkdir /tmp/nuance-prod; clear"
+Type "$env.PROMPT_STYLE = 'compact'; mkdir /tmp/nuance-prod; clear"
 Enter
 Sleep 300ms
 Show
@@ -33,7 +33,10 @@ Enter
 Sleep 1.4s
 Type "nuance theme ef-hard"
 Enter
-Sleep 1.6s
+Sleep 1s
+Type "ls src | first 3 | select name size"
+Enter
+Sleep 1.8s
 Type "# pin a look to one directory tree"
 Enter
 Sleep 600ms
@@ -51,6 +54,6 @@ Enter
 Sleep 2s
 
 Hide
-Type "nuance sync; rm -rf /tmp/nuance-prod"
+Type "'auto' | save -f (theme-state-path); rm -rf /tmp/nuance-prod"
 Enter
-Sleep 500ms
+Sleep 1s

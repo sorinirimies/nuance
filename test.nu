@@ -46,7 +46,7 @@ if ((prompt-styles | length) != (prompt-styles | uniq | length)) { $errors = ($e
 
 # ── theme quality: valid hex, readable text, AA ink on every segment ──
 # (color math lives in nushell-prompt.nu: contrast / ink-on / finish-palette)
-let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi clair-obscur-canvas mario-overworld meadow]
+let light_themes = [catppuccin-latte rose-pine-dawn github-light solarized-light tokyo-night-day gruvbox-light dawnfox kanagawa-lotus flexoki-light one-light papercolor-light modus-operandi clair-obscur-canvas mario-overworld meadow everforest-light ayu-light]
 for t in (theme-list) {
     let p = (theme-get $t).palette
     for k in ($p | columns | where {|c| $c not-in [light inks] }) {

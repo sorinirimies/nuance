@@ -3,7 +3,7 @@
 Every **theme**, **style** and **look** at a glance.
 Usage & commands are in the [main README](README.md#theming--styling).
 
-- [Themes (69)](#themes-69)
+- [Themes (72)](#themes-72)
 - [Prompt styles (50)](#prompt-styles-50)
 - [Looks (72)](#looks-72)
 
@@ -12,7 +12,7 @@ Usage & commands are in the [main README](README.md#theming--styling).
 
 ---
 
-## Themes (69)
+## Themes (72)
 
 Every theme's palette at a glance:
 
@@ -30,7 +30,7 @@ Light themes on a light terminal background:
 
 ![light themes](docs/light.gif)
 
-**Dark (54):**
+**Dark (55):**
 `gruvbox` · `catppuccin-mocha` · `catppuccin-macchiato` ·
 `catppuccin-frappe` · `tokyo-night` · `nord` · `dracula` · `rose-pine` ·
 `rose-pine-moon` · `everforest` · `kanagawa` · `onedark` · `monokai` ·
@@ -42,13 +42,15 @@ Light themes on a light terminal background:
 `synthwave-84` · `cobalt2` · `modus-vivendi` · `horizon` · `sonokai` ·
 `clair-obscur` · `mario-underground` · `pip-boy` · `tarnished` ·
 `hyrule` · `doom` · `phantom` · `cavern-hush` · `test-chamber` ·
-`ember` · `dojo` · `underworld` · `summit` · `rain-noir` · `blocky`
+`ember` · `dojo` · `underworld` · `summit` · `rain-noir` · `blocky` ·
+`duskfox`
 
-**Light (15):**
+**Light (17):**
 `catppuccin-latte` · `rose-pine-dawn` · `github-light` ·
 `solarized-light` · `tokyo-night-day` · `gruvbox-light` · `dawnfox` ·
 `kanagawa-lotus` · `flexoki-light` · `one-light` · `papercolor-light` ·
-`modus-operandi` · `clair-obscur-canvas` · `mario-overworld` · `meadow`
+`modus-operandi` · `clair-obscur-canvas` · `mario-overworld` · `meadow` ·
+`everforest-light` · `ayu-light`
 
 **Yours:** anything you `nuance import` (Ghostty, kitty, Alacritty, base16).
 

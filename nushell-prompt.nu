@@ -635,6 +635,24 @@ const EXTRA_THEMES = {
         yellow: "#f3d04a", green: "#5fb23a", cyan: "#4de3dc", blue: "#3d62d6"
         magenta: "#d26ad6", purple: "#9a5fd0", bg: "#12100d"
     }
+    # Everforest light (medium): warm paper, forest greens (light).
+    "everforest-light": {
+        fg: "#5c6a72", gray: "#a6b0a0", red: "#f85552", orange: "#f57d26"
+        yellow: "#dfa000", green: "#8da101", cyan: "#35a77c", blue: "#3a94c5"
+        magenta: "#df69ba", purple: "#df69ba", bg: "#fdf6e3"
+    }
+    # Ayu light: clean white, amber and sky accents (light).
+    "ayu-light": {
+        fg: "#5c6166", gray: "#adaeb1", red: "#e65050", orange: "#fa8d3e"
+        yellow: "#f2ae49", green: "#86b300", cyan: "#4cbf99", blue: "#399ee6"
+        magenta: "#a37acc", purple: "#a37acc", bg: "#fafafa"
+    }
+    # Duskfox: Nightfox's twilight variant — deep violet with soft pastels.
+    "duskfox": {
+        fg: "#e0def4", gray: "#6e6a86", red: "#eb6f92", orange: "#ea9a97"
+        yellow: "#f6c177", green: "#a3be8c", cyan: "#9ccfd8", blue: "#569fba"
+        magenta: "#c4a7e7", purple: "#a58ec7", bg: "#232136"
+    }
 }
 
 # Generic color_config from a simple palette (fg/gray/red/orange/yellow/
