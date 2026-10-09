@@ -439,6 +439,12 @@ let r_full = (with-env { PROMPT_STYLE: "full" } { right-prompt-core })
 if ($r_full | is-empty) { $errors = ($errors | append "right prompt vanished for `full`") }
 hide-env PROMPT_USER PROMPT_HOST
 
+# ── doctor shows ~ instead of the home directory ──
+if ((tilde "/not/home/x") != "/not/home/x") or ((tilde $nu.home-dir) != "~") { $errors = ($errors | append "tilde() wrong outside/at the home directory") }
+if ((tilde ($nu.home-dir | path join ".config" "x")) != "~/.config/x") { $errors = ($errors | append "tilde() should shorten the home directory") }
+let doc_text = (nuance doctor | get detail | str join " ")
+if ($doc_text | str contains $nu.home-dir) { $errors = ($errors | append "doctor output leaks the absolute home directory") }
+
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
 if ((prompt-host) | is-empty) { $errors = ($errors | append "prompt-host returned empty") }

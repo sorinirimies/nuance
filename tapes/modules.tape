@@ -31,13 +31,13 @@ Sleep 2.4s
 Type "nuance modules enable status lang jobs"
 Enter
 Sleep 1s
-Type "# toolchain shows inside a project"
+Type "# toolchain shows here"
 Enter
 Sleep 1.2s
 Type "^false"
 Enter
 Sleep 1.4s
-Type "# exit code only when a command fails"
+Type "# exit code on failure"
 Enter
 Sleep 1s
 Type "cd ~"

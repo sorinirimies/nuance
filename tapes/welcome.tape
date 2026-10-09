@@ -31,6 +31,6 @@ Sleep 2s
 Type "ls | first 4 | select name size modified"
 Enter
 Sleep 2.5s
-Type "sys host | select hostname uptime"
+Type "sys mem | select total free"
 Enter
 Sleep 2.5s

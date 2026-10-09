@@ -1277,12 +1277,20 @@ def --env "nuance configure" [] {
 }
 
 # Doctor row for the autoload file: is nuance installed where Nushell loads it?
+# Show a path with the home directory as ~ (macOS reports /tmp and /private/tmp
+# for the same place, so compare without a leading /private).
+def tilde [path: string] {
+    let strip = {|x| $x | str replace --regex '^/private(/|$)' '$1' }
+    let h = (do $strip $nu.home-dir)
+    let q = (do $strip $path)
+    if ($q == $h) { "~" } else if ($q | str starts-with $"($h)/") { $"~($q | str substring ($h | str length)..)" } else { $path }
+}
 def doctor-autoload [path: string] {
     if ($path | path exists) {
         let note = (if (($path | path type) == "symlink") { " (symlink to a git checkout)" } else { "" })
-        { check: "autoload file", status: "ok", detail: $"($path)($note)" }
+        { check: "autoload file", status: "ok", detail: $"(tilde $path)($note)" }
     } else {
-        { check: "autoload file", status: "warn", detail: $"($path) is missing - run `nuance sync`, which installs it, or the installer" }
+        { check: "autoload file", status: "warn", detail: $"(tilde $path) is missing - run `nuance sync`, which installs it, or the installer" }
     }
 }
 
@@ -1302,13 +1310,13 @@ def "nuance doctor" [] {
         (doctor-autoload $autoload)
         { check: "git", status: (if (which git | is-empty) { "warn" } else { "ok" }), detail: (if (which git | is-empty) { "git not found — git segment disabled" } else { "found" }) }
         { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }
-        { check: "theme", status: "info", detail: $"($env.THEME_NAME? | default 'unknown') \(($saved_theme))" }
+        { check: "theme", status: "info", detail: $"($env.THEME_NAME? | default 'unknown') \((if $saved_theme == 'auto' { 'auto-follow' } else { 'pinned' }))" }
         { check: "prompt style", status: "info", detail: ($env.PROMPT_STYLE? | default "full") }
         { check: "transient prompt", status: "info", detail: ($env.NUANCE_TRANSIENT? | default "off") }
         { check: "modules", status: "info", detail: (if (enabled-modules | is-empty) { "none enabled" } else { enabled-modules | str join ", " }) }
         { check: "terminal theme", status: "info", detail: (if ($ghostty | is-empty) { "no Ghostty theme detected" } else { $"Ghostty → ($ghostty)" }) }
-        { check: "imported themes", status: "info", detail: $"(user-theme-names | length) in (user-themes-dir)" }
-        { check: ".nuance override", status: "info", detail: (if $local == null { "none for this directory" } else { $local }) }
+        { check: "imported themes", status: "info", detail: $"(user-theme-names | length) in (tilde (user-themes-dir))" }
+        { check: ".nuance override", status: "info", detail: (if $local == null { "none for this directory" } else { tilde $local }) }
     ]
 }
 

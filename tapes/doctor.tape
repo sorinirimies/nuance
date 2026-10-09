@@ -1,23 +1,24 @@
 # nuance doctor: check nu version, truecolor, Nerd Font, install and current state.
+# Recorded in an isolated HOME, so no real paths or personal state end up in the GIF.
 Output docs/doctor.gif
 
-Set Shell "nu"
+Set Shell "bash"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 20
 Set Width 1200
-Set TypingSpeed 55ms
+Set Height 720
 Set Padding 24
 Set LineHeight 1.2
-Set Height 780
+Set TypingSpeed 55ms
 
 Hide
-Type "$env.PROMPT_COMMAND = { || create_left_prompt }"
+Type "export HOME=/tmp/nuance-doctor-home XDG_CONFIG_HOME=/tmp/nuance-doctor-home/.config && rm -rf $HOME && mkdir -p $HOME"
 Enter
-Type "$env.PROMPT_USER = 'sorin'"
+Type "export PROMPT_USER=sorin PROMPT_HOST=nuance PS1='> '"
 Enter
-Type "$env.PROMPT_HOST = 'nuance'"
+Type "export PATH=$PWD/target/release:$PATH"
 Enter
-Type "theme-apply nord; $env.PROMPT_STYLE = 'full'"
+Type "nuance theme nord >/dev/null && nuance prompt-style powerline >/dev/null && nuance modules enable lang >/dev/null"
 Enter
 Type "clear"
 Enter
@@ -27,4 +28,4 @@ Show
 Sleep 600ms
 Type "nuance doctor"
 Enter
-Sleep 4s
+Sleep 4.5s

@@ -27,7 +27,7 @@ Show
 Sleep 800ms
 Type "prompt-style"
 Enter
-Sleep 900ms
+Sleep 2s
 Type "rainbow"
 Sleep 1.2s
 Enter
@@ -35,12 +35,8 @@ Sleep 1.6s
 
 Type "theme"
 Enter
-Sleep 900ms
+Sleep 3s
 Type "monokai"
-Sleep 1.2s
-Enter
-Sleep 900ms
-Type "rainbow"
 Sleep 1.2s
 Enter
 Sleep 1.8s

@@ -46,7 +46,7 @@ Sleep 1.2s
 Type "date now"
 Enter
 Sleep 1.2s
-Type "pwd"
+Type "ls src | length"
 Enter
 Sleep 2s
 
