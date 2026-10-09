@@ -804,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "nuance-cli"
-version = "0.4.2"
+version = "0.6.0"
 dependencies = [
  "clap",
  "clap_complete",
