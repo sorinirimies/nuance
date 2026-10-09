@@ -452,7 +452,7 @@ let rz = [(resolve-theme "doom") (resolve-theme "gruvbox") (resolve-style "mario
 if ($rz != ["inferno" "gruvbox" "hud-run" "full" "shelter-101" 5]) { $errors = ($errors | append $"resolve-* wrong: ($rz | to nuon)") }
 
 # ── generated docs stay in sync with the registries ──
-let gal = (^nu scripts/gen_gallery.nu --check | complete)
+let gal = (^$nu.current-exe scripts/gen_gallery.nu --check | complete)
 if $gal.exit_code != 0 { $errors = ($errors | append "GALLERY.md is stale — run: nu scripts/gen_gallery.nu (just gallery)") }
 let readme = (open --raw README.md)
 let counts = $"((theme-list-builtin) ++ ($EXTRA_THEMES | columns) | length) themes, (prompt-styles | length) styles, (presets | length) looks"
