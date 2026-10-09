@@ -1610,10 +1610,10 @@ def style-defs [] {
         { name: "devbar",       kind: "blocks", glyph: "❯",   tone: "ok",       nerd: true,  desc: "Nerd-Font pills: exit code, ssh, path, git, toolchain, jobs", shape: "pill", segs: ["status" "ssh" "path" "git" "lang" "jobs"] }
         { name: "expedition33", kind: "inline", glyph: "❧",   tone: "modified", nerd: false, desc: "Clair Obscur: Expedition 33 — Belle Époque two-liner, gold ornaments, Gommage marks" }
         { name: "gommage",      kind: "inline", ctx: true, glyph: "✿",   tone: "git",      nerd: false, desc: "Clair Obscur — red petals fall for every change (Gommage)" }
-        { name: "vault",        kind: "inline", glyph: ">",   tone: "ok",       nerd: false, desc: "Fallout Pip-Boy — [VAULT-111] with HP and ☢ rads" }
-        { name: "grace",        kind: "inline", ctx: true, glyph: "❖",   tone: "modified", nerd: false, desc: "Elden Ring — HP/FP/stamina bars; YOU DIED on a failed command" }
+        { name: "vault",        kind: "inline", right: "none", glyph: ">",   tone: "ok",       nerd: false, desc: "Fallout Pip-Boy — [VAULT-111] with HP and ☢ rads" }
+        { name: "grace",        kind: "inline", right: "none", ctx: true, glyph: "❖",   tone: "modified", nerd: false, desc: "Elden Ring — HP/FP/stamina bars; YOU DIED on a failed command" }
         { name: "triforce",     kind: "inline", ctx: true, glyph: "▲",   tone: "modified", nerd: false, desc: "Zelda — ▲ Triforce, ♥ hearts, ◆ rupees" }
-        { name: "doomguy",      kind: "inline", glyph: "»",   tone: "modified", nerd: false, desc: "DOOM status bar — HEALTH / ARMOR / AMMO and the Doomguy face" }
+        { name: "doomguy",      kind: "inline", right: "none", glyph: "»",   tone: "modified", nerd: false, desc: "DOOM status bar — HEALTH / ARMOR / AMMO and the Doomguy face" }
         { name: "spaceship",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "spaceship — path on  branch [flags] via toolchain, two-line" }
         { name: "p10k-lean",    kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "powerlevel10k lean — path + colored git state, two-line" }
         { name: "fish",         kind: "inline", ctx: true, glyph: ">",   tone: "ok",       nerd: false, desc: "fish informative — user@host ~/path (branch|✚2…1)" }
@@ -1622,7 +1622,7 @@ def style-defs [] {
         { name: "powerline2l",  kind: "blocks", nl: true, glyph: "❯", tone: "ok", nerd: true, desc: "Nerd-Font powerline segments, prompt on its own line", shape: "arrow", segs: ["user" "path" "git" "lang"] }
         { name: "pills2l",      kind: "blocks", nl: true, glyph: "❯", tone: "ok", nerd: true, desc: "Nerd-Font pills with the prompt on its own line", shape: "pill", segs: ["status" "path" "git" "lang"] }
         { name: "boxed",        kind: "inline", glyph: "❯",   tone: "ok",       nerd: false, desc: "two-line box-drawing with a ● clean/dirty marker" }
-        { name: "mario",        kind: "inline", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line 🍄 overworld — ▣ ◆ ⚑ ◉ ▄" }
+        { name: "mario",        kind: "inline", right: "none", glyph: "▶",   tone: "ok",       nerd: false, desc: "two-line 🍄 overworld — ▣ ◆ ⚑ ◉ ▄" }
         { name: "arcade",       kind: "inline", glyph: "▮▮",  tone: "modified", nerd: false, desc: "retro all-caps ▶ 1UP score line" }
         { name: "8bit",         kind: "inline", glyph: "█",   tone: "modified", nerd: false, desc: "pixel ░▒▓ gradient separators" }
         { name: "cyberpunk",    kind: "inline", glyph: "▶▶▶", tone: "git",      nerd: false, desc: "two-line neon box-drawing with ⚡ and ▶▶▶" }
@@ -1694,46 +1694,111 @@ def --env prompt-style [name?: string] {
     print $"(ansi green_bold)✓(ansi reset) prompt style set to (ansi attr_bold)($choice)(ansi reset)"
 }
 
-# Gather git repo state as data (reused by every prompt style).
-# `--light` only resolves the branch/HEAD (skips status + stash: much faster).
+# Find the git dir by walking up from $PWD (no process spawn). Handles
+# worktrees/submodules where `.git` is a file ("gitdir: <path>"). Returns the
+# resolved git dir, or null outside a repository.
+def git-dir-find [start?: string] {
+    mut dir = ($start | default $env.PWD)
+    for _ in 0..40 {
+        let g = ($dir | path join ".git")
+        if ($g | path exists) {
+            if (($g | path type) == "dir") { return $g }
+            let target = (try { open --raw $g | lines | first | str replace "gitdir:" "" | str trim } catch { "" })
+            if ($target | is-empty) { return null }
+            return (if (($target | str starts-with "/") or ($target =~ '^[A-Za-z]:')) { $target } else { $dir | path join $target | path expand })
+        }
+        let up = ($dir | path dirname)
+        if $up == $dir { break }
+        $dir = $up
+    }
+    null
+}
+
+# In-progress operation ("REBASE 2/5", "MERGING", "CHERRY-PICKING",
+# "REVERTING", "BISECTING", "AM 1/3") — read from the git dir, no process.
+def git-op-state [gd: string] {
+    let rd = {|f| try { open --raw ($gd | path join $f) | str trim } catch { "" } }
+    if ($gd | path join "rebase-merge" | path exists) {
+        let n = (do $rd "rebase-merge/msgnum")
+        let t = (do $rd "rebase-merge/end")
+        return (if ($n | is-not-empty) and ($t | is-not-empty) { $"REBASE ($n)/($t)" } else { "REBASE" })
+    }
+    if ($gd | path join "rebase-apply" | path exists) {
+        let n = (do $rd "rebase-apply/next")
+        let t = (do $rd "rebase-apply/last")
+        let kind = (if ($gd | path join "rebase-apply" "rebasing" | path exists) { "REBASE" } else { "AM" })
+        return (if ($n | is-not-empty) and ($t | is-not-empty) { $"($kind) ($n)/($t)" } else { $kind })
+    }
+    if ($gd | path join "MERGE_HEAD" | path exists) { return "MERGING" }
+    if ($gd | path join "CHERRY_PICK_HEAD" | path exists) { return "CHERRY-PICKING" }
+    if ($gd | path join "REVERT_HEAD" | path exists) { return "REVERTING" }
+    if ($gd | path join "BISECT_LOG" | path exists) { return "BISECTING" }
+    ""
+}
+
+# Branch name plus any in-progress operation:  main|REBASE 2/5
+def git-head [g: record] {
+    let st = ($g.state? | default "")
+    if ($st | is-empty) { $g.head } else { $"($g.head)|($st)" }
+}
+
+# Gather git repo state as data (reused by every prompt style). One
+# `git status --porcelain=v2` call does the whole job (branch, ahead/behind,
+# stash count, every changed path) instead of five separate git processes.
+# `--light` only resolves the branch/HEAD (cheaper: skips the status scan).
 def git-info [--light] {
     # Pickers render dozens of previews in one go: they resolve git once and
     # park the record in $env.NUANCE_GIT so every preview reuses it.
     if ($env.NUANCE_GIT? | default null) != null { return $env.NUANCE_GIT }
-    let inside = (do -i { git rev-parse --is-inside-work-tree } | complete)
-    if $inside.exit_code != 0 { return { present: false } }
-    let branch = (do -i { git branch --show-current } | complete | get stdout | str trim)
-    let head = if ($branch | is-not-empty) { $branch } else {
-        let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
-        if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
-    }
+    let gd = (git-dir-find)
+    if $gd == null { return { present: false } }
+    let state = (git-op-state $gd)
+
     if $light {
-        return { present: true, head: $head, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
-    }
-    let lines = (do -i { git status --porcelain=v1 --branch } | complete | get stdout | lines)
-    let bl = ($lines | where {|l| $l | str starts-with "##" } | get 0? | default "")
-    let ahead  = ($bl | parse -r 'ahead (?<n>\d+)'  | get n.0? | default "0" | into int)
-    let behind = ($bl | parse -r 'behind (?<n>\d+)' | get n.0? | default "0" | into int)
-    mut staged = 0; mut modified = 0; mut untracked = 0; mut conflict = 0
-    for line in ($lines | where {|l| not ($l | str starts-with "##") }) {
-        let cs = ($line | split chars)
-        let x = ($cs | get 0? | default " ")
-        let y = ($cs | get 1? | default " ")
-        if ($x == "?" and $y == "?") { $untracked = $untracked + 1
-        } else if ($x == "U" or $y == "U" or ($x == "A" and $y == "A") or ($x == "D" and $y == "D")) { $conflict = $conflict + 1
-        } else {
-            if $x != " " { $staged = $staged + 1 }
-            if $y != " " { $modified = $modified + 1 }
+        let b = (do -i { git symbolic-ref --short -q HEAD } | complete | get stdout | str trim)
+        let head = if ($b | is-not-empty) { $b } else {
+            let sha = (do -i { git rev-parse --short HEAD } | complete | get stdout | str trim)
+            if ($sha | is-empty) { "(no commits)" } else { $"@($sha)" }
         }
+        return { present: true, head: $head, state: $state, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
     }
-    let stash = (do -i { git stash list } | complete | get stdout | lines | where {|l| $l | is-not-empty } | length)
+
+    # --show-stash needs git >= 2.35; fall back to counting the stash list.
+    mut r = (do -i { git status --porcelain=v2 --branch --show-stash } | complete)
+    mut stash_from_list = false
+    if $r.exit_code != 0 {
+        $r = (do -i { git status --porcelain=v2 --branch } | complete)
+        $stash_from_list = true
+    }
+    if $r.exit_code != 0 { return { present: false } }
+
+    let lines = ($r.stdout | lines)
+    let hdr = {|key| $lines | where {|l| $l | str starts-with $"# ($key) " } | get 0? | default "" | str replace $"# ($key) " "" }
+    let oid = (do $hdr "branch.oid")
+    let bhead = (do $hdr "branch.head")
+    let head = if $bhead == "(detached)" { $"@($oid | str substring 0..6)" } else if ($bhead | is-empty) { "(no commits)" } else { $bhead }
+    let ab = (do $hdr "branch.ab")
+    let ahead = ($ab | parse -r '\+(?<n>\d+)' | get n.0? | default "0" | into int)
+    let behind = ($ab | parse -r '-(?<n>\d+)' | get n.0? | default "0" | into int)
+    let stash = if $stash_from_list {
+        (do -i { git stash list } | complete | get stdout | lines | where {|l| $l | is-not-empty } | length)
+    } else {
+        (do $hdr "stash" | default "0" | if ($in | is-empty) { 0 } else { $in | into int })
+    }
+
+    let entries = ($lines | where {|l| not ($l | str starts-with "#") })
+    let untracked = ($entries | where {|l| $l | str starts-with "? " } | length)
+    let conflict = ($entries | where {|l| $l | str starts-with "u " } | length)
+    let tracked = ($entries | where {|l| ($l | str starts-with "1 ") or ($l | str starts-with "2 ") })
+    let staged = ($tracked | where {|l| ($l | str substring 2..2) != "." } | length)
+    let modified = ($tracked | where {|l| ($l | str substring 3..3) != "." } | length)
     let clean = (($ahead + $behind + $staged + $modified + $untracked + $conflict + $stash) == 0)
-    { present: true, head: $head, ahead: $ahead, behind: $behind, staged: $staged, modified: $modified, untracked: $untracked, conflict: $conflict, stash: $stash, clean: $clean }
+    { present: true, head: $head, state: $state, ahead: $ahead, behind: $behind, staged: $staged, modified: $modified, untracked: $untracked, conflict: $conflict, stash: $stash, clean: $clean }
 }
 
 # Plain-text branch + status summary (no color), e.g. "main ⇡2 +1 !3".
 def git-plain [g: record] {
-    mut t = $g.head
+    mut t = (git-head $g)
     if $g.ahead    > 0 { $t = $t + $" ⇡($g.ahead)" }
     if $g.behind   > 0 { $t = $t + $" ⇣($g.behind)" }
     if $g.conflict > 0 { $t = $t + $" =($g.conflict)" }
@@ -1748,7 +1813,7 @@ def git-plain [g: record] {
 def git-omz [g: record] {
     let p = $env.THEME_PALETTE
     let dirty = if $g.clean { "" } else { $" (ansi {fg: $p.err attr: b})✗(ansi reset)" }
-    $"(ansi {fg: $p.git})git:\((ansi {fg: $p.behind attr: b})($g.head)(ansi {fg: $p.git})\)(ansi reset)($dirty)"
+    $"(ansi {fg: $p.git})git:\((ansi {fg: $p.behind attr: b})(git-head $g)(ansi {fg: $p.git})\)(ansi reset)($dirty)"
 }
 
 # Rich git segment: branch/commit + divergence + working-tree status.
@@ -1758,7 +1823,7 @@ def git-segment [--counts] {
     if not $g.present { return "" }
 
     let icon = if ($env.PROMPT_NERD? | default true) { " " } else { "" }
-    let base = $"(ansi {fg: $p.sep})on (ansi {fg: $p.git attr: b})($icon)($g.head)(ansi reset)"
+    let base = $"(ansi {fg: $p.sep})on (ansi {fg: $p.git attr: b})($icon)(git-head $g)(ansi reset)"
     if not $counts { return $" ($base)" }
 
     mut parts = []
@@ -1924,7 +1989,7 @@ def block-seg [id: string, g: record] {
     match $id {
         "user" => { text: (prompt-user), bg: $p.user, ink: (do $ink "user") }
         "host" => { text: (prompt-host), bg: $p.host, ink: (do $ink "host") }
-        "path" => { text: ($env.PWD | str replace $nu.home-dir "~"), bg: $p.path, ink: (do $ink "path") }
+        "path" => { text: (display-dir), bg: $p.path, ink: (do $ink "path") }
         "git"  => (if $g.present { { text: (git-plain $g), bg: $p.git, ink: (do $ink "git") } } else { null })
         _ => {
             # context module (status, jobs, ssh, lang, …) — null when it has nothing to say
@@ -1942,14 +2007,15 @@ def render-blocks [shape: string, ids: list<string>] {
     let g = (git-info)
     let ids = ($ids | append (enabled-modules | where {|m| $m not-in $ids }))
     let segs = ($ids | each {|id| block-seg $id $g } | compact)
+    let nerd = ($env.PROMPT_NERD? | default true)
     if $shape == "pill" {
-        let lc = (char --unicode e0b6)
-        let rc = (char --unicode e0b4)
+        let lc = (if $nerd { char --unicode e0b6 } else { "(" })
+        let rc = (if $nerd { char --unicode e0b4 } else { ")" })
         return ($segs | each {|s|
             $"(ansi {fg: $s.bg})($lc)(ansi {bg: $s.bg fg: $s.ink attr: b}) ($s.text) (ansi reset)(ansi {fg: $s.bg})($rc)(ansi reset)"
         } | str join "  ")
     }
-    let sep = (if $shape == "slant" { char --unicode e0b8 } else { char --unicode e0b0 })
+    let sep = (if not $nerd { if $shape == "slant" { "/" } else { ">" } } else if $shape == "slant" { char --unicode e0b8 } else { char --unicode e0b0 })
     mut out = ""
     mut prev = ""
     for s in $segs {
@@ -1962,6 +2028,38 @@ def render-blocks [shape: string, ids: list<string>] {
 
 # Left prompt: the style's layout, plus the user's enabled context modules
 # as a tail for single-line styles (blocks styles fold them in as segments).
+# ── Directory display ────────────────────────────────────────
+# Long paths are shortened to fit: parent components collapse to their first
+# letter (fish-style) from the left, keeping the last two intact; if that is
+# still too long it falls back to …/parent/dir. The budget is a third of the
+# terminal width (min 24); override with $env.PROMPT_DIR_MAX (0 = never shorten).
+def shorten-path [path: string, budget: int] {
+    if $budget <= 0 or ($path | str length) <= $budget { return $path }
+    let parts = ($path | path split)
+    let n = ($parts | length)
+    if $n <= 2 { return $path }
+    let rooted = (($parts | first) == "/")
+    let join = {|ps| if $rooted { "/" + ($ps | skip 1 | str join "/") } else { $ps | str join "/" } }
+    mut cur = $parts
+    if $n > 3 {
+        for i in 1..($n - 3) {
+            let c = ($cur | get $i)
+            let short = (if ($c | str starts-with ".") { $c | str substring 0..1 } else { $c | str substring 0..0 })
+            $cur = ($cur | update $i $short)
+            let out = (do $join $cur)
+            if ($out | str length) <= $budget { return $out }
+        }
+    }
+    $"…/($parts | last 2 | str join '/')"
+}
+def dir-budget [] {
+    let o = ($env.PROMPT_DIR_MAX? | default null)
+    if $o != null { return ($o | into int) }
+    let cols = (try { (term size).columns } catch { 80 })
+    ([($cols // 3) 24] | math max)
+}
+def display-dir [] { shorten-path ($env.PWD | str replace $nu.home-dir "~") (dir-budget) }
+
 # ── helpers for the game / framework styles ──────────────────
 # Number of changed paths (conflicts count triple — they hurt the most).
 def dirty-count [g: record] {
@@ -2005,7 +2103,7 @@ def left-prompt-core [] {
 def render-left [] {
     let p = $env.THEME_PALETTE
     let style = ($env.PROMPT_STYLE? | default "full")
-    let full_dir = ($env.PWD | str replace $nu.home-dir "~")
+    let full_dir = (display-dir)
 
     # Data-driven styles: render straight from the registry row.
     let def = (style-def $style)
@@ -2031,7 +2129,7 @@ def render-left [] {
             let g = (git-info)
             let git_txt = if $g.present {
                 let dirty = if $g.clean { "" } else { $"(ansi {fg: $p.modified})*(ansi reset)" }
-                $" (ansi {fg: $p.sep})($g.head)($dirty)(ansi reset)"
+                $" (ansi {fg: $p.sep})(git-head $g)($dirty)(ansi reset)"
             } else { "" }
             $"(ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)\n"
         }
@@ -2073,7 +2171,7 @@ def render-left [] {
             let g = (git-info)
             let git_txt = if $g.present {
                 let dirty = if $g.clean { "" } else { $"(ansi {fg: $p.err})●(ansi reset)" }
-                $" (ansi {fg: $p.sep})on(ansi reset) (ansi {fg: $p.git attr: b})⎇ ($g.head)(ansi reset)($dirty)"
+                $" (ansi {fg: $p.sep})on(ansi reset) (ansi {fg: $p.git attr: b})⎇ (git-head $g)(ansi reset)($dirty)"
             } else { "" }
             $"(ansi {fg: $p.git attr: b})#(ansi reset) (ansi {fg: $p.user attr: b})(prompt-user)(ansi reset) (ansi {fg: $p.sep})@(ansi reset) (ansi {fg: $p.host attr: b})(prompt-host)(ansi reset) (ansi {fg: $p.sep})in(ansi reset) (ansi {fg: $p.path attr: b})($full_dir)(ansi reset)($git_txt)"
         }
@@ -2122,7 +2220,7 @@ def render-left [] {
             let hud_world = $"(ansi {fg: $p.sep})WORLD(ansi {fg: $p.path attr: b}) ($world)($rs)"
             let dir = $"(ansi {fg: $p.path attr: b})($full_dir)($rs)"
             let git_txt = if $g.present {
-                mut segs = [$"(ansi {fg: $p.ok attr: b})⚑ ($g.head)($rs)"]
+                mut segs = [$"(ansi {fg: $p.ok attr: b})⚑ (git-head $g)($rs)"]
                 if $coins == 0 and $g.conflict == 0 { $segs = ($segs | append $"(ansi {fg: $p.modified attr: b})★($rs)") }
                 if $g.ahead    > 0 { $segs = ($segs | append $"(ansi {fg: $p.ok})▲($g.ahead)($rs)") }
                 if $g.behind   > 0 { $segs = ($segs | append $"(ansi {fg: $p.behind})▼($g.behind)($rs)") }
@@ -2174,7 +2272,7 @@ def render-left [] {
                 if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.err attr: b})✖($g.conflict)($rs)") }
                 if $g.stash    > 0 { $parts = ($parts | append $"(ansi {fg: $p.stash})❦($g.stash)($rs)") }
                 let st = (if ($parts | is-empty) { $"(ansi {fg: $p.ahead})✦($rs)" } else { $parts | str join " " })
-                $" ($gold)⚜ (ansi {fg: $p.git attr: b})($g.head)($rs) ($st)"
+                $" ($gold)⚜ (ansi {fg: $p.git attr: b})(git-head $g)($rs) ($st)"
             } else { "" }
             let l1 = $"($gold)╭─❖ (ansi {fg: $p.user attr: b})(prompt-user)($gold) ✦ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
             $"($l1)\n($gold)╰─($rs)"
@@ -2186,7 +2284,7 @@ def render-left [] {
             let n = (if $g.present { $g.staged + $g.modified + $g.untracked + $g.conflict } else { 0 })
             let git_txt = if $g.present {
                 let tail = (if $n > 0 { $"(ansi {fg: $p.err})(repeat-str '✿' ([$n 6] | math min))($rs)" } else { $"(ansi {fg: $p.sep})✧($rs)" })
-                $" (ansi {fg: $p.err})❀($rs) (ansi {fg: $p.git attr: b})($g.head)($rs) ($tail)"
+                $" (ansi {fg: $p.err})❀($rs) (ansi {fg: $p.git attr: b})(git-head $g)($rs) ($tail)"
             } else { "" }
             $"(ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)"
         }
@@ -2197,7 +2295,7 @@ def render-left [] {
             let hp = (100 - ([((dirty-count $g) * 5) 95] | math min))
             let hpc = (if $hp >= 70 { $p.ok } else if $hp >= 40 { $p.modified } else { $p.err })
             let rad = (if $g.present and $g.conflict > 0 { $" (ansi {fg: $p.err attr: b})☢($g.conflict)($rs)" } else { "" })
-            let br = (if $g.present { $" (ansi {fg: $p.git})[($g.head)]($rs)" } else { "" })
+            let br = (if $g.present { $" (ansi {fg: $p.git})[(git-head $g)]($rs)" } else { "" })
             $"(ansi {fg: $p.ok attr: b})[VAULT-111]($rs) (ansi {fg: $p.user})(prompt-user)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs) (ansi {fg: $hpc attr: b})HP ($hp)/100($rs)($rad)($br)"
         }
         "grace" => {
@@ -2207,7 +2305,7 @@ def render-left [] {
             let n = (dirty-count $g)
             let died = (($env.LAST_EXIT_CODE? | default 0) != 0)
             let gold = (ansi {fg: $p.user})
-            let git_txt = (if $g.present { $" ($gold)❖ (ansi {fg: $p.git attr: b})($g.head)($rs)" } else { "" })
+            let git_txt = (if $g.present { $" ($gold)❖ (ansi {fg: $p.git attr: b})(git-head $g)($rs)" } else { "" })
             let bars = $"(ansi {fg: $p.err})♥($rs)(bar5 (5 - ([$n 4] | math min)) $p.err) (ansi {fg: $p.path})✦($rs)(bar5 5 $p.path) (ansi {fg: $p.ok})⚡($rs)(bar5 (if $died { 1 } else { 5 }) $p.ok)"
             let dead = (if $died { $"(ansi {fg: $p.err attr: b})YOU DIED($rs) " } else { "" })
             $"($dead)($gold)✧ (ansi {fg: $p.fg attr: b})($full_dir)($rs)($git_txt)  ($bars)"
@@ -2218,7 +2316,7 @@ def render-left [] {
             let empty = ([(((dirty-count $g) + 1) // 2) 3] | math min)
             let hearts = $"(ansi {fg: $p.err})(repeat-str '♥' (3 - $empty))(ansi {fg: $p.sep})(repeat-str '♡' $empty)($rs)"
             let rupees = (if $g.present and $g.untracked > 0 { $"  (ansi {fg: $p.ok})◆($g.untracked)($rs)" } else { "" })
-            let git_txt = (if $g.present { $"  (ansi {fg: $p.git attr: b})✦ ($g.head)($rs)" } else { "" })
+            let git_txt = (if $g.present { $"  (ansi {fg: $p.git attr: b})✦ (git-head $g)($rs)" } else { "" })
             $"(ansi {fg: $p.user attr: b})▲($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)  ($hearts)($rupees)"
         }
         "doomguy" => {
@@ -2229,7 +2327,7 @@ def render-left [] {
             let face = (if $hp >= 70 { "☺" } else if $hp >= 30 { "☹" } else { "☠" })
             let armor = (if $g.present { $g.staged } else { 0 })
             let ammo = (if $g.present { $g.ahead } else { 0 })
-            let br = (if $g.present { $" (ansi {fg: $p.git})($g.head)($rs)" } else { "" })
+            let br = (if $g.present { $" (ansi {fg: $p.git})(git-head $g)($rs)" } else { "" })
             $"(ansi {fg: $p.err attr: b})HEALTH ($hp)%($rs)  (ansi {fg: $p.ok attr: b})ARMOR ($armor)($rs)  (ansi {fg: $p.modified attr: b})AMMO ($ammo)($rs)  (ansi {fg: $p.user})($face)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($br)"
         }
         "spaceship" => {
@@ -2239,7 +2337,7 @@ def render-left [] {
             let flags = (git-flags $g)
             let git_txt = if $g.present {
                 let f = (if ($flags | is-empty) { "" } else { $" (ansi {fg: $p.err})[($flags)]($rs)" })
-                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git attr: b})($icon)($g.head)($rs)($f)"
+                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git attr: b})($icon)(git-head $g)($rs)($f)"
             } else { "" }
             let lang = (module-text "lang")
             let via = (if $lang == null { "" } else { $" (ansi {fg: $p.sep})via($rs) (ansi {fg: $p.modified attr: b})($lang)($rs)" })
@@ -2258,7 +2356,7 @@ def render-left [] {
                 if $g.modified > 0 { $parts = ($parts | append $"(ansi {fg: $p.modified})!($g.modified)($rs)") }
                 if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})?($g.untracked)($rs)") }
                 let tail = (if ($parts | is-empty) { "" } else { $" ($parts | str join ' ')" })
-                $"  (ansi {fg: $hc})($g.head)($rs)($tail)"
+                $"  (ansi {fg: $hc})(git-head $g)($rs)($tail)"
             } else { "" }
             $"(ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)\n"
         }
@@ -2272,7 +2370,7 @@ def render-left [] {
                 if $g.untracked > 0 { $parts = ($parts | append $"(ansi {fg: $p.untracked})…($g.untracked)($rs)") }
                 if $g.conflict > 0 { $parts = ($parts | append $"(ansi {fg: $p.err})✖($g.conflict)($rs)") }
                 let st = (if ($parts | is-empty) { $"(ansi {fg: $p.ok})✔($rs)" } else { $parts | str join "" })
-                $" (ansi {fg: $p.sep})\((ansi {fg: $p.git})($g.head)(ansi {fg: $p.sep})|($st)(ansi {fg: $p.sep})\)($rs)"
+                $" (ansi {fg: $p.sep})\((ansi {fg: $p.git})(git-head $g)(ansi {fg: $p.sep})|($st)(ansi {fg: $p.sep})\)($rs)"
             } else { "" }
             $"(ansi {fg: $p.user})(prompt-user)(ansi {fg: $p.sep})@(ansi {fg: $p.host})(prompt-host)($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)"
         }
@@ -2284,7 +2382,7 @@ def render-left [] {
                 if $g.staged   > 0 { $marks = $marks + $"(ansi {fg: $p.ok})●($rs)" }
                 if $g.modified > 0 { $marks = $marks + $"(ansi {fg: $p.err})●($rs)" }
                 if $g.untracked > 0 { $marks = $marks + $"(ansi {fg: $p.modified})●($rs)" }
-                $" (ansi {fg: $p.git attr: b})[($g.head)($marks)(ansi {fg: $p.git attr: b})]($rs)"
+                $" (ansi {fg: $p.git attr: b})[(git-head $g)($marks)(ansi {fg: $p.git attr: b})]($rs)"
             } else { "" }
             $"(ansi {fg: $p.git attr: b})(prompt-user)($rs) (ansi {fg: $p.sep})at($rs) (ansi {fg: $p.host attr: b})(prompt-host)($rs) (ansi {fg: $p.sep})in($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)\n"
         }
@@ -2293,7 +2391,7 @@ def render-left [] {
             let rs = (ansi reset)
             let git_txt = if $g.present {
                 let dirty = (if $g.clean { "" } else { $" (ansi {fg: $p.err attr: b})✗($rs)" })
-                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git})git:(ansi {fg: $p.behind attr: b})($g.head)($rs)($dirty)"
+                $" (ansi {fg: $p.sep})on($rs) (ansi {fg: $p.git})git:(ansi {fg: $p.behind attr: b})(git-head $g)($rs)($dirty)"
             } else { "" }
             let l1 = $"(ansi {fg: $p.sep})╭─($rs) (ansi {fg: $p.git attr: b})(prompt-user)($rs) (ansi {fg: $p.sep})at($rs) (ansi {fg: $p.host attr: b})(prompt-host)($rs) (ansi {fg: $p.sep})in($rs) (ansi {fg: $p.path attr: b})($full_dir)($rs)($git_txt)"
             $"($l1)\n(ansi {fg: $p.sep})╰─($rs)"
@@ -2306,6 +2404,8 @@ def render-left [] {
 }
 
 def right-prompt-core [] {
+    # HUD-style prompts are already full; they opt out of the right prompt.
+    if ((style-def ($env.PROMPT_STYLE? | default "full")).right? | default "time") == "none" { return "" }
     let p = $env.THEME_PALETTE
     let dur_ms = ($env.CMD_DURATION_MS? | default "0" | into int)
     let dur_seg = if $dur_ms > 2000 {

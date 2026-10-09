@@ -107,6 +107,7 @@ for t in (theme-list) {
     }
 }
 $env.PROMPT_STYLE = $saved_style
+hide-env NUANCE_GIT
 hide-env PROMPT_USER PROMPT_HOST
 
 # ── context modules ──
@@ -277,6 +278,147 @@ for s in [mario expedition33 fino spaceship p10k-lean steeef powerline2l pills2l
 }
 hide-env PROMPT_USER PROMPT_HOST
 $env.PROMPT_STYLE = $saved_style
+
+# ── git-info against real repositories (porcelain v2, op state, worktrees) ──
+let gtmp = (mktemp -d | path expand)
+let gorig = $env.PWD
+let gid = [-c user.name=t -c user.email=t@t -c commit.gpgsign=false -c init.defaultBranch=main]
+mkdir ($gtmp | path join "plain")
+cd ($gtmp | path join "plain")
+let g_none = (git-info)
+cd $gtmp
+mkdir repo
+cd repo
+^git init -q -b main
+let g_unborn = (git-info)
+"a\n" | save a
+^git add a
+^git ...$gid commit -q -m first
+let g_clean = (git-info)
+"b\n" | save -f a
+"n\n" | save n
+^git add n
+"u\n" | save u
+let g_dirty = (git-info)
+^git ...$gid stash -q -u
+let g_stash = (git-info)
+^git checkout -q --detach
+let g_detached = (git-info)
+^git checkout -q main
+mkdir sub
+cd sub
+let g_sub = (git-info)
+let g_light = (git-info --light)
+cd ..
+# ahead / behind via a bare remote and two clones
+cd $gtmp
+^git init -q --bare -b main remote.git
+^git clone -q remote.git c1 e> /dev/null
+^git clone -q remote.git c2 e> /dev/null
+cd c1
+"x\n" | save x
+^git add x
+^git ...$gid commit -q -m x
+^git push -q origin main e> /dev/null
+cd ../c2
+^git pull -q origin main e> /dev/null
+"y\n" | save y
+^git add y
+^git ...$gid commit -q -m y
+^git push -q origin main e> /dev/null
+cd ../c1
+"z\n" | save z
+^git add z
+^git ...$gid commit -q -m z
+^git fetch -q origin e> /dev/null
+let g_div = (git-info)
+# merge conflict
+cd $gtmp
+mkdir mc
+cd mc
+^git init -q -b main
+"1\n" | save f
+^git add f
+^git ...$gid commit -q -m base
+^git checkout -q -b other
+"other\n" | save -f f
+^git ...$gid commit -q -am other
+^git checkout -q main
+"main\n" | save -f f
+^git ...$gid commit -q -am main
+^git ...$gid merge other e> /dev/null | ignore
+let g_conflict = (git-info)
+# linked worktree: .git is a *file*
+cd ../repo
+^git ...$gid worktree add -q ../wt -b wtb e> /dev/null
+cd ../wt
+let g_wt = (git-info)
+let wt_gd = (git-dir-find)
+cd $gorig
+rm -rf $gtmp
+
+if $g_none.present { $errors = ($errors | append "git-info: plain dir reported as a repo") }
+if (not $g_unborn.present) or ($g_unborn.head != "main") { $errors = ($errors | append $"git-info unborn branch: ($g_unborn | to nuon)") }
+if (not $g_clean.clean) or ($g_clean.head != "main") { $errors = ($errors | append $"git-info clean repo not clean: ($g_clean | to nuon)") }
+if ($g_dirty.staged != 1) or ($g_dirty.modified != 1) or ($g_dirty.untracked != 1) or $g_dirty.clean { $errors = ($errors | append $"git-info dirty counts wrong: ($g_dirty | to nuon)") }
+if ($g_stash.stash != 1) or ($g_stash.staged + $g_stash.modified + $g_stash.untracked != 0) { $errors = ($errors | append $"git-info stash wrong: ($g_stash | to nuon)") }
+if (not ($g_detached.head | str starts-with "@")) or (($g_detached.head | str length) != 8) { $errors = ($errors | append $"git-info detached HEAD wrong: ($g_detached.head)") }
+if (not $g_sub.present) or ($g_sub.head != "main") { $errors = ($errors | append "git-info doesn't work from a subdirectory") }
+if (not $g_light.present) or ($g_light.head != "main") { $errors = ($errors | append "git-info --light wrong") }
+if ($g_div.ahead != 1) or ($g_div.behind != 1) { $errors = ($errors | append $"git-info ahead/behind wrong: ($g_div | to nuon)") }
+if ($g_conflict.conflict != 1) or ($g_conflict.state != "MERGING") { $errors = ($errors | append $"git-info conflict/state wrong: ($g_conflict | to nuon)") }
+if (not $g_wt.present) or ($g_wt.head != "wtb") or ($wt_gd == null) or not ($wt_gd | str contains "worktrees") { $errors = ($errors | append $"git-info worktree wrong: ($g_wt | to nuon) / ($wt_gd)") }
+if ((git-head $g_conflict) != "main|MERGING") or ((git-head $g_clean) != "main") { $errors = ($errors | append "git-head wrong") }
+
+# in-progress operation detection straight from a fake git dir
+let fgd = (mktemp -d)
+mkdir ($fgd | path join "rebase-merge")
+"2" | save ($fgd | path join "rebase-merge" "msgnum")
+"5" | save ($fgd | path join "rebase-merge" "end")
+let st_rebase = (git-op-state $fgd)
+rm -rf ($fgd | path join "rebase-merge")
+"" | save ($fgd | path join "CHERRY_PICK_HEAD")
+let st_cherry = (git-op-state $fgd)
+rm ($fgd | path join "CHERRY_PICK_HEAD")
+let st_none = (git-op-state $fgd)
+rm -rf $fgd
+if $st_rebase != "REBASE 2/5" { $errors = ($errors | append $"git-op-state rebase: ($st_rebase)") }
+if $st_cherry != "CHERRY-PICKING" { $errors = ($errors | append $"git-op-state cherry-pick: ($st_cherry)") }
+if $st_none != "" { $errors = ($errors | append $"git-op-state should be empty: ($st_none)") }
+
+# ── path shortening ──
+let sp_cases = [
+    ["~/Projects/nuance" 20 "~/Projects/nuance"]
+    ["~/Projects/some/long/path/here/x" 20 "~/P/s/l/path/here/x"]
+    ["~/Projects/some/long/path/here/x" 10 "…/here/x"]
+    ["/usr/local/share/doc/pkg" 18 "/u/l/share/doc/pkg"]
+    ["~/.config/nushell/autoload" 14 "…/nushell/autoload"]
+    ["~/Projects/some/long/path" 0 "~/Projects/some/long/path"]
+]
+for c in $sp_cases {
+    let got = (shorten-path $c.0 $c.1)
+    if $got != $c.2 { $errors = ($errors | append $"shorten-path '($c.0)' budget ($c.1): got '($got)', want '($c.2)'") }
+}
+let b_env = (with-env { PROMPT_DIR_MAX: 12 } { dir-budget })
+let b_off = (with-env { PROMPT_DIR_MAX: 0 } { dir-budget })
+if ($b_env != 12) or ($b_off != 0) or ((dir-budget) < 24) { $errors = ($errors | append "dir-budget wrong (env override / auto minimum)") }
+
+# ── ASCII fallback when PROMPT_NERD is off, right-prompt opt-out ──
+theme-apply "gruvbox"
+$env.PROMPT_USER = "sorin"; $env.PROMPT_HOST = "nuance"
+let nf_off = (with-env { PROMPT_NERD: false, PROMPT_STYLE: "powerline", NUANCE_GIT: { present: false } } { left-prompt-core | ansi strip })
+let nf_pill = (with-env { PROMPT_NERD: false, PROMPT_STYLE: "capsule", NUANCE_GIT: { present: false } } { left-prompt-core | ansi strip })
+let nf_on = (with-env { PROMPT_NERD: true, PROMPT_STYLE: "powerline", NUANCE_GIT: { present: false } } { left-prompt-core | ansi strip })
+if not ($nf_off | str contains ">") or ($nf_off | str contains (char --unicode e0b0)) { $errors = ($errors | append $"powerline should use '>' without Nerd Font: ($nf_off)") }
+if not ($nf_pill | str contains "(") or not ($nf_pill | str contains ")") { $errors = ($errors | append "capsule should use parentheses without Nerd Font") }
+if not ($nf_on | str contains (char --unicode e0b0)) { $errors = ($errors | append "powerline lost its glyph with Nerd Font on") }
+for s in [mario vault grace doomguy] {
+    let r = (with-env { PROMPT_STYLE: $s } { right-prompt-core })
+    if $r != "" { $errors = ($errors | append $"style '($s)' should hide the right prompt") }
+}
+let r_full = (with-env { PROMPT_STYLE: "full" } { right-prompt-core })
+if ($r_full | is-empty) { $errors = ($errors | append "right prompt vanished for `full`") }
+hide-env PROMPT_USER PROMPT_HOST
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }

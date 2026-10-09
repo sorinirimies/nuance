@@ -120,7 +120,15 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 - A **look** pins a theme + style together and overrides Ghostty auto-follow.
 - The **git segment** shows branch, `⇡`ahead `⇣`behind `=`conflict `+`staged
   `!`modified `?`untracked `*`stash, `✔` clean — plus command duration (>2s)
-  and an exit-status-aware indicator.
+  and an exit-status-aware indicator. In-progress operations show next to the
+  branch (`main|REBASE 2/5`, `main|MERGING`, `|CHERRY-PICKING`, `|BISECTING`).
+  Git state comes from a single `git status --porcelain=v2` call (about 4×
+  faster than before), and linked worktrees/submodules are detected.
+- **Adaptive paths:** long directories shorten fish-style to fit a third of the
+  terminal width (`~/Projects/some/long/path` → `~/P/s/long/path`, falling back to
+  `…/parent/dir`). Tune with `$env.PROMPT_DIR_MAX` (`0` = never shorten).
+- **No Nerd Font?** Segment styles degrade to ASCII separators (`>`, `/`, `( )`)
+  when `$env.PROMPT_NERD = false`.
 
 - **Readable by construction.** Every theme is checked against WCAG contrast
   (text ≥ 3:1, segment text ≥ 4.5:1) and out-of-range colors are nudged toward
@@ -222,6 +230,7 @@ for imported themes.
 
 **Toggles:** `$env.PROMPT_NERD` (Nerd Font glyphs on/off) ·
 `$env.PROMPT_USER` / `$env.PROMPT_HOST` (override shown user/host) ·
+`$env.PROMPT_DIR_MAX` (path-shortening budget) ·
 `$env.NUANCE_THEMES_DIR` (where imported themes are stored).
 
 ## Contributing / demos
