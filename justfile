@@ -31,6 +31,10 @@ install-tools:
     @command -v cargo-outdated >/dev/null 2>&1 || cargo install cargo-outdated --locked
     @echo "✅ All tools installed!"
 
+# Build nushell-prompt.nu from nu/*.nu (edit the parts, never the built file)
+build-prompt:
+    nu scripts/build_prompt.nu
+
 # ── Build ─────────────────────────────────────────────────────────────────────
 
 # Build the nuance-cli binary (debug)
@@ -72,7 +76,7 @@ clippy:
     cargo clippy --all-targets -- -D warnings
 
 # Run all quality checks (fmt, clippy, both test suites)
-check-all: fmt-check clippy test test-nu
+check-all: build-prompt fmt-check clippy test test-nu
     @echo "✅ All checks passed!"
 
 # Full pre-release gate — check-all plus a locked release build

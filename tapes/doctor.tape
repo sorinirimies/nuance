@@ -6,7 +6,7 @@ Set Shell "bash"
 Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 20
 Set Width 1200
-Set Height 720
+Set Height 980
 Set Padding 24
 Set LineHeight 1.2
 Set TypingSpeed 55ms

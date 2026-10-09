@@ -8,7 +8,7 @@ Set Width 1200
 Set TypingSpeed 55ms
 Set Padding 24
 Set LineHeight 1.2
-Set Height 760
+Set Height 900
 
 Hide
 Type "$env.PROMPT_COMMAND = { || create_left_prompt }"
@@ -37,7 +37,7 @@ Sleep 1.2s
 Type "^false"
 Enter
 Sleep 1.4s
-Type "# exit code on failure"
+Type "# exit status"
 Enter
 Sleep 1s
 Type "cd ~"

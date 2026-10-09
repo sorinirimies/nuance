@@ -58,7 +58,53 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Some(Commands::Configure) => with_nu(|target| nu::run_nu(target, "nuance configure")),
-        Some(Commands::Doctor) => with_nu(|target| nu::run_nu(target, "nuance doctor")),
+        Some(Commands::Doctor { clear_errors }) => with_nu(|target| {
+            nu::run_nu(
+                target,
+                if clear_errors {
+                    "nuance doctor --clear-errors"
+                } else {
+                    "nuance doctor"
+                },
+            )
+        }),
+        Some(Commands::List { kind, json }) => {
+            let k: Vec<String> = kind.into_iter().collect();
+            let pipe = if json { " | to json" } else { "" };
+            with_nu(|target| nu::run_nu(target, &format!("nuance list {}{pipe}", nu::quote(&k))))
+        }
+        Some(Commands::Current { json }) => {
+            let pipe = if json { " | to json" } else { "" };
+            with_nu(|target| nu::run_nu(target, &format!("nuance current{pipe}")))
+        }
+        Some(Commands::Preview { theme, style }) => {
+            let args: Vec<String> = theme.into_iter().chain(style).collect();
+            with_nu(|target| nu::run_nu(target, &format!("nuance preview {}", nu::quote(&args))))
+        }
+        Some(Commands::Random { what }) => {
+            let args: Vec<String> = what.into_iter().collect();
+            with_nu(|target| nu::run_nu(target, &format!("nuance random {}", nu::quote(&args))))
+        }
+        Some(Commands::Appearance { args }) => {
+            with_nu(|target| nu::run_nu(target, &format!("nuance appearance {}", nu::quote(&args))))
+        }
+        Some(Commands::Export) => with_nu(|target| nu::run_nu(target, "nuance export")),
+        Some(Commands::Integration { mode }) => {
+            let args: Vec<String> = mode.into_iter().collect();
+            with_nu(|target| {
+                nu::run_nu(target, &format!("nuance integration {}", nu::quote(&args)))
+            })
+        }
+        Some(Commands::Style { action, name }) => {
+            let args: Vec<String> = action.into_iter().chain(name).collect();
+            with_nu(|target| nu::run_nu(target, &format!("nuance style {}", nu::quote(&args))))
+        }
+        Some(Commands::Uninstall { purge }) => nu::uninstall(purge),
+        Some(Commands::Completions { shell }) => {
+            use clap::CommandFactory;
+            clap_complete::generate(shell, &mut Cli::command(), "nuance", &mut std::io::stdout());
+            ExitCode::SUCCESS
+        }
         Some(Commands::Import { source, name }) => {
             let mut script = format!("nuance import {}", nu::quote(&[source]));
             if let Some(n) = name {

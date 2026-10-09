@@ -1,6 +1,9 @@
 # nushell-prompt.nu — nuance: themeable, git-aware Nushell prompt
 # https://github.com/sorinirimies/nuance
 # Single self-contained file. Drop into your Nushell autoload dir.
+#
+# GENERATED from nu/*.nu by scripts/build_prompt.nu — edit those files, then
+# run `just build-prompt` (test.nu fails if this file is stale).
 
 # ── color themes ─────────────────────────────────────────────
 # (part of nushell-prompt)
@@ -789,6 +792,17 @@ def theme-get [name: string] {
     { color_config: $t.color_config, palette: (finish-palette $t.palette) }
 }
 
+# ── Tab completion ───────────────────────────────────────────
+def "nu-complete nuance themes" [] { theme-list }
+def "nu-complete nuance styles" [] { prompt-styles }
+def "nu-complete nuance looks" [] { presets | get name }
+def "nu-complete nuance modules" [] { module-names }
+def "nu-complete nuance module-actions" [] { ["list" "enable" "disable" "clear"] }
+def "nu-complete nuance transient" [] { ["on" "dir" "off" "toggle"] }
+def "nu-complete nuance kinds" [] { ["themes" "styles" "looks" "modules"] }
+def "nu-complete nuance random" [] { ["look" "theme" "style"] }
+def "nu-complete nuance integration" [] { ["on" "off" "status"] }
+
 # ── Public API ────────────────────────────────────────────────
 def theme-list-builtin [] {
     ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "super-mario" "cyberpunk"]
@@ -798,7 +812,7 @@ def theme-list-builtin [] {
 # One .nuon file per theme in <config>/nuance/themes (override the directory
 # with $env.NUANCE_THEMES_DIR). Same 11-color shape as the consts above.
 def user-themes-dir [] {
-    $env.NUANCE_THEMES_DIR? | default ($nu.default-config-dir | path join "nuance" "themes")
+    $env.NUANCE_THEMES_DIR? | default ((nuance-config-dir) | path join "nuance" "themes")
 }
 def user-theme-names [] {
     let dir = (user-themes-dir)
@@ -886,7 +900,7 @@ $env.config.render_right_prompt_on_last_line = true
 $env.config.show_banner = false
 
 # File that stores the currently-selected theme name.
-def theme-state-path [] { $nu.default-config-dir | path join "current-theme.txt" }
+def theme-state-path [] { (nuance-config-dir) | path join "current-theme.txt" }
 
 # Apply a theme to the *current* session (colors + prompt palette).
 def --env theme-apply [name: string] {
@@ -924,16 +938,28 @@ def nuance-cli-available [] { (which nuance | is-not-empty) }
 # `^nuance ...` only ever persists to disk from its own subprocess — this
 # is what makes the change visible immediately in the shell you're
 # actually sitting in, instead of only the next new one.
+# ── Appearance (dark/light) theme pair ───────────────────────
+# `nuance appearance <dark-theme> <light-theme>` follows the OS appearance when
+# a shell starts (or on `reload-theme`).
+def appearance-path [] { (nuance-config-dir) | path join "appearance.txt" }
+def appearance-theme [] {
+    let c = (try { open (appearance-path) | str trim | split row "," } catch { [] })
+    if ($c | length) != 2 { return null }
+    let name = (if (os-dark-mode) { $c.0 } else { $c.1 })
+    if $name in (theme-list) { $name } else { null }
+}
+# Which theme to start with, given the saved state.
+def pick-theme-name [saved: string] {
+    if $saved == "appearance" {
+        let t = (appearance-theme)
+        if $t != null { return $t }
+    }
+    if $saved in (theme-list) { return $saved }
+    let g = (ghostty-theme-name)
+    if ($g | is-not-empty) { $g } else { "gruvbox" }
+}
 def --env reload-theme [] {
-    let saved = (try { open (theme-state-path) | str trim } catch { "auto" })
-    let name = (
-        if ($saved in (theme-list)) { $saved }
-        else {
-            let g = (ghostty-theme-name)
-            if ($g | is-not-empty) { $g } else { "gruvbox" }
-        }
-    )
-    theme-apply $name
+    theme-apply (pick-theme-name (try { open (theme-state-path) | str trim } catch { "auto" }))
 }
 
 def --env reload-style [] {
@@ -954,7 +980,7 @@ def --env sync-picker-item [] {
 # UI as any other shell) and reloads the result into this session. Without
 # it, falls back to Nushell's own fuzzy `input list` picker. Either way,
 # "↻ sync with terminal" is always the first entry.
-def --env theme [name?: string] {
+def --env theme [name?: string@"nu-complete nuance themes"] {
     if ($name | is-empty) and (nuance-cli-available) {
         ^nuance theme
         reload-theme
@@ -1104,7 +1130,7 @@ def --env look-picker-items [] {
 
 # Pick a full look (theme + prompt style). No arg = interactive picker
 # (delegates to the `nuance` ratatui picker when available).
-def --env look [name?: string] {
+def --env look [name?: string@"nu-complete nuance looks"] {
     if ($name | is-empty) and (nuance-cli-available) {
         ^nuance look
         reload-theme
@@ -1200,22 +1226,22 @@ def "nuance help" [] {
 # (ratatui via the external `nuance` binary when available, else Nushell's
 # own fuzzy `input list`); a name sets + pins it. Kept as a separate name
 # for discoverability/back-compat — identical behavior either way.
-def --env "nuance theme" [name?: string] { theme $name }
+def --env "nuance theme" [name?: string@"nu-complete nuance themes"] { theme $name }
 
 # `nuance prompt-style` — same as bare `prompt-style`.
-def --env "nuance prompt-style" [name?: string] { prompt-style $name }
+def --env "nuance prompt-style" [name?: string@"nu-complete nuance styles"] { prompt-style $name }
 
 # `nuance look` — same as bare `look`.
-def --env "nuance look" [name?: string] { look $name }
+def --env "nuance look" [name?: string@"nu-complete nuance looks"] { look $name }
 
 # `nuance transient [on|off|toggle]` — collapse finished prompts to one glyph.
-def --env "nuance transient" [mode?: string] {
+def --env "nuance transient" [mode?: string@"nu-complete nuance transient"] {
     let cur = ($env.NUANCE_TRANSIENT? | default "off")
     let next = match ($mode | default "") {
-        "" => { print $"transient prompt: (ansi attr_bold)($cur)(ansi reset)  \(nuance transient on|off|toggle\)"; return }
+        "" => { print $"transient prompt: (ansi attr_bold)($cur)(ansi reset)  \(nuance transient on|dir|off|toggle\)"; return }
         "toggle" => (if $cur == "on" { "off" } else { "on" })
-        "on" | "off" => $mode
-        _ => { print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, off or toggle"; return }
+        "on" | "off" | "dir" => $mode
+        _ => { print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, dir, off or toggle"; return }
     }
     transient-apply $next
     $next | save -f (transient-state-path)
@@ -1223,7 +1249,7 @@ def --env "nuance transient" [mode?: string] {
 }
 
 # `nuance here [theme [style]] | clear` — pin a theme/style to this directory tree.
-def "nuance here" [theme?: string, style?: string] {
+def "nuance here" [theme?: string@"nu-complete nuance themes", style?: string@"nu-complete nuance styles"] {
     let f = ($env.PWD | path join ".nuance")
     if $theme == null {
         let found = (dir-config-find)
@@ -1279,11 +1305,11 @@ def --env "nuance configure" [] {
 # Doctor row for the autoload file: is nuance installed where Nushell loads it?
 # Show a path with the home directory as ~ (macOS reports /tmp and /private/tmp
 # for the same place, so compare without a leading /private).
-def tilde [path: string] {
+def tilde [path: string, home?: string] {
     let strip = {|x| $x | str replace --regex '^/private(/|$)' '$1' }
-    let h = (do $strip $nu.home-dir)
+    let h = (do $strip ($home | default $nu.home-dir))
     let q = (do $strip $path)
-    if ($q == $h) { "~" } else if ($q | str starts-with $"($h)/") { $"~($q | str substring ($h | str length)..)" } else { $path }
+    if ($q == $h) { "~" } else if ($q | str starts-with $"($h)/") { $"~($q | str replace $h '')" } else { $path }
 }
 def doctor-autoload [path: string] {
     if ($path | path exists) {
@@ -1295,7 +1321,11 @@ def doctor-autoload [path: string] {
 }
 
 # `nuance doctor` — check the environment nuance depends on.
-def "nuance doctor" [] {
+def "nuance doctor" [--clear-errors] {
+    if $clear_errors {
+        rm -f ((nuance-cache-dir) | path join "last-error.txt") (slow-git-path)
+        print $"(ansi green_bold)✓(ansi reset) cleared the last prompt error and slow-repo marks"
+    }
     let nu_ver = (version | get version)
     let minor = ($nu_ver | split row "." | get 1 | into int)
     let autoload = ($nu.user-autoload-dirs | get 0? | default "" | path join "nushell-prompt.nu")
@@ -1303,6 +1333,8 @@ def "nuance doctor" [] {
     let ghostty = (try { ghostty-theme-name } catch { null })
     let saved_theme = (try { open (theme-state-path) | str trim } catch { "auto" })
     let local = (dir-config-find)
+    let le = ((nuance-cache-dir) | path join "last-error.txt")
+    let err_row = (if ($le | path exists) { { check: "last prompt error", status: "warn", detail: (open --raw $le | str trim) } } else { { check: "last prompt error", status: "ok", detail: "none" } })
     [
         { check: "nushell version", status: (if $minor >= 100 { "ok" } else { "warn" }), detail: $"($nu_ver)(if $minor < 100 { ' — transient prompt needs 0.100+' } else { '' })" }
         { check: "truecolor", status: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "ok" } else { "warn" }), detail: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "COLORTERM is set" } else { "COLORTERM not truecolor/24bit — theme colors may be approximated" }) }
@@ -1316,12 +1348,157 @@ def "nuance doctor" [] {
         { check: "modules", status: "info", detail: (if (enabled-modules | is-empty) { "none enabled" } else { enabled-modules | str join ", " }) }
         { check: "terminal theme", status: "info", detail: (if ($ghostty | is-empty) { "no Ghostty theme detected" } else { $"Ghostty → ($ghostty)" }) }
         { check: "imported themes", status: "info", detail: $"(user-theme-names | length) in (tilde (user-themes-dir))" }
+        { check: "colors", status: (if (color-mode) == "truecolor" { "ok" } else { "info" }), detail: $"(color-mode)(if (color-mode) != 'truecolor' { ' — theme colors are downgraded for this terminal' } else { '' })" }
+        { check: "terminal integration", status: "info", detail: $"($env.NUANCE_INTEGRATION? | default 'on') \(window title, cwd, semantic prompt marks)" }
+        { check: "git mode", status: "info", detail: $"($env.PROMPT_GIT? | default 'full')(if (slow-git-path | path exists) { ' — some repos are marked slow (-uno)' } else { '' })" }
+        { check: "custom styles", status: "info", detail: $"(user-style-defs | length) in (tilde (user-styles-dir))" }
+        $err_row
         { check: ".nuance override", status: "info", detail: (if $local == null { "none for this directory" } else { tilde $local }) }
     ]
 }
 
+# `nuance list [themes|styles|looks|modules]` — what is available (data, so `| to json` works).
+def "nuance list" [kind?: string@"nu-complete nuance kinds"] {
+    match ($kind | default "themes") {
+        "themes" => (theme-list | each {|t| { name: $t, light: ((lum (theme-get-raw $t).palette.bg) > 0.4) } })
+        "styles" => (style-defs | each {|d| { name: $d.name, kind: $d.kind, nerd_font: $d.nerd, description: $d.desc } })
+        "looks" => (presets | select name theme style)
+        "modules" => (module-defs | select name desc)
+        _ => { print $"(ansi red)unknown kind:(ansi reset) ($kind) — use themes, styles, looks or modules"; [] }
+    }
+}
+
+# `nuance current` — the active theme, style and options.
+def "nuance current" [] {
+    {
+        theme: ($env.THEME_NAME? | default "unknown")
+        style: ($env.PROMPT_STYLE? | default "full")
+        transient: ($env.NUANCE_TRANSIENT? | default "off")
+        modules: (enabled-modules)
+        integration: ($env.NUANCE_INTEGRATION? | default "on")
+        colors: (color-mode)
+        git: ($env.PROMPT_GIT? | default "full")
+    }
+}
+
+# `nuance preview [theme [style]]` — render a prompt without applying anything.
+def "nuance preview" [theme?: string@"nu-complete nuance themes", style?: string@"nu-complete nuance styles"] {
+    let t = ($theme | default ($env.THEME_NAME? | default "gruvbox"))
+    let st = ($style | default ($env.PROMPT_STYLE? | default "full"))
+    if $t not-in (theme-list) { print $"(ansi red)unknown theme:(ansi reset) ($t)"; return }
+    if $st not-in (prompt-styles) { print $"(ansi red)unknown style:(ansi reset) ($st)"; return }
+    with-env { THEME_PALETTE: (theme-get $t).palette, PROMPT_STYLE: $st, LAST_EXIT_CODE: 0 } {
+        finalize $"(left-prompt-core)(indicator-core)"
+    }
+}
+
+# `nuance random [look|theme|style]` — surprise me (and pin the pick).
+def --env "nuance random" [what?: string@"nu-complete nuance random"] {
+    let pick = {|xs| $xs | get (random int 0..<($xs | length)) }
+    match ($what | default "look") {
+        "look" => { look (do $pick (presets | get name)) }
+        "theme" => { theme (do $pick (theme-list)) }
+        "style" => { prompt-style (do $pick (prompt-styles)) }
+        _ => { print $"(ansi red)unknown:(ansi reset) ($what) — use look, theme or style" }
+    }
+}
+
+# `nuance appearance <dark-theme> <light-theme> | off` — follow the OS dark/light mode.
+def --env "nuance appearance" [dark?: string@"nu-complete nuance themes", light?: string@"nu-complete nuance themes"] {
+    if $dark == null {
+        let c = (try { open (appearance-path) | str trim } catch { "" })
+        print (if ($c | is-empty) { "appearance switching is off — nuance appearance <dark-theme> <light-theme>" } else { $"appearance pair: ($c)" })
+        return
+    }
+    if $dark == "off" {
+        rm -f (appearance-path)
+        "auto" | save -f (theme-state-path)
+        print $"(ansi green_bold)✓(ansi reset) appearance switching off \(back to terminal auto-follow)"
+        return
+    }
+    if $light == null or $dark not-in (theme-list) or $light not-in (theme-list) {
+        print $"(ansi red)usage:(ansi reset) nuance appearance <dark-theme> <light-theme>   \(both must be known themes)"
+        return
+    }
+    $"($dark),($light)" | save -f (appearance-path)
+    "appearance" | save -f (theme-state-path)
+    theme-apply (pick-theme-name "appearance")
+    print $"(ansi green_bold)✓(ansi reset) dark → (ansi attr_bold)($dark)(ansi reset), light → (ansi attr_bold)($light)(ansi reset) — applied when a shell starts"
+}
+
+# ── Share a look ─────────────────────────────────────────────
+# `nuance export` prints  nuance:1:<theme>:<style>:<modules+…>:<transient>
+# and `nuance import "<that string>"` applies it on another machine.
+def "nuance export" [] {
+    let mods = ((enabled-modules) | str join "+")
+    let t = ($env.THEME_NAME? | default "gruvbox")
+    if $t in (user-theme-names) { print -e $"(ansi yellow)note:(ansi reset) ($t) is an imported theme — it will only resolve on machines that have it" }
+    $"nuance:1:($t):($env.PROMPT_STYLE? | default 'full'):($mods):($env.NUANCE_TRANSIENT? | default 'off')"
+}
+def --env apply-share [code: string] {
+    let c = ($code | str trim | split row ":")
+    if ($c | length) != 6 or ($c.1 != "1") {
+        print $"(ansi red)not a nuance share string(ansi reset) — expected nuance:1:<theme>:<style>:<modules>:<transient>"
+        return
+    }
+    let theme = $c.2
+    let style = $c.3
+    let mods = ($c.4 | split row "+" | where {|m| $m | is-not-empty })
+    let tr = $c.5
+    let bad = ($mods | where {|m| $m not-in (module-names) })
+    if $theme not-in (theme-list) { print $"(ansi red)unknown theme:(ansi reset) ($theme)"; return }
+    if $style not-in (prompt-styles) { print $"(ansi red)unknown style:(ansi reset) ($style)"; return }
+    if ($bad | is-not-empty) or ($tr not-in ["on" "off" "dir"]) { print $"(ansi red)invalid modules or transient mode(ansi reset)"; return }
+    apply-look $theme $style
+    $env.NUANCE_MODULES = $mods
+    $mods | str join "\n" | save -f (modules-state-path)
+    transient-apply $tr
+    $tr | save -f (transient-state-path)
+    print $"(ansi green_bold)✓(ansi reset) applied: theme (ansi attr_bold)($theme)(ansi reset), style (ansi attr_bold)($style)(ansi reset), modules ((if ($mods | is-empty) { 'none' } else { $mods | str join ', ' })), transient ($tr)"
+}
+
+# `nuance integration [on|off|status]` — window title, cwd reporting, semantic prompt marks.
+def --env "nuance integration" [mode?: string@"nu-complete nuance integration"] {
+    let cur = ($env.NUANCE_INTEGRATION? | default "on")
+    match ($mode | default "status") {
+        "status" => { print $"terminal integration: (ansi attr_bold)($cur)(ansi reset)  \(nuance integration on|off)" }
+        "on" | "off" => {
+            integration-apply $mode
+            $mode | save -f (integration-state-path)
+            print $"(ansi green_bold)✓(ansi reset) terminal integration (ansi attr_bold)($mode)(ansi reset)"
+        }
+        _ => { print $"(ansi red)unknown mode:(ansi reset) ($mode) — use on, off or status" }
+    }
+}
+
+# `nuance style [new <name> | dir]` — your own segment styles (see README).
+def "nuance style" [action?: string, name?: string] {
+    let dir = (user-styles-dir)
+    match ($action | default "list") {
+        "dir" => { print $dir }
+        "list" => { user-style-defs | select name shape segs desc }
+        "new" => {
+            if ($name | is-empty) or not ($name =~ '^[a-z0-9][a-z0-9_-]*$') { print $"(ansi red)usage:(ansi reset) nuance style new <name>   \(lowercase letters, digits, - and _)"; return }
+            if $name in (style-defs-builtin | get name) { print $"(ansi red)'($name)' is a built-in style(ansi reset)"; return }
+            let f = ($dir | path join $"($name).nuon")
+            if ($f | path exists) { print $"(ansi red)already exists:(ansi reset) ($f)"; return }
+            mkdir $dir
+            {
+                shape: "arrow"
+                segs: ["user" "path" "git" "lang"]
+                glyph: "❯"
+                tone: "ok"
+                desc: "my custom style"
+                nl: false
+            } | to nuon --indent 4 | save $f
+            print $"(ansi green_bold)✓(ansi reset) created (tilde $f)\nshape: arrow | slant | pill · segs: path is required, plus any of (style-seg-ids | str join ', ')\napply with: nuance prompt-style ($name)"
+        }
+        _ => { print $"(ansi red)unknown action:(ansi reset) ($action) — use list, new <name> or dir" }
+    }
+}
+
 # `nuance modules [list|enable|disable|clear] [name…]` — situational prompt segments.
-def --env "nuance modules" [action?: string, ...names: string] {
+def --env "nuance modules" [action?: string@"nu-complete nuance module-actions", ...names: string@"nu-complete nuance modules"] {
     let act = ($action | default "list")
     match $act {
         "list" => {
@@ -1608,7 +1785,8 @@ def ghostty-adopt [name: string] {
 }
 
 # `nuance import <file|ghostty-theme-name> [--name x]`
-def "nuance import" [source: string, --name: string] {
+def --env "nuance import" [source: string, --name: string] {
+    if ($source | str starts-with "nuance:") { apply-share $source; return }
     let r = (try { theme-import $source $name } catch {|e| print $"(ansi red)import failed:(ansi reset) ($e.msg)"; return })
     print $"(ansi green_bold)✓(ansi reset) imported (ansi attr_bold)($r.name)(ansi reset) from ($r.format) theme — apply with: (ansi attr_bold)nuance theme ($r.name)(ansi reset)"
 }
@@ -1634,13 +1812,7 @@ def --env theme-sync [] { nuance sync theme }
 #   • a pinned theme (a saved theme name) wins — keeps e.g. cyberpunk
 #   • "auto" / no pin / invalid → follow Ghostty, else fall back to gruvbox
 let saved_theme = (try { open (theme-state-path) | str trim } catch { "auto" })
-let start_theme = (
-    if ($saved_theme in (theme-list)) { $saved_theme }
-    else {
-        let g = (ghostty-theme-name)
-        if ($g | is-not-empty) { $g } else { "gruvbox" }
-    }
-)
+let start_theme = (pick-theme-name $saved_theme)
 theme-apply $start_theme
 
 # ─────────────────────────────────────────────────────────────
@@ -1650,7 +1822,7 @@ theme-apply $start_theme
 #   • switch layout with:  prompt-style   (see `style-defs` for every style)
 # ─────────────────────────────────────────────────────────────
 
-def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt" }
+def prompt-style-path [] { (nuance-config-dir) | path join "prompt-style.txt" }
 # ── Style registry ───────────────────────────────────────────
 # One row per prompt style = the single source of truth for: the style list,
 # the indicator glyph/color, picker/gallery descriptions, and (for `blocks`
@@ -1662,7 +1834,7 @@ def prompt-style-path [] { $nu.default-config-dir | path join "prompt-style.txt"
 #   glyph   prompt indicator (second line / before the cursor)
 #   tone    palette role for the indicator when the last command succeeded
 #   nerd    needs a Nerd Font for its separators
-def style-defs [] {
+def style-defs-builtin [] {
     [
         { name: "full",         kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "user@host in ~/path on  branch +git (default)" }
         { name: "compact",      kind: "inline", ctx: true, glyph: "❯",   tone: "ok",       nerd: false, desc: "…/last2/dirs on  branch +git" }
@@ -1716,6 +1888,28 @@ def style-defs [] {
         { name: "cyberpunk",    kind: "inline", glyph: "▶▶▶", tone: "git",      nerd: false, desc: "two-line neon box-drawing with ⚡ and ▶▶▶" }
     ]
 }
+# ── User styles ──────────────────────────────────────────────
+# Drop a <name>.nuon in <config>/nuance/styles (override: $env.NUANCE_STYLES_DIR)
+# to define your own segment style — see `nuance style new <name>`.
+def user-styles-dir [] {
+    $env.NUANCE_STYLES_DIR? | default ((nuance-config-dir) | path join "nuance" "styles")
+}
+def style-seg-ids [] { ["user" "host" "path" "git"] ++ (module-names) }
+def user-style-defs [] {
+    let dir = (user-styles-dir)
+    if not ($dir | path exists) { return [] }
+    let taken = (style-defs-builtin | get name)
+    ls $dir | where name =~ '\.nuon$' | get name | each {|f|
+        let name = ($f | path parse | get stem)
+        let r = (try { open $f } catch { null })
+        let segs = ($r.segs? | default [])
+        let ok = ($r != null) and ($name not-in $taken) and (($r.shape? | default "") in ["arrow" "slant" "pill"]) and (($segs | describe) =~ '^list') and ("path" in $segs) and ($segs | all {|x| $x in (style-seg-ids) }) and (($r.tone? | default "ok") in (palette-text-roles))
+        if $ok {
+            { name: $name, kind: "blocks", glyph: ($r.glyph? | default "❯"), tone: ($r.tone? | default "ok"), nerd: ($r.nerd? | default true), desc: ($r.desc? | default "custom style"), shape: $r.shape, segs: $segs, nl: ($r.nl? | default false), user: true }
+        } else { null }
+    } | compact
+}
+def style-defs [] { (style-defs-builtin) ++ (user-style-defs) }
 def prompt-styles [] { style-defs | get name }
 # Registry row for a style name (falls back to `full` for unknown names).
 def style-def [name: string] {
@@ -1758,7 +1952,7 @@ def --env style-picker-items [] {
 
 # Switch prompt layout. No arg = interactive picker (delegates to the
 # `nuance` ratatui picker when available, same as every other picker here).
-def --env prompt-style [name?: string] {
+def --env prompt-style [name?: string@"nu-complete nuance styles"] {
     if ($name | is-empty) and (nuance-cli-available) {
         ^nuance prompt-style
         reload-style
@@ -1824,6 +2018,28 @@ def git-op-state [gd: string] {
     ""
 }
 
+# ── Slow repositories ────────────────────────────────────────
+# If a `git status` takes longer than 400 ms (override: $env.NUANCE_GIT_SLOW_MS),
+# the repo is remembered for a day and scanned with -uno from then on, so a huge
+# monorepo can't make every prompt crawl. `nuance doctor --clear-errors` forgets.
+def slow-git-path [] { (nuance-cache-dir) | path join "slow-git.txt" }
+def git-slow-marked [gd: string] {
+    let f = (slow-git-path)
+    if not ($f | path exists) { return false }
+    let now = (date now | format date "%s" | into int)
+    open --raw $f | lines | any {|l|
+        let c = ($l | split row "\t")
+        (($c | get 0) == $gd) and (($now - ($c | get 1 | into int)) < 86400)
+    }
+}
+def git-slow-mark [gd: string] {
+    try {
+        mkdir (nuance-cache-dir)
+        let now = (date now | format date "%s")
+        $"($gd)\t($now)\n" | save --append (slow-git-path)
+    }
+}
+
 # Branch name plus any in-progress operation:  main|REBASE 2/5
 def git-head [g: record] {
     let st = ($g.state? | default "")
@@ -1838,9 +2054,13 @@ def git-info [--light] {
     # Pickers render dozens of previews in one go: they resolve git once and
     # park the record in $env.NUANCE_GIT so every preview reuses it.
     if ($env.NUANCE_GIT? | default null) != null { return $env.NUANCE_GIT }
+    # $env.PROMPT_GIT = full | light | off  (also settable per tree via `.nuance`: git = "off")
+    let mode = ($env.PROMPT_GIT? | default "full")
+    if $mode == "off" { return { present: false } }
     let gd = (git-dir-find)
     if $gd == null { return { present: false } }
     let state = (git-op-state $gd)
+    let light = ($light or ($mode == "light"))
 
     if $light {
         let b = (do -i { git symbolic-ref --short -q HEAD } | complete | get stdout | str trim)
@@ -1851,14 +2071,22 @@ def git-info [--light] {
         return { present: true, head: $head, state: $state, ahead: 0, behind: 0, staged: 0, modified: 0, untracked: 0, conflict: 0, stash: 0, clean: true }
     }
 
+    # A repo whose status scan was slow recently is scanned without untracked
+    # files (the expensive part) — see git-slow-mark.
+    let slow = (git-slow-marked $gd)
+    let base = (["status" "--porcelain=v2" "--branch"] ++ (if $slow { ["-uno"] } else { [] }))
+    let t0 = (date now)
     # --show-stash needs git >= 2.35; fall back to counting the stash list.
-    mut r = (do -i { git status --porcelain=v2 --branch --show-stash } | complete)
+    mut r = (do -i { ^git ...($base ++ ["--show-stash"]) } | complete)
     mut stash_from_list = false
     if $r.exit_code != 0 {
-        $r = (do -i { git status --porcelain=v2 --branch } | complete)
+        $r = (do -i { ^git ...$base } | complete)
         $stash_from_list = true
     }
     if $r.exit_code != 0 { return { present: false } }
+    let took = ((date now) - $t0)
+    let slow_ms = ($env.NUANCE_GIT_SLOW_MS? | default 400 | into int)
+    if (not $slow) and ($took > ($slow_ms * 1ms)) { git-slow-mark $gd }
 
     let lines = ($r.stdout | lines)
     let hdr = {|key| $lines | where {|l| $l | str starts-with $"# ($key) " } | get 0? | default "" | str replace $"# ($key) " "" }
@@ -1963,10 +2191,14 @@ def module-defs [] {
         { name: "nix",    role: "ahead",    desc: "inside a nix shell" }
         { name: "lang",   role: "ahead",    desc: "project toolchain + version: rust, node, python, go, ruby, zig" }
         { name: "k8s",    role: "host",     desc: "current kubectl context" }
+        { name: "docker", role: "ahead",    desc: "non-default docker context" }
+        { name: "cloud",  role: "host",     desc: "active AWS profile or GCP project" }
+        { name: "pkg",    role: "modified", desc: "version of the nearest Cargo.toml / package.json / pyproject.toml" }
+        { name: "battery", role: "ok",      desc: "battery percentage (laptops)" }
     ]
 }
 def module-names [] { module-defs | get name }
-def modules-state-path [] { $nu.default-config-dir | path join "modules.txt" }
+def modules-state-path [] { (nuance-config-dir) | path join "modules.txt" }
 
 # Modules the user enabled globally (persisted in modules.txt).
 def enabled-modules [] {
@@ -1978,10 +2210,22 @@ def first-version [text: string] {
     $text | parse -r '(?<v>\d+\.\d+(?:\.\d+)?)' | get v.0? | default ""
 }
 
+# Where nuance keeps its state files ($env.NUANCE_CONFIG_DIR overrides — used by tests).
+def nuance-config-dir [] { $env.NUANCE_CONFIG_DIR? | default $nu.default-config-dir }
+# Where nuance keeps small caches (toolchain versions, slow-repo marks, last error).
+def nuance-cache-dir [] { $env.NUANCE_CACHE_DIR? | default ($nu.cache-dir | path join "nuance") }
+# Terminal width ($env.NUANCE_COLUMNS overrides — used by tests).
+def term-cols [] {
+    let o = ($env.NUANCE_COLUMNS? | default null)
+    if $o != null { $o | into int } else { try { (term size).columns } catch { 80 } }
+}
+# Today's date for HUD styles ($env.NUANCE_DATE overrides — used by tests).
+def prompt-date [] { $env.NUANCE_DATE? | default (date now | format date "%a %-d") }
+
 # Toolchain version, cached on disk for an hour — spawning rustc/node on
 # every prompt would make the shell feel sluggish.
 def tool-version [tool: string, args: list<string>] {
-    let dir = ($nu.cache-dir | path join "nuance")
+    let dir = (nuance-cache-dir)
     let f = ($dir | path join $"ver-($tool)")  # keyed by binary name
     if ($f | path exists) {
         let age = ((date now) - (ls -D $f | get 0.modified))
@@ -2015,8 +2259,57 @@ def lang-detect [start?: string] {
     ""
 }
 
+# Version of the nearest package manifest (walks up like lang-detect).
+def pkg-version [start?: string] {
+    mut dir = ($start | default $env.PWD)
+    for _ in 0..5 {
+        let cargo = ($dir | path join "Cargo.toml")
+        if ($cargo | path exists) {
+            let v = (open --raw $cargo | lines | where {|l| $l =~ '^version\s*=' } | first 1 | parse -r '"(?<v>[^"]+)"' | get v.0? | default "")
+            if ($v | is-not-empty) { return $v }
+        }
+        let pj = ($dir | path join "package.json")
+        if ($pj | path exists) {
+            let v = (try { open $pj | get -o version | default "" } catch { "" })
+            if ($v | is-not-empty) { return $v }
+        }
+        let py = ($dir | path join "pyproject.toml")
+        if ($py | path exists) {
+            let v = (open --raw $py | lines | where {|l| $l =~ '^version\s*=' } | first 1 | parse -r '"(?<v>[^"]+)"' | get v.0? | default "")
+            if ($v | is-not-empty) { return $v }
+        }
+        let up = ($dir | path dirname)
+        if $up == $dir { break }
+        $dir = $up
+    }
+    ""
+}
+
+# Battery percentage or null (no battery). Cached for a minute — `pmset` is slow.
+def battery-percent [] {
+    let f = ((nuance-cache-dir) | path join "battery.txt")
+    let now = (date now | format date "%s" | into int)
+    if ($f | path exists) {
+        let c = (open --raw $f | str trim | split row " ")
+        if ($c | length) == 2 and (($now - ($c.0 | into int)) < 60) {
+            return (if $c.1 == "none" { null } else { $c.1 | into int })
+        }
+    }
+    let pct = if ("/sys/class/power_supply" | path exists) {
+        let bats = (glob "/sys/class/power_supply/BAT*/capacity")
+        if ($bats | is-empty) { null } else { try { open --raw ($bats | first) | str trim | into int } catch { null } }
+    } else if (which pmset | is-not-empty) {
+        (do -i { ^pmset -g batt } | complete | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
+    } else { null }
+    try { mkdir (nuance-cache-dir); $"($now) ($pct | default 'none')" | save -f $f }
+    $pct
+}
+
 # Text of one module, or null when it has nothing to show.
 def module-text [name: string] {
+    # tests/screenshots: $env.NUANCE_FAKE_MODULES = { lang: "rust 1.0.0", status: "-" }  ("-" = hidden)
+    let fake = ($env.NUANCE_FAKE_MODULES? | default {} | get -o $name)
+    if $fake != null { return (if $fake == "-" { null } else { $fake }) }
     match $name {
         "status" => {
             let c = ($env.LAST_EXIT_CODE? | default 0)
@@ -2041,6 +2334,27 @@ def module-text [name: string] {
                 let v = (tool-version $tool $args)
                 if ($v | is-empty) { $l } else { $"($l) ($v)" }
             }
+        }
+        "docker" => {
+            let env_ctx = ($env.DOCKER_CONTEXT? | default "")
+            let ctx = if ($env_ctx | is-not-empty) { $env_ctx } else {
+                let cfg = ($nu.home-dir | path join ".docker" "config.json")
+                if ($cfg | path exists) { (try { open $cfg | get -o currentContext } catch { null }) | default "" } else { "" }
+            }
+            if ($ctx | is-empty) or $ctx == "default" { null } else { $"docker:($ctx)" }
+        }
+        "cloud" => {
+            let aws = ($env.AWS_PROFILE? | default ($env.AWS_VAULT? | default ""))
+            let gcp = ($env.CLOUDSDK_CORE_PROJECT? | default ($env.GOOGLE_CLOUD_PROJECT? | default ""))
+            if ($aws | is-not-empty) { $"aws:($aws)" } else if ($gcp | is-not-empty) { $"gcp:($gcp)" } else { null }
+        }
+        "pkg" => {
+            let v = (pkg-version)
+            if ($v | is-empty) { null } else { $"v($v)" }
+        }
+        "battery" => {
+            let b = (battery-percent)
+            if $b == null { null } else { $"(if $b <= 20 { '⚠' } else { '⚡' }) ($b)%" }
         }
         "k8s" => {
             let cfg = ($env.KUBECONFIG? | default ($nu.home-dir | path join ".kube" "config") | split row (char esep) | first)
@@ -2121,8 +2435,16 @@ def render-blocks [shape: string, ids: list<string>] {
 # letter (fish-style) from the left, keeping the last two intact; if that is
 # still too long it falls back to …/parent/dir. The budget is a third of the
 # terminal width (min 24); override with $env.PROMPT_DIR_MAX (0 = never shorten).
+# Terminal columns a string occupies: wide (CJK, emoji, fullwidth) characters
+# count as 2, combining marks as 0.
+def display-width [s: string] {
+    let chars = ($s | split chars)
+    let wide = ($chars | where {|c| $c =~ '^[\x{1100}-\x{115F}\x{2E80}-\x{A4CF}\x{AC00}-\x{D7A3}\x{F900}-\x{FAFF}\x{FE30}-\x{FE6F}\x{FF00}-\x{FF60}\x{FFE0}-\x{FFE6}\x{1F300}-\x{1FAFF}\x{20000}-\x{3FFFD}]$' } | length)
+    let comb = ($chars | where {|c| $c =~ '^[\x{0300}-\x{036F}\x{200B}-\x{200D}\x{FE0F}]$' } | length)
+    ($chars | length) + $wide - $comb
+}
 def shorten-path [path: string, budget: int] {
-    if $budget <= 0 or ($path | str length) <= $budget { return $path }
+    if $budget <= 0 or (display-width $path) <= $budget { return $path }
     let parts = ($path | path split)
     let n = ($parts | length)
     if $n <= 2 { return $path }
@@ -2132,10 +2454,10 @@ def shorten-path [path: string, budget: int] {
     if $n > 3 {
         for i in 1..($n - 3) {
             let c = ($cur | get $i)
-            let short = (if ($c | str starts-with ".") { $c | str substring 0..1 } else { $c | str substring 0..0 })
+            let short = (if ($c | str starts-with ".") { $c | str substring --grapheme-clusters 0..1 } else { $c | str substring --grapheme-clusters 0..0 })
             $cur = ($cur | update $i $short)
             let out = (do $join $cur)
-            if ($out | str length) <= $budget { return $out }
+            if (display-width $out) <= $budget { return $out }
         }
     }
     $"…/($parts | last 2 | str join '/')"
@@ -2143,10 +2465,17 @@ def shorten-path [path: string, budget: int] {
 def dir-budget [] {
     let o = ($env.PROMPT_DIR_MAX? | default null)
     if $o != null { return ($o | into int) }
-    let cols = (try { (term size).columns } catch { 80 })
-    ([($cols // 3) 24] | math max)
+    ([((term-cols) // 3) 24] | math max)
 }
-def display-dir [] { shorten-path ($env.PWD | str replace $nu.home-dir "~") (dir-budget) }
+# $env.NUANCE_DIR overrides the shown directory (used by tests and screenshots).
+# Asking the terminal for its width costs ~10 ms, so short paths (which can
+# never be shortened below the 24-column minimum budget) skip it entirely.
+def display-dir [] {
+    let o = ($env.NUANCE_DIR? | default null)
+    let path = (if $o != null { $o } else { $env.PWD | str replace $nu.home-dir "~" })
+    if ($env.PROMPT_DIR_MAX? | default null) == null and (display-width $path) <= 24 { return $path }
+    shorten-path $path (dir-budget)
+}
 
 # ── helpers for the game / framework styles ──────────────────
 # Number of changed paths (conflicts count triple — they hurt the most).
@@ -2287,7 +2616,7 @@ def render-left [] {
         }
         "af-magic" => {
             # a full-width rule, then user ~/dir git:(branch)
-            let cols = (try { (term size).columns } catch { 80 })
+            let cols = (term-cols)
             let bar = ("" | fill --width $cols --character "─")
             let g = (git-info)
             let git_txt = if $g.present { $"  (git-omz $g)" } else { "" }
@@ -2534,7 +2863,7 @@ def render-left [] {
         "farmstead" => {
             let g = (git-info)
             let rs = (ansi reset)
-            let day = (date now | format date "%a %-d")
+            let day = (prompt-date)
             let crops = (if $g.present and $g.ahead > 0 { $" (ansi {fg: $p.ok})(repeat-str '❀' ([$g.ahead 5] | math min))($rs)" } else { "" })
             let br = (if $g.present { $"  (ansi {fg: $p.ok})⚘ (git-head $g)($rs)" } else { "" })
             $"(ansi {fg: $p.user attr: b})☀ ($day)($rs)  (ansi {fg: $p.path attr: b})⌂ ($full_dir)($rs)($br)($crops)"
@@ -2623,6 +2952,104 @@ def indicator-core [] {
 }
 
 
+# ── Color fallback ───────────────────────────────────────────
+# Themes are truecolor (#rrggbb). On terminals that can't show that, the final
+# prompt string is rewritten: 24-bit SGR codes become the nearest 256- or
+# 16-color ones, and NO_COLOR strips color entirely.
+# Force a mode with $env.NUANCE_COLORS = truecolor | 256 | 16 | none.
+def color-mode [] {
+    if (($env.NO_COLOR? | default "") | is-not-empty) { return "none" }
+    let o = ($env.NUANCE_COLORS? | default "auto")
+    if $o in ["truecolor" "256" "16" "none"] { return $o }
+    if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { return "truecolor" }
+    if (($env.TERM? | default "") | str contains "256") { "256" } else { "16" }
+}
+def rgb-256 [r: int, g: int, b: int] {
+    if (($r - $g | math abs) < 10) and (($g - $b | math abs) < 10) {
+        let a = (($r + $g + $b) / 3)
+        if $a < 8 { return 16 }
+        if $a > 248 { return 231 }
+        return (232 + ([((($a - 8) * 24 / 247) | math round | into int) 23] | math min))
+    }
+    let lv = {|v| ($v * 5.0 / 255.0) | math round | into int }
+    16 + 36 * (do $lv $r) + 6 * (do $lv $g) + (do $lv $b)
+}
+# Index (0-15) of the nearest basic ANSI color.
+def rgb-16 [r: int, g: int, b: int] {
+    let pal = [[0 0 0] [205 0 0] [0 205 0] [205 205 0] [0 0 238] [205 0 205] [0 205 205] [229 229 229] [127 127 127] [255 0 0] [0 255 0] [255 255 0] [92 92 255] [255 0 255] [0 255 255] [255 255 255]]
+    $pal | enumerate | each {|e|
+        let c = $e.item
+        { i: $e.index, d: ((($c.0 - $r) ** 2) + (($c.1 - $g) ** 2) + (($c.2 - $b) ** 2)) }
+    } | sort-by d | first | get i
+}
+# Rewrite the parameters of one SGR sequence (the part between ESC[ and m).
+def convert-sgr [params: string, mode: string] {
+    let t = ($params | split row ";")
+    let n = ($t | length)
+    mut out = []
+    mut i = 0
+    while $i < $n {
+        let tok = ($t | get $i)
+        if ($tok in ["38" "48"]) and (($t | get -o ($i + 1)) == "2") and (($i + 4) < $n) {
+            let r = ($t | get ($i + 2) | into int)
+            let g = ($t | get ($i + 3) | into int)
+            let b = ($t | get ($i + 4) | into int)
+            if $mode == "256" {
+                $out = ($out | append [$tok "5" (rgb-256 $r $g $b | into string)])
+            } else {
+                let c = (rgb-16 $r $g $b)
+                let fg = ($tok == "38")
+                let code = (if $c < 8 { (if $fg { 30 } else { 40 }) + $c } else { (if $fg { 90 } else { 100 }) + $c - 8 })
+                $out = ($out | append ($code | into string))
+            }
+            $i = $i + 5
+        } else {
+            $out = ($out | append $tok)
+            $i = $i + 1
+        }
+    }
+    $out | str join ";"
+}
+def downgrade-ansi [s: string, mode: string] {
+    if $mode == "truecolor" { return $s }
+    if $mode == "none" { return ($s | ansi strip) }
+    let esc = (char --unicode "1b")
+    let parts = ($s | split row $"($esc)[")
+    let rest = ($parts | skip 1 | each {|chunk|
+        let i = ($chunk | str index-of "m")
+        if $i < 0 { $"($esc)[($chunk)" } else {
+            let params = (if $i == 0 { "" } else { $chunk | str substring 0..<$i })
+            let text = ($chunk | str substring ($i + 1)..)
+            if ($params | str contains "38;2;") or ($params | str contains "48;2;") {
+                $"($esc)[(convert-sgr $params $mode)m($text)"
+            } else { $"($esc)[($chunk)" }
+        }
+    })
+    ($parts | first) + ($rest | str join "")
+}
+def finalize [s: string] {
+    let m = (color-mode)
+    if $m == "truecolor" { $s } else { downgrade-ansi $s $m }
+}
+
+# ── Safety net ───────────────────────────────────────────────
+# A prompt must never break your shell. Every renderer runs inside safe-run:
+# on any error it logs the message (shown by `nuance doctor`) and falls back to
+# a plain prompt.
+def log-prompt-error [what: string, msg: string] {
+    try {
+        let dir = (nuance-cache-dir)
+        mkdir $dir
+        $"($what): ($msg)" | save -f ($dir | path join "last-error.txt")
+    }
+}
+def safe-run [what: string, body: closure, fallback: closure] {
+    try { do $body } catch {|e|
+        log-prompt-error $what ($e.msg? | default "unknown error")
+        do $fallback
+    }
+}
+
 # ── Per-directory overrides (.nuance) ────────────────────────
 # A `.nuance` TOML file in a directory (or any parent) re-themes the prompt
 # while you are inside it — e.g. a red theme for prod checkouts:
@@ -2656,6 +3083,8 @@ def dir-override [] {
     }
     let st = ($cfg.style? | default "")
     if ($st | describe) == "string" and $st in (prompt-styles) { $e = ($e | insert PROMPT_STYLE $st) }
+    let gm = ($cfg.git? | default "")
+    if ($gm | describe) == "string" and $gm in ["off" "light" "full"] { $e = ($e | insert PROMPT_GIT $gm) }
     if ($e | is-empty) { null } else { $e }
 }
 
@@ -2664,28 +3093,64 @@ def with-local [body: closure] {
     if $o == null { do $body } else { with-env $o { do $body } }
 }
 
-def create_left_prompt [] { with-local { left-prompt-core } }
-def create_right_prompt [] { with-local { right-prompt-core } }
-def prompt-indicator [] { with-local { indicator-core } }
+def create_left_prompt [] {
+    finalize (safe-run "left prompt" { with-local { left-prompt-core } } { $"(($env.PWD | str replace $nu.home-dir '~')) " })
+}
+def create_right_prompt [] {
+    finalize (safe-run "right prompt" { with-local { right-prompt-core } } { "" })
+}
+def prompt-indicator [] {
+    finalize (safe-run "indicator" { with-local { indicator-core } } { "❯ " })
+}
+
+# ── Terminal integration ─────────────────────────────────────
+# Nushell can emit terminal-integration sequences (window title, working
+# directory, clickable paths, semantic prompt marks for jump-to-prompt / copy
+# last output). They are on by default; `nuance integration off` disables all.
+def integration-state-path [] { (nuance-config-dir) | path join "integration.txt" }
+def --env integration-apply [mode: string] {
+    let on = ($mode != "off")
+    $env.config.shell_integration.osc2 = $on
+    $env.config.shell_integration.osc7 = $on
+    $env.config.shell_integration.osc8 = $on
+    $env.config.shell_integration.osc133 = $on
+    $env.config.shell_integration.osc633 = $on
+    $env.NUANCE_INTEGRATION = (if $on { "on" } else { "off" })
+}
+integration-apply (try { open (integration-state-path) | str trim } catch { "on" })
 
 # ── Transient prompt ─────────────────────────────────────────
 # Once you press Enter, the finished prompt collapses to a single colored
 # glyph so scrollback stays clean (powerlevel10k / starship "transient").
 # Uses Nushell's TRANSIENT_PROMPT_* variables. Toggle: `nuance transient`.
-def transient-state-path [] { $nu.default-config-dir | path join "transient.txt" }
+def transient-state-path [] { (nuance-config-dir) | path join "transient.txt" }
+# Mirror a style's indicator glyph for Vi normal mode (❯ → ❮).
+def vi-glyph [g: string] {
+    let m = { "❯": "❮", "▶": "◀", "»": "«", ">": "<", "▸": "◂", "❧": "☙", "▮▮": "▮▮", "▶▶▶": "◀◀◀" }
+    $m | get -o $g | default "❮"
+}
+def vi-normal [] {
+    let p = $env.THEME_PALETTE
+    let g = (style-def ($env.PROMPT_STYLE? | default "full")).glyph
+    $"(ansi {fg: $p.err attr: b})(vi-glyph (if ($g | is-empty) { '❯' } else { $g })) (ansi reset)"
+}
+# Collapsed prompt: the style's glyph, colored by the last exit status. In
+# `dir` mode the directory name stays in front of it.
 def transient-left [] {
     let p = $env.THEME_PALETTE
     let g = (style-def ($env.PROMPT_STYLE? | default "full")).glyph
     let glyph = if ($g | is-empty) { "❯" } else { $g }
-    $"(ansi {fg: $p.ok attr: b})($glyph) (ansi reset)"
+    let c = (if (($env.LAST_EXIT_CODE? | default 0) == 0) { $p.ok } else { $p.err })
+    let dir = (if ($env.NUANCE_TRANSIENT? | default "on") == "dir" { $"(ansi {fg: $p.path})($env.PWD | path basename)(ansi reset) " } else { "" })
+    $"($dir)(ansi {fg: $c attr: b})($glyph) (ansi reset)"
 }
 def --env transient-apply [mode: string] {
-    if $mode == "on" {
-        $env.TRANSIENT_PROMPT_COMMAND = { || with-local { transient-left } }
+    if $mode in ["on" "dir"] {
+        $env.TRANSIENT_PROMPT_COMMAND = { || finalize (safe-run "transient prompt" { with-local { transient-left } } { "❯ " }) }
         $env.TRANSIENT_PROMPT_INDICATOR = { || "" }
         $env.TRANSIENT_PROMPT_INDICATOR_VI_INSERT = { || "" }
         $env.TRANSIENT_PROMPT_COMMAND_RIGHT = { || "" }
-        $env.NUANCE_TRANSIENT = "on"
+        $env.NUANCE_TRANSIENT = $mode
     } else {
         hide-env --ignore-errors TRANSIENT_PROMPT_COMMAND TRANSIENT_PROMPT_INDICATOR TRANSIENT_PROMPT_INDICATOR_VI_INSERT TRANSIENT_PROMPT_COMMAND_RIGHT
         $env.NUANCE_TRANSIENT = "off"
@@ -2699,5 +3164,5 @@ $env.PROMPT_COMMAND = { || create_left_prompt }
 $env.PROMPT_COMMAND_RIGHT = { || create_right_prompt }
 $env.PROMPT_INDICATOR = { || prompt-indicator }
 $env.PROMPT_INDICATOR_VI_INSERT = { || prompt-indicator }
-$env.PROMPT_INDICATOR_VI_NORMAL = { || $"(ansi {fg: $env.THEME_PALETTE.err attr: b})❮ (ansi reset)" }
-$env.PROMPT_MULTILINE_INDICATOR = { || $"(ansi {fg: $env.THEME_PALETTE.sep})::: (ansi reset)" }
+$env.PROMPT_INDICATOR_VI_NORMAL = { || finalize (safe-run "vi indicator" { with-local { vi-normal } } { "❮ " }) }
+$env.PROMPT_MULTILINE_INDICATOR = { || finalize $"(ansi {fg: $env.THEME_PALETTE.sep}):::(ansi reset) " }

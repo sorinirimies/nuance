@@ -48,6 +48,56 @@ jobs:
           DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
           test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
 
+  # Early warning for Nushell breaking/deprecating something we use. Allowed to
+  # fail: a red nightly job is a heads-up, not a blocker.
+  nushell-nightly:
+    name: nushell nightly (allowed to fail)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nushell nightly
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="$(curl -fsSL https://api.github.com/repos/nushell/nightly/releases?per_page=1 | python3 -c "import sys,json,re; d=json.load(sys.stdin)[0]; print(next(a['browser_download_url'] for a in d['assets'] if re.search(r'x86_64-unknown-linux-gnu\\.tar\\.gz$', a['name'])))")"
+          echo "fetching $url"
+          curl -fsSL "$url" -o /tmp/nu.tar.gz
+          mkdir -p /tmp/nu-extract
+          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
+          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
+          mkdir -p "$HOME/.local/bin"
+          cp "$bin" "$HOME/.local/bin/nu"
+          chmod +x "$HOME/.local/bin/nu"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/nu" --version
+
+      - name: Nushell suite (nightly)
+        run: nu test.nu
+
+  # Experimental: does the prompt suite pass on Windows? Allowed to fail.
+  nushell-windows:
+    name: nushell on windows (experimental)
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nushell
+        shell: pwsh
+        run: |
+          $ver = "0.114.1"
+          $url = "https://github.com/nushell/nushell/releases/download/$ver/nu-$ver-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest $url -OutFile nu.zip
+          Expand-Archive nu.zip -DestinationPath nu-extract
+          $bin = (Get-ChildItem -Recurse nu-extract -Filter nu.exe | Select-Object -First 1).DirectoryName
+          echo $bin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+      - name: Nushell suite
+        shell: pwsh
+        run: nu test.nu
+
   cli:
     name: nuance-cli (${{ matrix.os }})
     strategy:

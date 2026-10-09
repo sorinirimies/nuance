@@ -4,6 +4,8 @@
 # Run:  nu test.nu
 source nushell-prompt.nu
 $env.NUANCE_THEMES_DIR = (mktemp -d)
+$env.NUANCE_CONFIG_DIR = (mktemp -d)   # state files (theme/style/modules/…) never touch your real config
+$env.NUANCE_CACHE_DIR = (mktemp -d)
 
 mut errors = []
 
@@ -440,10 +442,192 @@ if ($r_full | is-empty) { $errors = ($errors | append "right prompt vanished for
 hide-env PROMPT_USER PROMPT_HOST
 
 # ── doctor shows ~ instead of the home directory ──
+if ((tilde "/Users/josé/code/ü" "/Users/josé") != "~/code/ü") or ((tilde "/private/tmp/h/a" "/tmp/h") != "~/a") { $errors = ($errors | append "tilde() must handle non-ASCII homes and /private") }
 if ((tilde "/not/home/x") != "/not/home/x") or ((tilde $nu.home-dir) != "~") { $errors = ($errors | append "tilde() wrong outside/at the home directory") }
 if ((tilde ($nu.home-dir | path join ".config" "x")) != "~/.config/x") { $errors = ($errors | append "tilde() should shorten the home directory") }
 let doc_text = (nuance doctor | get detail | str join " ")
 if ($doc_text | str contains $nu.home-dir) { $errors = ($errors | append "doctor output leaks the absolute home directory") }
+
+# ── color fallback ──
+let sample = $"(ansi {fg: '#ff5555' bg: '#282a36' attr: b}) hi (ansi reset) (ansi {fg: '#808080'})x(ansi reset)"
+let esc = (char --unicode "1b")
+if ((downgrade-ansi $sample "truecolor") != $sample) { $errors = ($errors | append "truecolor mode must not touch the string") }
+let d256 = (downgrade-ansi $sample "256")
+if not ($d256 | str contains $"($esc)[1;48;5;59;38;5;210m") or ($d256 | str contains "38;2;") { $errors = ($errors | append $"256-color downgrade wrong: ($d256 | to nuon)") }
+let d16 = (downgrade-ansi $sample "16")
+if not ($d16 | str contains $"($esc)[1;40;91m") or ($d16 | str contains ";5;") { $errors = ($errors | append $"16-color downgrade wrong: ($d16 | to nuon)") }
+if ((downgrade-ansi $sample "none") != " hi  x") { $errors = ($errors | append "none mode should strip all color") }
+if ((rgb-256 255 85 85) != 210) or ((rgb-256 128 128 128) != 244) or ((rgb-256 0 0 0) != 16) or ((rgb-256 255 255 255) != 231) { $errors = ($errors | append "rgb-256 mapping wrong") }
+if ((rgb-16 255 85 85) != 9) or ((rgb-16 0 0 0) != 0) { $errors = ($errors | append "rgb-16 mapping wrong") }
+let cm_nc = (with-env { NO_COLOR: "1" } { color-mode })
+let cm_force = (with-env { NUANCE_COLORS: "256", COLORTERM: "truecolor" } { color-mode })
+let cm_true = (with-env { COLORTERM: "truecolor" } { color-mode })
+let cm_256 = (with-env { COLORTERM: "", TERM: "xterm-256color" } { color-mode })
+let cm_16 = (with-env { COLORTERM: "", TERM: "linux" } { color-mode })
+if ([$cm_nc $cm_force $cm_true $cm_256 $cm_16] != ["none" "256" "truecolor" "256" "16"]) { $errors = ($errors | append $"color-mode wrong: ([$cm_nc $cm_force $cm_true $cm_256 $cm_16] | to nuon)") }
+let fin = (with-env { NUANCE_COLORS: "256", NUANCE_GIT: { present: false }, PROMPT_STYLE: "powerline", NUANCE_DIR: "~/x" } { create_left_prompt })
+if ($fin | str contains "38;2;") or not ($fin | str contains "38;5;") { $errors = ($errors | append "create_left_prompt ignores NUANCE_COLORS") }
+
+# ── display width / wide characters ──
+if ((display-width "abc") != 3) or ((display-width "项目") != 4) or ((display-width "a项b") != 4) or ((display-width "é") != 1) { $errors = ($errors | append "display-width wrong") }
+if ((shorten-path "~/项目/代码/目录/子目录" 14) != "…/目录/子目录") or ((shorten-path "~/项目/代码/目录/子目录" 19) != "~/项/代/目录/子目录") or ((shorten-path "~/项目/代码/目录/子目录" 40) != "~/项目/代码/目录/子目录") { $errors = ($errors | append $"shorten-path should measure wide chars: (shorten-path '~/项目/代码/目录/子目录' 14) / (shorten-path '~/项目/代码/目录/子目录' 19)") }
+
+# ── safety net: a broken renderer never breaks the prompt ──
+let broken = (with-env { NUANCE_GIT: { present: true }, PROMPT_STYLE: "mario", NUANCE_DIR: "~/proj" } { create_left_prompt })
+let broken_r = (with-env { NUANCE_GIT: { present: true }, PROMPT_STYLE: "mario" } { create_right_prompt })
+let err_file = ((nuance-cache-dir) | path join "last-error.txt")
+if not ($broken | str contains ($env.PWD | path basename)) { $errors = ($errors | append $"fallback prompt should show the path, got: ($broken)") }
+if not ($err_file | path exists) or not (open --raw $err_file | str contains "left prompt") { $errors = ($errors | append "prompt error was not logged to last-error.txt") }
+let doc_err = (nuance doctor | where check == "last prompt error" | first)
+if $doc_err.status != "warn" { $errors = ($errors | append "doctor should warn about the last prompt error") }
+nuance doctor --clear-errors | ignore
+if ($err_file | path exists) { $errors = ($errors | append "doctor --clear-errors didn't remove last-error.txt") }
+let doc_ok = (nuance doctor | where check == "last prompt error" | first)
+if $doc_ok.status != "ok" { $errors = ($errors | append "doctor should report no prompt error after clearing") }
+
+# ── git modes + slow-repo handling (real repo) ──
+let sg = (mktemp -d | path expand)
+let sg_orig = $env.PWD
+cd $sg
+^git init -q -b main
+"a\n" | save a
+^git add a
+^git ...$gid commit -q -m first
+"u\n" | save u
+let sg_full = (git-info)
+let sg_off = (with-env { PROMPT_GIT: "off" } { git-info })
+let sg_light = (with-env { PROMPT_GIT: "light" } { git-info })
+let slow_before = (git-slow-marked (git-dir-find))
+let sg_mark = (with-env { NUANCE_GIT_SLOW_MS: 0 } { git-info })
+let slow_after = (git-slow-marked (git-dir-find))
+let sg_slow = (git-info)
+# a mark older than a day is ignored
+let old_line = $"((git-dir-find))\t1000\n"
+$old_line | save -f (slow-git-path)
+let slow_expired = (git-slow-marked (git-dir-find))
+cd $sg_orig
+rm -rf $sg
+if $sg_full.untracked != 1 { $errors = ($errors | append "git full mode should count untracked files") }
+if $sg_off.present { $errors = ($errors | append "PROMPT_GIT=off should hide git") }
+if (not $sg_light.present) or ($sg_light.untracked != 0) { $errors = ($errors | append "PROMPT_GIT=light should skip the status scan") }
+if $slow_before or (not $slow_after) { $errors = ($errors | append "slow repo was not marked after a slow status") }
+if $sg_slow.untracked != 0 { $errors = ($errors | append "a slow-marked repo should be scanned with -uno") }
+if $slow_expired { $errors = ($errors | append "slow marks should expire after a day") }
+rm -f (slow-git-path)
+
+# ── user styles ──
+let usd = (mktemp -d)
+$env.NUANCE_STYLES_DIR = $usd
+{ shape: "slant", segs: ["user" "path" "git"], glyph: "▸", tone: "ok", desc: "mine" } | to nuon | save ($usd | path join "my-slant.nuon")
+{ shape: "bogus", segs: ["path"] } | to nuon | save ($usd | path join "bad-shape.nuon")
+{ shape: "arrow", segs: ["user" "git"] } | to nuon | save ($usd | path join "no-path.nuon")
+{ shape: "arrow", segs: ["path" "nope"] } | to nuon | save ($usd | path join "bad-seg.nuon")
+{ shape: "arrow", segs: ["path"] } | to nuon | save ($usd | path join "full.nuon")   # collides with a built-in
+let ustyles = (user-style-defs | get name)
+let all_styles = (prompt-styles)
+nuance style new generated | ignore
+let gen_ok = ("generated" in (prompt-styles))
+let gen_dup = (nuance style new generated | ignore; "ok")
+theme-apply "gruvbox"
+let user_render = (with-env { PROMPT_STYLE: "my-slant", NUANCE_GIT: { present: false }, NUANCE_DIR: "~/proj", PROMPT_USER: "sorin" } { left-prompt-core | ansi strip })
+let user_ind = (with-env { PROMPT_STYLE: "my-slant" } { indicator-core | ansi strip })
+hide-env NUANCE_STYLES_DIR
+rm -rf $usd
+if $ustyles != ["generated" "my-slant"] and $ustyles != ["my-slant"] { $errors = ($errors | append $"user styles: wrong set loaded: ($ustyles | to nuon)") }
+if ("my-slant" not-in $all_styles) or ("bad-shape" in $all_styles) or ("no-path" in $all_styles) or ("bad-seg" in $all_styles) { $errors = ($errors | append "user styles were not validated") }
+if not $gen_ok { $errors = ($errors | append "nuance style new should create a loadable style") }
+if not ($user_render | str contains "sorin") or not ($user_render | str contains "~/proj") or not ($user_render | str contains (char --unicode e0b8)) { $errors = ($errors | append $"user style rendered wrong: ($user_render)") }
+if not ($user_ind | str contains "▸") { $errors = ($errors | append "user style glyph not used as indicator") }
+
+# ── new modules ──
+let mt_docker = (with-env { DOCKER_CONTEXT: "colima" } { module-text "docker" })
+let mt_docker_def = (with-env { DOCKER_CONTEXT: "default" } { module-text "docker" })
+let mt_aws = (with-env { AWS_PROFILE: "prod" } { module-text "cloud" })
+let mt_gcp = (with-env { AWS_PROFILE: "", AWS_VAULT: "", CLOUDSDK_CORE_PROJECT: "proj-1" } { module-text "cloud" })
+let pkgd = (mktemp -d)
+"[package]\nname = \"x\"\nversion = \"1.2.3\"\n" | save ($pkgd | path join "Cargo.toml")
+mkdir ($pkgd | path join "sub")
+let pv_rust = (pkg-version ($pkgd | path join "sub"))
+rm ($pkgd | path join "Cargo.toml")
+{ name: "x", version: "4.5.6" } | to json | save ($pkgd | path join "package.json")
+let pv_node = (pkg-version $pkgd)
+rm -rf $pkgd
+let mt_fake = (with-env { NUANCE_FAKE_MODULES: { lang: "rust 9.9.9", status: "-" } } { [(module-text "lang") (module-text "status")] })
+if $mt_docker != "docker:colima" or $mt_docker_def != null { $errors = ($errors | append "docker module wrong") }
+if $mt_aws != "aws:prod" or $mt_gcp != "gcp:proj-1" { $errors = ($errors | append "cloud module wrong") }
+if $pv_rust != "1.2.3" or $pv_node != "4.5.6" { $errors = ($errors | append $"pkg-version wrong: ($pv_rust) / ($pv_node)") }
+if $mt_fake != ["rust 9.9.9" null] { $errors = ($errors | append "NUANCE_FAKE_MODULES hook wrong") }
+for m in (module-defs) { if ($m.role not-in (palette-seg-roles)) { $errors = ($errors | append $"module ($m.name): bad role") } }
+
+# ── vi mode + transient glyphs ──
+if ((vi-glyph "❯") != "❮") or ((vi-glyph "▶") != "◀") or ((vi-glyph "zz") != "❮") { $errors = ($errors | append "vi-glyph wrong") }
+let tr_dir = (with-env { NUANCE_TRANSIENT: "dir", PROMPT_STYLE: "full" } { transient-left | ansi strip })
+let tr_on = (with-env { NUANCE_TRANSIENT: "on", PROMPT_STYLE: "full" } { transient-left | ansi strip })
+if not ($tr_dir | str contains ($env.PWD | path basename)) or ($tr_on | str contains ($env.PWD | path basename)) { $errors = ($errors | append "transient dir mode should add the directory name (and plain mode shouldn't)") }
+if not ((with-env { PROMPT_STYLE: "full" } { vi-normal | ansi strip }) | str contains "❮") { $errors = ($errors | append "vi-normal indicator wrong") }
+
+# ── terminal integration toggle ──
+integration-apply "off"
+let integ_off = [$env.config.shell_integration.osc133 $env.config.shell_integration.osc2 $env.config.shell_integration.osc7]
+integration-apply "on"
+let integ_on = [$env.config.shell_integration.osc133 $env.config.shell_integration.osc2 $env.config.shell_integration.osc7]
+if $integ_off != [false false false] or $integ_on != [true true true] { $errors = ($errors | append "integration-apply doesn't flip the shell_integration flags") }
+
+# ── list / current / preview / random ──
+if ((nuance list themes | length) != (theme-list | length)) or ((nuance list styles | length) != (prompt-styles | length)) or ((nuance list looks | length) != (presets | length)) or ((nuance list modules | length) != (module-names | length)) { $errors = ($errors | append "nuance list counts wrong") }
+let lt = (nuance list themes)
+if not (($lt | where name == "tokyo-night-day" | first).light) or (($lt | where name == "gruvbox" | first).light) { $errors = ($errors | append "nuance list themes: light flag wrong") }
+let cur = (nuance current)
+for k in [theme style transient modules integration colors git] { if $k not-in ($cur | columns) { $errors = ($errors | append $"nuance current missing '($k)'") } }
+let prev = (with-env { NUANCE_GIT: { present: false }, NUANCE_DIR: "~/proj", PROMPT_USER: "sorin", PROMPT_HOST: "nuance" } { nuance preview dracula pastel })
+if not ($prev | ansi strip | str contains "~/proj") { $errors = ($errors | append "nuance preview didn't render") }
+
+# ── share strings (export / import round trip) ──
+$env.THEME_NAME = "dracula"
+$env.PROMPT_STYLE = "agnoster"
+$env.NUANCE_MODULES = ["lang" "jobs"]
+$env.NUANCE_TRANSIENT = "dir"
+let code = (nuance export)
+if $code != "nuance:1:dracula:agnoster:lang+jobs:dir" { $errors = ($errors | append $"nuance export wrong: ($code)") }
+$env.NUANCE_MODULES = []
+nuance import "nuance:1:nord:pastel:status:on" | ignore
+let after_import = [$env.THEME_NAME $env.PROMPT_STYLE ($env.NUANCE_MODULES | str join ",") $env.NUANCE_TRANSIENT]
+if $after_import != ["nord" "pastel" "status" "on"] { $errors = ($errors | append $"nuance import <share string> wrong: ($after_import | to nuon)") }
+if (open (modules-state-path) | str trim) != "status" or (open (transient-state-path) | str trim) != "on" { $errors = ($errors | append "share string import didn't persist modules/transient") }
+nuance import "nuance:1:no-such-theme:full::off" | ignore
+nuance import "nuance:2:nord:full::off" | ignore
+if $env.THEME_NAME != "nord" { $errors = ($errors | append "invalid share strings must not change anything") }
+transient-apply "off"
+$env.NUANCE_MODULES = []
+
+# ── appearance pair ──
+let ap = (mktemp -d)
+let ap_prev = $env.NUANCE_CONFIG_DIR
+$env.NUANCE_CONFIG_DIR = $ap
+"gruvbox,tokyo-night-day" | save (appearance-path)
+let ap_name = (appearance-theme)
+"nope,also-nope" | save -f (appearance-path)
+let ap_bad = (appearance-theme)
+"appearance" | save -f (theme-state-path)
+let ap_pick = (pick-theme-name "appearance")
+nuance appearance off
+let ap_state = (open (theme-state-path) | str trim)
+$env.NUANCE_CONFIG_DIR = $ap_prev
+rm -rf $ap
+if $ap_name not-in ["gruvbox" "tokyo-night-day"] or $ap_bad != null { $errors = ($errors | append "appearance-theme wrong") }
+if $ap_pick not-in (theme-list) or $ap_state != "auto" { $errors = ($errors | append "appearance pick/off wrong") }
+
+# ── completers ──
+if ((nu-complete nuance themes | length) != (theme-list | length)) or ("on" not-in (nu-complete nuance transient)) or ("enable" not-in (nu-complete nuance module-actions)) { $errors = ($errors | append "completers wrong") }
+$env.PROMPT_STYLE = $saved_style
+
+# ── golden snapshots: every style × representative themes, every theme × two styles ──
+let golden = (^$nu.current-exe scripts/golden.nu --check | complete)
+if $golden.exit_code != 0 { $errors = ($errors | append $"golden prompt snapshots changed:\n($golden.stderr)") }
+
+# ── the built drop-in file matches its parts in nu/*.nu ──
+let built = (^$nu.current-exe scripts/build_prompt.nu --check | complete)
+if $built.exit_code != 0 { $errors = ($errors | append "nushell-prompt.nu is stale — run: just build-prompt") }
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }
@@ -474,7 +658,7 @@ if ("NUANCE_GIT" in ($env | columns)) { $errors = ($errors | append "theme-picke
 
 # ── public commands are defined ──
 let cmds = (scope commands | get name)
-for c in ["theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules" "nuance configure" "nuance doctor" "nuance import" "nuance here"] {
+for c in ["nuance list" "nuance current" "nuance preview" "nuance random" "nuance appearance" "nuance export" "nuance integration" "nuance style" "theme" "theme-sync" "prompt-style" "look" "looks" "theme-preview" "style-preview" "style-label" "style-picker-items" "theme-label" "theme-picker-items" "look-label" "look-picker-items" "sync-picker-item" "reload-theme" "reload-style" "nuance-cli-available" "nuance" "nuance help" "nuance update" "nuance theme" "nuance prompt-style" "nuance look" "nuance sync" "nuance sync theme" "nuance transient" "nuance modules" "nuance configure" "nuance doctor" "nuance import" "nuance here"] {
     if ($c not-in $cmds) { $errors = ($errors | append $"command not defined: ($c)") }
 }
 

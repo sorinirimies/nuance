@@ -282,3 +282,202 @@ fn doctor_reports_checks() {
         );
     }
 }
+
+fn stdout(o: &Output) -> String {
+    String::from_utf8_lossy(&o.stdout).to_string()
+}
+
+#[test]
+fn list_and_current_emit_json() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["list", "themes", "--json"]);
+    assert!(out.status.success());
+    let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).expect("valid JSON");
+    assert!(v.as_array().unwrap().len() >= 60, "expected many themes");
+    assert!(v
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|t| t["name"] == "gruvbox" && t["light"] == false));
+
+    let out = run(home.path(), &["list", "styles", "--json"]);
+    let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).unwrap();
+    assert!(v
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|s| s["name"] == "powerline"));
+
+    let out = run(home.path(), &["current", "--json"]);
+    let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).unwrap();
+    for k in ["theme", "style", "transient", "modules", "colors", "git"] {
+        assert!(v.get(k).is_some(), "current is missing `{k}`");
+    }
+}
+
+#[test]
+fn preview_renders_without_applying() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let work = tempfile::tempdir().unwrap();
+    let out = run_in(home.path(), work.path(), &["preview", "dracula", "bracket"]);
+    assert!(out.status.success());
+    assert!(
+        stdout(&out).contains('['),
+        "bracket style should render brackets"
+    );
+    // nothing was pinned
+    let cfg = config_dir(home.path());
+    assert!(!Path::new(&format!("{cfg}/current-theme.txt")).exists());
+    let out = run(home.path(), &["preview", "no-such-theme"]);
+    assert!(stdout(&out).contains("unknown theme"));
+}
+
+#[test]
+fn export_and_import_round_trip() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(
+        home.path(),
+        &["import", "nuance:1:nord:agnoster:lang+jobs:dir"],
+    );
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("applied"));
+    let cfg = config_dir(home.path());
+    let theme = std::fs::read_to_string(format!("{cfg}/current-theme.txt")).unwrap();
+    assert_eq!(theme.trim(), "nord");
+    let style = std::fs::read_to_string(format!("{cfg}/prompt-style.txt")).unwrap();
+    assert_eq!(style.trim(), "agnoster");
+    let modules = std::fs::read_to_string(format!("{cfg}/modules.txt")).unwrap();
+    assert_eq!(modules.lines().collect::<Vec<_>>(), ["lang", "jobs"]);
+
+    // a fresh shell exports exactly what was imported
+    let out = run(home.path(), &["export"]);
+    assert_eq!(stdout(&out).trim(), "nuance:1:nord:agnoster:lang+jobs:dir");
+
+    let out = run(home.path(), &["import", "nuance:1:no-such-theme:full::off"]);
+    assert!(stdout(&out).contains("unknown theme"));
+}
+
+#[test]
+fn integration_and_appearance_persist() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let cfg = config_dir(home.path());
+    let out = run(home.path(), &["integration", "off"]);
+    assert!(out.status.success());
+    assert_eq!(
+        std::fs::read_to_string(format!("{cfg}/integration.txt"))
+            .unwrap()
+            .trim(),
+        "off"
+    );
+    let out = run(home.path(), &["integration", "status"]);
+    assert!(stdout(&out).contains("off"));
+
+    let out = run(home.path(), &["appearance", "dracula", "tokyo-night-day"]);
+    assert!(out.status.success());
+    assert_eq!(
+        std::fs::read_to_string(format!("{cfg}/appearance.txt"))
+            .unwrap()
+            .trim(),
+        "dracula,tokyo-night-day"
+    );
+    assert_eq!(
+        std::fs::read_to_string(format!("{cfg}/current-theme.txt"))
+            .unwrap()
+            .trim(),
+        "appearance"
+    );
+    run(home.path(), &["appearance", "off"]);
+    assert!(!Path::new(&format!("{cfg}/appearance.txt")).exists());
+}
+
+#[test]
+fn custom_style_can_be_created_and_used() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["style", "new", "mine"]);
+    assert!(out.status.success());
+    let cfg = config_dir(home.path());
+    assert!(Path::new(&format!("{cfg}/nuance/styles/mine.nuon")).exists());
+    let out = run(home.path(), &["prompt-style", "mine"]);
+    assert!(stdout(&out).contains("prompt style set to"));
+    let out = run(home.path(), &["style", "new", "powerline"]);
+    assert!(stdout(&out).contains("built-in"));
+}
+
+#[test]
+fn completions_are_generated() {
+    let home = tempfile::tempdir().unwrap();
+    for shell in ["bash", "zsh", "fish"] {
+        let out = run(home.path(), &["completions", shell]);
+        assert!(out.status.success(), "{shell}");
+        let text = stdout(&out);
+        assert!(
+            text.contains("nuance"),
+            "{shell} completions mention nuance"
+        );
+        assert!(
+            text.contains("uninstall"),
+            "{shell} completions list subcommands"
+        );
+    }
+}
+
+#[test]
+fn uninstall_removes_the_autoload_file_and_purges_state() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let cfg = config_dir(home.path());
+    run(home.path(), &["theme", "gruvbox"]); // installs + pins
+    assert!(Path::new(&format!("{cfg}/autoload/nushell-prompt.nu")).exists());
+    assert!(Path::new(&format!("{cfg}/current-theme.txt")).exists());
+
+    let out = run(home.path(), &["uninstall"]);
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("removed"));
+    assert!(!Path::new(&format!("{cfg}/autoload/nushell-prompt.nu")).exists());
+    assert!(
+        Path::new(&format!("{cfg}/current-theme.txt")).exists(),
+        "state survives a plain uninstall"
+    );
+
+    let out = run(home.path(), &["uninstall", "--purge"]);
+    assert!(out.status.success());
+    assert!(!Path::new(&format!("{cfg}/current-theme.txt")).exists());
+
+    let out = run(home.path(), &["uninstall"]);
+    assert!(stdout(&out).contains("nothing to remove"));
+}
+
+#[test]
+fn doctor_can_clear_errors() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["doctor", "--clear-errors"]);
+    assert!(out.status.success());
+    assert!(stdout(&out).contains("cleared"));
+}

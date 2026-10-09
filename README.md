@@ -90,9 +90,22 @@ nuance configure       # guided setup: look → transient prompt → modules
 nuance doctor          # check nu version, truecolor, Nerd Font, install, state
 nuance import <file|ghostty-theme-name> [--name x]   # ghostty/kitty/alacritty/base16 → theme
 nuance here dracula powerline   # pin a theme/style to this directory tree (.nuance)
+nuance list [themes|styles|looks|modules] [--json]   # what is available
+nuance current [--json]       # the active theme, style and options
+nuance preview nord pastel    # render a prompt without applying anything
+nuance random [look|theme|style]   # surprise me (and pin the pick)
+nuance appearance dracula tokyo-night-day   # follow the OS dark/light mode (off to stop)
+nuance export                 # share string for your look…
+nuance import "nuance:1:nord:pastel:lang+jobs:on"   # …and apply one on another machine
+nuance integration [on|off]   # window title, cwd reporting, semantic prompt marks
+nuance style new mine         # create your own segment style
 nuance sync            # follow the terminal's theme (auto-follow)
 nuance update          # git pull the checkout, then: exec nu
+nuance uninstall [--purge]    # remove nuance from Nushell's autoload dir
+nuance completions zsh        # shell completions for the CLI (bash, zsh, fish, …)
 ```
+
+`theme`, `look`, `prompt-style`, `modules`, … **tab-complete** inside Nushell.
 
 Short forms (same effect): `theme [name]` · `prompt-style [name]` ·
 `look [name]` · `theme-sync` · `theme-preview` · `style-preview`. These also
@@ -146,7 +159,9 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 
 - **Context modules** (`nuance modules enable lang jobs …`) add segments only
   when they matter: `status` (non-zero exit), `jobs`, `ssh`, `root`, `venv`,
-  `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached) and `k8s`.
+  `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached), `k8s`, `docker`
+  (non-default context), `cloud` (AWS profile / GCP project), `pkg` (manifest
+  version) and `battery`.
   Block styles (`powerline`, `capsule`, …) fold them in as extra segments;
   single-line styles append them as a colored tail. `pastel` and `devbar`
   include `lang`/`status`/`jobs` out of the box.
@@ -173,6 +188,30 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   ![nuance configure](docs/configure.gif)
 
   ![nuance doctor](docs/doctor.gif)
+
+- **A prompt that can't break your shell.** Every renderer runs inside a safety
+  net: on any error nuance logs it (shown by `nuance doctor`) and falls back to a
+  plain prompt instead of leaving you with a broken one.
+- **Any terminal.** Theme colors are truecolor; on terminals without it the
+  prompt is rewritten to the nearest 256- or 16-color codes, and `NO_COLOR`
+  turns color off (force a mode with `$env.NUANCE_COLORS`).
+- **Terminal integration** (`nuance integration`): window title, working-directory
+  reporting, clickable paths and semantic prompt marks (jump between prompts,
+  copy the last command's output in Ghostty / kitty / WezTerm) — on by default,
+  `nuance integration off` disables it.
+- **Your own styles.** `nuance style new mine` writes
+  `<config>/nuance/styles/mine.nuon` — pick a `shape` (`arrow`, `slant`, `pill`),
+  the segments (`user host path git` plus any module: `status jobs ssh root venv
+  nix lang k8s docker cloud pkg battery`), a glyph and a tone; it shows up in
+  every picker like a built-in.
+- **Big repositories.** `$env.PROMPT_GIT` = `full` | `light` | `off` (or
+  `git = "off"` in a `.nuance`); a repo whose `git status` is slow is remembered
+  for a day and scanned without untracked files. `nuance doctor --clear-errors`
+  forgets.
+- **Light/dark switching** (`nuance appearance <dark> <light>`) and **shareable
+  looks** (`nuance export` / `nuance import "nuance:1:…"`).
+
+  ![the toolbox: preview, custom styles, sharing](docs/toolbox.gif)
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
@@ -204,12 +243,13 @@ One pure-Nushell file, no OS-specific dependencies. Paths resolve via Nushell
 built-ins; the Ghostty config is found at `~/.config/ghostty/config` or the
 macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `gsettings`. Two suites run in CI on **Ubuntu + macOS** — `nu test.nu`
-(themes/styles/looks/helpers, across Nushell **0.111** and **0.114**) and
-`cargo test` (the `nuance` CLI/TUI, 48 unit + integration tests):
+(themes/styles/looks/helpers, golden snapshots of 1,300 rendered prompts, across
+Nushell **0.111**, **0.114** and nightly) and `cargo test` (the `nuance` CLI/TUI,
+57 unit + integration tests):
 
 ```sh
 nu test.nu       # ✓ all checks passed — 69 themes, 50 styles, 72 looks
-cargo test       # ✓ 48 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
+cargo test       # ✓ 57 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
 ## How it works
@@ -251,12 +291,18 @@ common tasks — `just --list` to see them all: `just check-all` (fmt +
 clippy + both test suites), `just changelog`, `just tape welcome` / `just tapes-all` (re-record every demo GIF),
 `just release 0.2.0`.
 
-Project layout: `nushell-prompt.nu` (the prompt itself) + `src/` (the
-`nuance-cli` crate: `clap` + `ratatui`, self-contained — vendors the prompt
-script via `include_str!`) + `scripts/` (pure Nushell: `install.nu`/
-`uninstall.nu`, for installs without Rust/Cargo) + `tapes/`, `docs/`
-(VHS-recorded GIFs/screenshots), `test.nu`, `tests/` (Rust integration
-tests).
+Project layout: `nu/*.nu` (the prompt itself, in numbered parts) →
+`scripts/build_prompt.nu` concatenates them into the single drop-in
+`nushell-prompt.nu` (**edit `nu/`, then `just build-prompt`** — `test.nu` fails if
+the built file is stale) + `src/` (the `nuance-cli` crate: `clap` + `ratatui`,
+self-contained — vendors the built prompt via `include_str!`) + `scripts/`
+(installers, the gallery and golden-file generators) + `tapes/`, `docs/`
+(VHS-recorded GIFs/screenshots), `test.nu`, `tests/` (Rust integration tests and
+`tests/golden/prompts.txt`).
+
+Changed how a prompt renders on purpose? `nu scripts/golden.nu --update` and review
+the diff. Added a theme, style or look? `just gallery` regenerates `GALLERY.md`
+(and `test.nu` checks the README counts).
 
 ## Changelog
 
@@ -265,4 +311,5 @@ See [CHANGELOG.md](CHANGELOG.md) (generated with
 
 ## License
 
-MIT
+MIT. Theme palettes adapted from open-source colour schemes are credited in
+[THIRD_PARTY.md](THIRD_PARTY.md).

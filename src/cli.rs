@@ -32,10 +32,70 @@ pub enum Commands {
         /// Look name, e.g. cyberpunk, gruvbox-minimal, tokyo-powerline
         name: Option<String>,
     },
+    /// List what is available: themes (default), styles, looks or modules
+    List {
+        /// themes | styles | looks | modules
+        kind: Option<String>,
+        /// Print JSON instead of a table
+        #[arg(long)]
+        json: bool,
+    },
+    /// Show the active theme, style and options
+    Current {
+        /// Print JSON instead of a table
+        #[arg(long)]
+        json: bool,
+    },
+    /// Render a prompt for a theme/style without applying anything
+    Preview {
+        /// Theme name (default: the active one)
+        theme: Option<String>,
+        /// Style name (default: the active one)
+        style: Option<String>,
+    },
+    /// Pick something at random and pin it: look (default), theme or style
+    Random {
+        /// look | theme | style
+        what: Option<String>,
+    },
+    /// Follow the OS dark/light mode: <dark-theme> <light-theme>, or `off`
+    Appearance {
+        /// <dark-theme> <light-theme> | off — omit to show the current pair
+        args: Vec<String>,
+    },
+    /// Print a share string for the current look (apply it with `nuance import`)
+    Export,
+    /// Window title, working-directory reporting and semantic prompt marks (on, off, status)
+    Integration {
+        /// on | off | status
+        mode: Option<String>,
+    },
+    /// Your own segment styles: list, new <name>, dir
+    Style {
+        /// list (default) | new | dir
+        action: Option<String>,
+        /// Style name for `new`
+        name: Option<String>,
+    },
+    /// Remove nuance from Nushell's autoload directory
+    Uninstall {
+        /// Also delete state files (theme, style, modules, imported themes/styles)
+        #[arg(long)]
+        purge: bool,
+    },
+    /// Print shell completions for the nuance CLI (bash, zsh, fish, elvish, powershell)
+    Completions {
+        /// Target shell
+        shell: clap_complete::Shell,
+    },
     /// Guided setup: pick a look (or theme + style), transient prompt, modules
     Configure,
     /// Check fonts, truecolor, install and current nuance state
-    Doctor,
+    Doctor {
+        /// Forget the last prompt error and slow-repo marks first
+        #[arg(long)]
+        clear_errors: bool,
+    },
     /// Import a ghostty/kitty/alacritty/base16 theme (file path, or a Ghostty theme name)
     Import {
         /// Color-scheme file, or the name of a Ghostty theme
@@ -58,7 +118,7 @@ pub enum Commands {
     Modules {
         /// list (default), enable, disable or clear
         action: Option<String>,
-        /// Module names, e.g. lang status jobs ssh venv nix k8s root
+        /// Module names, e.g. lang status jobs ssh venv nix k8s root docker cloud pkg battery
         names: Vec<String>,
     },
     /// Follow the terminal's own theme automatically
@@ -74,12 +134,22 @@ pub fn usage() -> &'static str {
   nuance prompt-style [name]   ratatui picker w/ live preview, or set one
   nuance look [name]           ratatui picker w/ live preview, or apply one
   nuance configure             guided setup (look, transient prompt, modules)
-  nuance doctor                check fonts, truecolor, install and state
+  nuance doctor [--clear-errors]  check fonts, truecolor, install and state
+  nuance list [kind] [--json]  themes (default) | styles | looks | modules
+  nuance current [--json]      the active theme, style and options
+  nuance preview [theme [style]]  render a prompt without applying it
+  nuance random [look|theme|style]  surprise me
+  nuance appearance <dark> <light>  follow the OS dark/light mode (off to stop)
+  nuance export                print a share string; nuance import '<string>' applies it
+  nuance integration [on|off]  title, cwd and semantic prompt marks
+  nuance style [new <name>]    your own segment styles
+  nuance uninstall [--purge]   remove nuance from Nushell's autoload dir
+  nuance completions <shell>   shell completions (bash, zsh, fish, …)
   nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme
   nuance here [theme [style]]  pin a theme to this directory tree (.nuance)
   nuance transient [on|off]    collapse finished prompts to one glyph
   nuance modules [enable|disable|list|clear] [name…]
-                               situational segments: status jobs ssh root venv nix lang k8s
+                               situational segments: status jobs ssh root venv nix lang k8s docker cloud pkg battery
   nuance sync                  follow the terminal's theme (auto-follow)
   nuance update                pull the latest checkout, then: exec nu
   nuance help                  this help
@@ -101,6 +171,16 @@ mod tests {
             "look",
             "configure",
             "doctor",
+            "list",
+            "current",
+            "preview",
+            "random",
+            "appearance",
+            "export",
+            "integration",
+            "style",
+            "uninstall",
+            "completions",
             "import",
             "here",
             "transient",
@@ -173,7 +253,9 @@ mod tests {
         }
         assert!(matches!(
             Cli::try_parse_from(["nuance", "doctor"]).unwrap().command,
-            Some(Commands::Doctor)
+            Some(Commands::Doctor {
+                clear_errors: false
+            })
         ));
         assert!(matches!(
             Cli::try_parse_from(["nuance", "configure"])
@@ -181,6 +263,42 @@ mod tests {
                 .command,
             Some(Commands::Configure)
         ));
+    }
+
+    #[test]
+    fn parses_new_commands() {
+        let p = |a: &[&str]| Cli::try_parse_from(a).unwrap().command;
+        assert!(matches!(
+            p(&["nuance", "list", "styles", "--json"]),
+            Some(Commands::List { json: true, .. })
+        ));
+        assert!(matches!(
+            p(&["nuance", "current"]),
+            Some(Commands::Current { json: false })
+        ));
+        assert!(matches!(
+            p(&["nuance", "preview", "nord", "pastel"]),
+            Some(Commands::Preview {
+                theme: Some(_),
+                style: Some(_)
+            })
+        ));
+        assert!(matches!(
+            p(&["nuance", "uninstall", "--purge"]),
+            Some(Commands::Uninstall { purge: true })
+        ));
+        assert!(matches!(
+            p(&["nuance", "doctor", "--clear-errors"]),
+            Some(Commands::Doctor { clear_errors: true })
+        ));
+        match p(&["nuance", "appearance", "dracula", "tokyo-night-day"]) {
+            Some(Commands::Appearance { args }) => {
+                assert_eq!(args, vec!["dracula", "tokyo-night-day"])
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        assert!(Cli::try_parse_from(["nuance", "completions", "bash"]).is_ok());
+        assert!(Cli::try_parse_from(["nuance", "completions", "nushelly"]).is_err());
     }
 
     #[test]

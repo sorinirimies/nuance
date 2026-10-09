@@ -171,6 +171,53 @@ pub fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>,
     Ok(items)
 }
 
+/// Remove nuance from Nushell's autoload directory. With `purge`, also delete
+/// the state files and the `nuance/` directory (imported themes, user styles).
+/// Deliberately does not go through `with_nu`, which would (re)install first.
+pub fn uninstall(purge: bool) -> ExitCode {
+    if let Err(e) = ensure_nu() {
+        eprintln!("nuance: {e}");
+        return ExitCode::FAILURE;
+    }
+    let mut removed: Vec<PathBuf> = Vec::new();
+    if let Some(dir) = autoload_dir() {
+        let target = dir.join(FILE);
+        if (target.exists() || is_symlink(&target)) && fs::remove_file(&target).is_ok() {
+            removed.push(target);
+        }
+    }
+    if purge {
+        if let Some(cfg) = nu_capture("$nu.default-config-dir").map(PathBuf::from) {
+            for f in [
+                "current-theme.txt",
+                "prompt-style.txt",
+                "transient.txt",
+                "modules.txt",
+                "integration.txt",
+                "appearance.txt",
+            ] {
+                let p = cfg.join(f);
+                if p.exists() && fs::remove_file(&p).is_ok() {
+                    removed.push(p);
+                }
+            }
+            let nuance_dir = cfg.join("nuance");
+            if nuance_dir.is_dir() && fs::remove_dir_all(&nuance_dir).is_ok() {
+                removed.push(nuance_dir);
+            }
+        }
+    }
+    if removed.is_empty() {
+        println!("nothing to remove — nuance is not installed in Nushell's autoload directory.");
+    } else {
+        for p in &removed {
+            println!("\x1b[1;32m\u{2713}\x1b[0m removed {}", p.display());
+        }
+        println!("open a new shell (or run: exec nu) — the nuance binary itself stays; remove it with `cargo uninstall nuance-cli`.");
+    }
+    ExitCode::SUCCESS
+}
+
 pub fn cmd_update(target: &Path) -> ExitCode {
     match repo_dir(target) {
         Some(dir) => {
