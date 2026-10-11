@@ -436,3 +436,7 @@ info:
     @echo "Version:  $(just version)"
     @echo "License:  MIT"
     @echo "Repo:     https://github.com/sorinirimies/nuance"
+
+# Security: dependency vulnerability scan (needs `cargo install cargo-audit`)
+audit:
+    cargo audit
