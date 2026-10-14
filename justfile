@@ -117,12 +117,7 @@ uninstall-nu: check-nu
 changelog: check-git-cliff
     #!/usr/bin/env sh
     set -e
-    { \
-        echo "# Changelog"; echo; \
-        echo "All notable changes to this project are documented here — generated with"; \
-        echo "[git-cliff](https://git-cliff.org) (config: [cliff.toml](cliff.toml))."; echo; \
-        git-cliff --config cliff.toml; \
-    } > CHANGELOG.md
+    git-cliff --config cliff.toml --output CHANGELOG.md
     echo "✅ CHANGELOG.md regenerated!"
 
 # Preview unreleased changes (no file write)
