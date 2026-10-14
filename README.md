@@ -14,11 +14,30 @@
 themeable, git-aware prompt for [Nushell](https://www.nushell.sh), shipped as a
 single drop-in file. Switch between **72 color themes** and **50 prompt
 styles**, combine them into named **looks**, and optionally let the shell
-**follow your terminal's theme** automatically. macOS · Linux · WSL.
+**follow your terminal's theme** automatically — or go the other way and
+let nuance theme the **whole terminal screen** (background, cursor, ANSI colors). macOS · Linux · WSL.
 
 ![nuance demo](docs/welcome.gif)
 
 > **See every theme, style and look in the [gallery →](GALLERY.md)**
+
+## Full-screen terminal theme
+
+Optionally theme the whole terminal, not just the prompt. Off by default.
+
+```sh
+nuance terminal on     # background + foreground + cursor follow the theme
+nuance terminal full   # …plus the 16 ANSI colors (ls, git, vim recolor too)
+nuance terminal off    # reset to your terminal's own colors
+```
+
+![terminal theme](docs/terminal.gif)
+
+It re-applies on every theme/look change and at shell startup, via OSC
+10/11/12/4 escape sequences (only when stdout is a TTY). Works in Ghostty,
+iTerm2, kitty, WezTerm, Alacritty and foot; Terminal.app ignores most of it;
+tmux needs `set -g allow-passthrough on`. With it on, nuance's theme wins over
+your terminal's own colors.
 
 ## Installation
 
@@ -158,23 +177,6 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 
   ![transient prompt](docs/transient.gif)
 
-- **Full-screen terminal theme** (`nuance terminal on|full`): the terminal's
-  background, foreground, cursor (and with `full`, its 16 ANSI colors) follow the
-  theme too — not just the prompt. `nuance terminal off` restores your own colors.
-
-  ![terminal theme](docs/terminal.gif)
-
-- **Context modules** (`nuance modules enable lang jobs …`) add segments only
-  when they matter: `status` (non-zero exit), `jobs`, `ssh`, `root`, `venv`,
-  `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached), `k8s`, `docker`
-  (non-default context), `cloud` (AWS profile / GCP project), `pkg` (manifest
-  version) and `battery`.
-  Block styles (`powerline`, `capsule`, …) fold them in as extra segments;
-  single-line styles append them as a colored tail. `pastel` and `devbar`
-  include `lang`/`status`/`jobs` out of the box.
-
-  ![context modules](docs/modules.gif)
-
 - **Import any terminal theme** (`nuance import`): Ghostty, kitty, Alacritty
   (TOML) and base16 (YAML) color schemes become nuance themes, or pass a
   Ghostty theme *name* (e.g. `nuance import "Rose Pine Moon" --name rpm`).
@@ -221,22 +223,6 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   ![the toolbox: preview, custom styles, sharing](docs/toolbox.gif)
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
-
-## Full-screen terminal theme
-
-Optionally theme the whole terminal, not just the prompt. Off by default.
-
-```sh
-nuance terminal on     # background + foreground + cursor follow the theme
-nuance terminal full   # …plus the 16 ANSI colors (ls, git, vim recolor too)
-nuance terminal off    # reset to your terminal's own colors
-```
-
-It re-applies on every theme/look change and at shell startup, via OSC
-10/11/12/4 escape sequences (only when stdout is a TTY). Works in Ghostty,
-iTerm2, kitty, WezTerm, Alacritty and foot; Terminal.app ignores most of it;
-tmux needs `set -g allow-passthrough on`. With it on, nuance's theme wins over
-your terminal's own colors.
 
 ## Ghostty auto-follow
 
