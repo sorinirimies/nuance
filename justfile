@@ -435,3 +435,7 @@ info:
 # Security: dependency vulnerability scan (needs `cargo install cargo-audit`)
 audit:
     cargo audit
+
+# Security: licenses, bans, sources, advisories (needs `cargo install cargo-deny`)
+deny:
+    cargo deny check
