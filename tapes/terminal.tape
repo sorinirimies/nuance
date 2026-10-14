@@ -6,7 +6,7 @@ Set FontFamily "FiraCode Nerd Font Mono"
 Set FontSize 20
 Set Width 1200
 Set TypingSpeed 55ms
-Set Padding 24
+Set Padding 12
 Set LineHeight 1.2
 Set Height 640
 
@@ -17,7 +17,7 @@ Type "$env.PROMPT_USER = 'sorin'"
 Enter
 Type "$env.PROMPT_HOST = 'nuance'"
 Enter
-Type "theme-apply tokyo-night; $env.PROMPT_STYLE = 'powerline'"
+Type "theme-apply nord; $env.PROMPT_STYLE = 'powerline'"
 Enter
 Type "clear"
 Enter
@@ -39,16 +39,19 @@ Enter
 Sleep 1.2s
 Type "nuance theme dracula"
 Enter
-Sleep 1.5s
+Sleep 2.2s
 Type "nuance theme catppuccin-latte"
 Enter
-Sleep 1.5s
+Sleep 2.8s
 Type "nuance theme gruvbox"
 Enter
-Sleep 1.5s
+Sleep 2.2s
+Type "nuance theme tokyo-night"
+Enter
+Sleep 2.2s
 Type "nuance terminal off"
 Enter
-Sleep 1.5s
+Sleep 2.5s
 
 Hide
 Type "nuance terminal off"
