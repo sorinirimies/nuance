@@ -48,6 +48,13 @@ pub fn ensure_nu() -> Result<(), String> {
                 .to_string(),
         );
     }
+    if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+        return Err(
+            "Nushell (`nu`) is required; refusing to auto-install in a non-interactive session.\n\
+             Run `cargo install nu --locked` or see https://www.nushell.sh"
+                .to_string(),
+        );
+    }
     eprintln!("\x1b[1;33m!\x1b[0m  nu not found — installing it with `cargo install nu --locked` (one-time, ~1-2 min)…");
     let status = Command::new("cargo")
         .arg("install")
@@ -84,6 +91,17 @@ pub fn is_symlink(p: &Path) -> bool {
         .unwrap_or(false)
 }
 
+/// Write via a sibling temp file + rename so a crash never leaves a
+/// half-written autoload script (Nushell would choke on it at startup).
+pub fn write_atomic(target: &Path, bytes: &[u8]) -> Result<(), String> {
+    let tmp = target.with_extension("nu.tmp");
+    fs::write(&tmp, bytes).map_err(|e| format!("write {}: {e}", tmp.display()))?;
+    fs::rename(&tmp, target).map_err(|e| {
+        let _ = fs::remove_file(&tmp);
+        format!("rename {} -> {}: {e}", tmp.display(), target.display())
+    })
+}
+
 /// Make sure Nushell will pick up nuance: if nothing is installed yet, vendor
 /// the embedded script into the autoload directory. If the user already has
 /// their own clone symlinked/copied there, leave it alone — it's the source
@@ -98,7 +116,7 @@ pub fn ensure_installed() -> Result<PathBuf, String> {
         return Ok(target);
     }
     fs::create_dir_all(&dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
-    fs::write(&target, NUSHELL_PROMPT).map_err(|e| format!("write {}: {e}", target.display()))?;
+    write_atomic(&target, NUSHELL_PROMPT.as_bytes())?;
     eprintln!(
         "\x1b[1;32m==>\x1b[0m installed nuance -> {}",
         target.display()
@@ -294,6 +312,18 @@ mod tests {
         let rest = vec!["gruvbox".to_string()];
         let script = format!("nuance theme {}", quote(&rest));
         assert_eq!(script.trim(), "nuance theme \"gruvbox\"");
+    }
+
+    #[test]
+    fn write_atomic_writes_and_leaves_no_tmp() {
+        let dir = std::env::temp_dir().join(format!("nuance-atomic-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("x.nu");
+        write_atomic(&f, b"one").unwrap();
+        write_atomic(&f, b"two").unwrap();
+        assert_eq!(fs::read_to_string(&f).unwrap(), "two");
+        assert!(!dir.join("x.nu.tmp").exists());
+        fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

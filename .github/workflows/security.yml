@@ -5,9 +5,9 @@ on:
     - cron: "0 3 * * *"
   push:
     branches: [main]
-    paths: ["Cargo.lock", "Cargo.toml", "**/Cargo.toml", ".cargo/audit.toml"]
+    paths: ["Cargo.lock", "Cargo.toml", "**/Cargo.toml", ".cargo/audit.toml", "deny.toml"]
   pull_request:
-    paths: ["Cargo.lock", "Cargo.toml", "**/Cargo.toml", ".cargo/audit.toml"]
+    paths: ["Cargo.lock", "Cargo.toml", "**/Cargo.toml", ".cargo/audit.toml", "deny.toml"]
   workflow_dispatch:
 
 jobs:
@@ -26,3 +26,9 @@ jobs:
         run: '[ -f Cargo.lock ] || cargo generate-lockfile'
       - name: Audit dependencies
         run: cargo audit
+  deny:
+    name: cargo deny (licenses, bans, sources)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: EmbarkStudios/cargo-deny-action@v2

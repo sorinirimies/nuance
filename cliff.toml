@@ -59,6 +59,7 @@ protect_breaking_commits = false
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
+    { message = "(?i)^chore\\(deps\\)", skip = true },
     { message = "(?i)^fix(es|ed)?:?\\b", group = "<!-- 1 -->🐛 Bug Fixes" },
     { message = "(?i)^(add[s]?|adding):?\\b", group = "<!-- 0 -->🚀 Features" },
     { message = "(?i)^(readme|gallery|docs?):", group = "<!-- 3 -->📚 Documentation" },
