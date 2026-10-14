@@ -158,6 +158,12 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 
   ![transient prompt](docs/transient.gif)
 
+- **Full-screen terminal theme** (`nuance terminal on|full`): the terminal's
+  background, foreground, cursor (and with `full`, its 16 ANSI colors) follow the
+  theme too — not just the prompt. `nuance terminal off` restores your own colors.
+
+  ![terminal theme](docs/terminal.gif)
+
 - **Context modules** (`nuance modules enable lang jobs …`) add segments only
   when they matter: `status` (non-zero exit), `jobs`, `ssh`, `root`, `venv`,
   `nix`, `lang` (rust/node/python/go/ruby/zig + version, cached), `k8s`, `docker`
