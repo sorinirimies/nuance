@@ -47,13 +47,60 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes (git-cliff)
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
 
       - name: Create release (or no-op if it already exists)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --generate-notes
+          gh release view "$tag" >/dev/null 2>&1 || gh release create "$tag" --title "$tag" --notes-file RELEASE_NOTES.md
+
+  # Keep CHANGELOG.md current: regenerate it from the full history on every
+  # release tag and commit it back to main (same output as `just changelog`).
+  changelog:
+    name: update CHANGELOG.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Generate changelog (git-cliff)
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --strip header
+        env:
+          OUTPUT: CHANGELOG.body.md
+
+      - name: Commit CHANGELOG.md
+        run: |
+          {
+            echo "# Changelog"; echo
+            echo "All notable changes to this project are documented here — generated with"
+            echo "[git-cliff](https://git-cliff.org) (config: [cliff.toml](cliff.toml))."; echo
+            cat CHANGELOG.body.md
+          } > CHANGELOG.md
+          rm -f CHANGELOG.body.md
+          if git diff --quiet CHANGELOG.md; then echo "changelog already current"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): update for ${GITHUB_REF_NAME} [skip ci]"
+          git push origin HEAD:main
 
   # Prebuilt binaries for people without cargo: attached to the GitHub
   # Release so they can be downloaded manually (Releases page) instead of

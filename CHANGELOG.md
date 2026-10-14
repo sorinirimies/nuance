@@ -5,6 +5,38 @@ All notable changes to this project are documented here — generated with
 
 ## [unreleased]
 
+### 🚀 Features
+
+- Add: nuance terminal — theme terminal bg/fg/cursor/ANSI via OSC
+
+### 💼 Other
+
+- Merge remotes
+- Chore: atomic vendoring, non-interactive nu guard, cargo-deny, changelog skips deps
+
+### 📚 Documentation
+
+- Docs: add audit badge
+- Docs: add audit badge
+- Docs: add terminal theme tape, gif and README entry
+- Docs: re-record terminal theme gif with more visible theme changes
+- Docs: move full-screen terminal theme section near the top
+## [0.6.3] - 2026-10-12
+
+### 💼 Other
+
+- Chore: bump version to 0.6.3
+
+### ⚙️ Miscellaneous Tasks
+
+- Ci(security): add cargo-audit workflow and just audit recipe
+## [0.6.2] - 2026-10-11
+
+### 💼 Other
+
+- Chore: bump version to 0.6.2
+## [0.6.1] - 2026-10-09
+
 ### 💼 Other
 
 - Test: portable stderr redirects (Windows)
@@ -12,6 +44,11 @@ All notable changes to this project are documented here — generated with
 
 - three new themes: everforest-light, ayu-light (light), duskfox; THIRD_PARTY credits updated; GALLERY/README counts, golden snapshots and the theme gallery GIF regenerated
 - import-here.tape: no more wrapped commands (compact base style), shows the imported theme recoloring syntax highlighting, and resets the pinned theme reliably (it used to leave current-theme.txt pinned to the imported theme)
+- Chore: bump version to 0.6.1
+
+### 📚 Documentation
+
+- Docs: regenerate CHANGELOG
 ## [0.6.0] - 2026-10-09
 
 ### 🐛 Bug Fixes
@@ -159,35 +196,8 @@ All notable changes to this project are documented here — generated with
 - Chore: bump version to 0.3.0
 ## [0.2.17] - 2026-10-06
 
-### 🐛 Bug Fixes
-
-- Fix: correct justfile remote names (gitea-microlab/starscream -> gitea/gitea_starscream); fix nu str downcase deprecation in test.nu
-
 ### 💼 Other
 
-- Chore(deps): nightly dependency upgrade 2026-09-12
-- Chore: bump version to 0.2.6
-- Chore(deps): nightly dependency upgrade 2026-09-15
-- Chore: bump version to 0.2.7
-- Chore(deps): nightly dependency upgrade 2026-09-17
-- Chore: bump version to 0.2.8
-- Chore(deps): nightly dependency upgrade 2026-09-19
-- Chore: bump version to 0.2.9
-- Chore(deps): nightly dependency upgrade 2026-09-22
-- Chore: bump version to 0.2.10
-- Chore(deps): nightly dependency upgrade 2026-09-23
-- Chore: bump version to 0.2.11
-- Chore(deps): nightly dependency upgrade 2026-09-24
-- Chore: bump version to 0.2.12
-- Chore(deps): nightly dependency upgrade 2026-09-26
-- Chore: bump version to 0.2.13
-- Chore(deps): nightly dependency upgrade 2026-10-01
-- Chore: bump version to 0.2.14
-- Chore(deps): nightly dependency upgrade 2026-10-03
-- Chore: bump version to 0.2.15
-- Chore(deps): nightly dependency upgrade 2026-10-04
-- Chore: bump version to 0.2.16
-- Chore(deps): nightly dependency upgrade 2026-10-06
 - Chore: bump version to 0.2.17
 
 ### ⚙️ Miscellaneous Tasks
@@ -198,6 +208,65 @@ All notable changes to this project are documented here — generated with
 - nightly-deps: cargo upgrade (majors w/ compatible fallback) + cargo update; release when Cargo.toml or direct lock versions change
 - justfile: push-all-force, pull-all, push-release-all, publish*, update-deps, changelog-*, validate-tag, etc.
 - bump clap to 4.6.7
+## [0.2.16] - 2026-10-04
+
+### 💼 Other
+
+- Chore: bump version to 0.2.16
+## [0.2.15] - 2026-10-03
+
+### 💼 Other
+
+- Chore: bump version to 0.2.15
+## [0.2.14] - 2026-10-01
+
+### 💼 Other
+
+- Chore: bump version to 0.2.14
+## [0.2.13] - 2026-09-26
+
+### 💼 Other
+
+- Chore: bump version to 0.2.13
+## [0.2.12] - 2026-09-24
+
+### 💼 Other
+
+- Chore: bump version to 0.2.12
+## [0.2.11] - 2026-09-23
+
+### 💼 Other
+
+- Chore: bump version to 0.2.11
+## [0.2.10] - 2026-09-22
+
+### 💼 Other
+
+- Chore: bump version to 0.2.10
+## [0.2.9] - 2026-09-19
+
+### 💼 Other
+
+- Chore: bump version to 0.2.9
+## [0.2.8] - 2026-09-17
+
+### 💼 Other
+
+- Chore: bump version to 0.2.8
+## [0.2.7] - 2026-09-15
+
+### 💼 Other
+
+- Chore: bump version to 0.2.7
+## [0.2.6] - 2026-09-12
+
+### 🐛 Bug Fixes
+
+- Fix: correct justfile remote names (gitea-microlab/starscream -> gitea/gitea_starscream); fix nu str downcase deprecation in test.nu
+
+### 💼 Other
+
+- Chore: bump version to 0.2.6
 
 ### ◀️ Revert
 
@@ -206,13 +275,11 @@ All notable changes to this project are documented here — generated with
 
 ### 💼 Other
 
-- Chore(deps): nightly dependency upgrade 2026-09-10
 - Chore: bump version to 0.2.5
 ## [0.2.4] - 2026-09-08
 
 ### 💼 Other
 
-- Chore(deps): nightly dependency upgrade 2026-09-08
 - Chore: bump version to 0.2.4
 ## [0.2.3] - 2026-09-08
 
