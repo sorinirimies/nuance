@@ -84,6 +84,7 @@ def "nu-complete nuance styles" [] { prompt-styles }
 def "nu-complete nuance looks" [] { presets | get name }
 def "nu-complete nuance modules" [] { module-names }
 def "nu-complete nuance module-actions" [] { ["list" "enable" "disable" "clear"] }
+def "nu-complete nuance terminal" [] { ["on" "full" "off"] }
 def "nu-complete nuance transient" [] { ["on" "dir" "off" "toggle"] }
 def "nu-complete nuance kinds" [] { ["themes" "styles" "looks" "modules"] }
 def "nu-complete nuance random" [] { ["look" "theme" "style"] }

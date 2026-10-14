@@ -119,6 +119,10 @@ fn main() -> ExitCode {
             let args: Vec<String> = mode.into_iter().collect();
             with_nu(|target| nu::run_nu(target, &format!("nuance transient {}", nu::quote(&args))))
         }
+        Some(Commands::Terminal { mode }) => {
+            let args: Vec<String> = mode.into_iter().collect();
+            with_nu(|target| nu::run_nu(target, &format!("nuance terminal {}", nu::quote(&args))))
+        }
         Some(Commands::Modules { action, names }) => {
             let args: Vec<String> = action.into_iter().chain(names).collect();
             with_nu(|target| nu::run_nu(target, &format!("nuance modules {}", nu::quote(&args))))

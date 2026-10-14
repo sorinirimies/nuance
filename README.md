@@ -216,6 +216,22 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
 
 See every theme, style and look with previews → **[GALLERY.md](GALLERY.md)**.
 
+## Full-screen terminal theme
+
+Optionally theme the whole terminal, not just the prompt. Off by default.
+
+```sh
+nuance terminal on     # background + foreground + cursor follow the theme
+nuance terminal full   # …plus the 16 ANSI colors (ls, git, vim recolor too)
+nuance terminal off    # reset to your terminal's own colors
+```
+
+It re-applies on every theme/look change and at shell startup, via OSC
+10/11/12/4 escape sequences (only when stdout is a TTY). Works in Ghostty,
+iTerm2, kitty, WezTerm, Alacritty and foot; Terminal.app ignores most of it;
+tmux needs `set -g allow-passthrough on`. With it on, nuance's theme wins over
+your terminal's own colors.
+
 ## Ghostty auto-follow
 
 By default the theme follows your [Ghostty](https://ghostty.org) config

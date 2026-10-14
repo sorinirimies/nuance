@@ -155,6 +155,19 @@ if not ($tail_pl | str contains "✘ 1") { $errors = ($errors | append "enabled 
 hide-env PROMPT_USER PROMPT_HOST
 $env.PROMPT_STYLE = $saved_style
 
+# ── terminal screen theming (OSC sequences) ──
+for t in (theme-list) {
+    let p = (theme-get $t).palette
+    let on = (terminal-sequences "on" $p)
+    let full = (terminal-sequences "full" $p)
+    if not ($on | str contains $"]11;($p.bg)") or not ($on | str contains $"]10;($p.fg)") { $errors = ($errors | append $"theme '($t)': terminal 'on' missing bg/fg OSC") }
+    if ($on | str contains "]4;") { $errors = ($errors | append $"theme '($t)': terminal 'on' must not touch ANSI palette") }
+    if (($full | split row "]4;" | length) - 1) != 16 { $errors = ($errors | append $"theme '($t)': terminal 'full' must set 16 ANSI colors") }
+}
+let off_seq = (terminal-sequences "off" (theme-get "dracula").palette)
+if not ($off_seq | str contains "]111") or not ($off_seq | str contains "]104") { $errors = ($errors | append "terminal off must emit reset sequences") }
+if (($env.NUANCE_TERMINAL? | default "off") != "off") { $errors = ($errors | append "terminal theming must be off by default") }
+
 # ── transient prompt ──
 transient-apply "on"
 if ($env.NUANCE_TRANSIENT != "on") or ("TRANSIENT_PROMPT_COMMAND" not-in ($env | columns)) { $errors = ($errors | append "transient-apply on didn't set TRANSIENT_PROMPT_COMMAND") }

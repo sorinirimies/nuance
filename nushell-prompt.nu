@@ -816,6 +816,7 @@ def "nu-complete nuance styles" [] { prompt-styles }
 def "nu-complete nuance looks" [] { presets | get name }
 def "nu-complete nuance modules" [] { module-names }
 def "nu-complete nuance module-actions" [] { ["list" "enable" "disable" "clear"] }
+def "nu-complete nuance terminal" [] { ["on" "full" "off"] }
 def "nu-complete nuance transient" [] { ["on" "dir" "off" "toggle"] }
 def "nu-complete nuance kinds" [] { ["themes" "styles" "looks" "modules"] }
 def "nu-complete nuance random" [] { ["look" "theme" "style"] }
@@ -826,6 +827,52 @@ def theme-list-builtin [] {
     ["gruvbox" "catppuccin-mocha" "catppuccin-macchiato" "catppuccin-frappe" "catppuccin-latte" "tokyo-night" "nord" "dracula" "rose-pine" "rose-pine-moon" "rose-pine-dawn" "everforest" "kanagawa" "onedark" "monokai" "ayu-dark" "ayu-mirage" "night-owl" "github-dark" "github-light" "oxocarbon" "zenburn" "solarized" "solarized-light" "super-mario" "cyberpunk"]
 }
 
+# ── Terminal screen theming ──────────────────────────────────
+# Optional: besides the prompt, recolor the whole terminal screen — background,
+# foreground, cursor and (in `full` mode) the 16 ANSI colors — from the active
+# theme via OSC escape sequences. Off by default. Toggle: `nuance terminal`.
+#   off   leave the terminal's own colors alone (resets anything nuance set)
+#   on    background + foreground + cursor
+#   full  on + ANSI palette 0-15 (recolors ls, git, vim … too)
+# Works in Ghostty, iTerm2, kitty, WezTerm, Alacritty, foot. Terminal.app
+# ignores most of it. Reset sequences restore the terminal's own colors.
+def terminal-state-path [] { ($env.NUANCE_CONFIG_DIR? | default $nu.default-config-dir) | path join "terminal.txt" }
+
+# OSC 4 palette for `full` mode, derived from the theme's roles.
+def terminal-ansi [p: record] {
+    let n = [$p.surface $p.err $p.ok $p.modified $p.path $p.git $p.host $p.fg]
+    let b = [$p.sep $p.err $p.ok $p.modified $p.path $p.git $p.host $p.fg]
+    $n | append $b
+}
+
+# Escape sequences (a string) that apply `mode` for `palette`. Pure; no I/O.
+def terminal-sequences [mode: string, p: record] {
+    let esc = (char --unicode "1b")
+    let bel = (char --unicode "07")
+    if $mode == "off" {
+        return $"($esc)]110($bel)($esc)]111($bel)($esc)]112($bel)($esc)]104($bel)"
+    }
+    mut s = $"($esc)]10;($p.fg)($bel)($esc)]11;($p.bg)($bel)($esc)]12;($p.fg)($bel)"
+    if $mode == "full" {
+        for e in (terminal-ansi $p | enumerate) {
+            $s = $s + $"($esc)]4;($e.index);($e.item)($bel)"
+        }
+    }
+    $s
+}
+
+# Emit to the terminal (only when stdout is a TTY; never into pipes/scripts).
+def terminal-emit [mode: string, p: record] {
+    if (is-terminal --stdout) { print -n (terminal-sequences $mode $p) }
+}
+
+# Called on every theme change: re-skin the screen when the mode is on/full.
+def terminal-follow [p: record] {
+    let m = ($env.NUANCE_TERMINAL? | default "off")
+    if $m != "off" { terminal-emit $m $p }
+}
+
+$env.NUANCE_TERMINAL = (try { open (terminal-state-path) | str trim } catch { "off" })
 # ── User themes (nuance import …) ─────────────────────────────
 # One .nuon file per theme in <config>/nuance/themes (override the directory
 # with $env.NUANCE_THEMES_DIR). Same 11-color shape as the consts above.
@@ -926,6 +973,7 @@ def --env theme-apply [name: string] {
     $env.config.color_config = $t.color_config
     $env.THEME_PALETTE = $t.palette
     $env.THEME_NAME = $name
+    terminal-follow $t.palette
 }
 
 # Render one theme name into a labelled preview line: "name  →  <live prompt>".
@@ -1232,6 +1280,7 @@ def "nuance help" [] {
     print "  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme"
     print "  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)"
     print "  nuance transient [on|off]    collapse finished prompts to one glyph"
+    print "  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)"
     print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
     print "  nuance help                  this help"
@@ -1251,6 +1300,23 @@ def --env "nuance prompt-style" [name?: string@"nu-complete nuance styles"] { pr
 
 # `nuance look` — same as bare `look`.
 def --env "nuance look" [name?: string@"nu-complete nuance looks"] { look $name }
+
+# `nuance terminal [on|full|off]` — also theme the terminal's background, foreground, cursor (and ANSI colors with `full`).
+def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal"] {
+    let cur = ($env.NUANCE_TERMINAL? | default "off")
+    if ($mode | default "") == "" {
+        print $"terminal theming: (ansi attr_bold)($cur)(ansi reset)  \(nuance terminal on|full|off\)"
+        return
+    }
+    if $mode not-in ["on" "full" "off"] {
+        print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, full or off"
+        return
+    }
+    terminal-emit $mode $env.THEME_PALETTE
+    $env.NUANCE_TERMINAL = $mode
+    $mode | save -f (terminal-state-path)
+    print $"(ansi green_bold)✓(ansi reset) terminal theming (ansi attr_bold)($mode)(ansi reset)"
+}
 
 # `nuance transient [on|off|toggle]` — collapse finished prompts to one glyph.
 def --env "nuance transient" [mode?: string@"nu-complete nuance transient"] {

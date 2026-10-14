@@ -114,6 +114,11 @@ pub enum Commands {
         /// on | off | toggle — omit to show the current state
         mode: Option<String>,
     },
+    /// Also theme the terminal screen: background, foreground, cursor (on | full | off)
+    Terminal {
+        /// on | full | off — omit to show the current state
+        mode: Option<String>,
+    },
     /// Situational prompt segments: list | enable | disable | clear [name…]
     Modules {
         /// list (default), enable, disable or clear
@@ -148,6 +153,7 @@ pub fn usage() -> &'static str {
   nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme
   nuance here [theme [style]]  pin a theme to this directory tree (.nuance)
   nuance transient [on|off]    collapse finished prompts to one glyph
+  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)
   nuance modules [enable|disable|list|clear] [name…]
                                situational segments: status jobs ssh root venv nix lang k8s docker cloud pkg battery
   nuance sync                  follow the terminal's theme (auto-follow)
@@ -184,6 +190,7 @@ mod tests {
             "import",
             "here",
             "transient",
+            "terminal",
             "modules",
             "sync",
             "update",

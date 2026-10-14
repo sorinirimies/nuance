@@ -98,6 +98,7 @@ def --env theme-apply [name: string] {
     $env.config.color_config = $t.color_config
     $env.THEME_PALETTE = $t.palette
     $env.THEME_NAME = $name
+    terminal-follow $t.palette
 }
 
 # Render one theme name into a labelled preview line: "name  →  <live prompt>".
@@ -404,6 +405,7 @@ def "nuance help" [] {
     print "  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme"
     print "  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)"
     print "  nuance transient [on|off]    collapse finished prompts to one glyph"
+    print "  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)"
     print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
     print "  nuance help                  this help"
@@ -423,6 +425,23 @@ def --env "nuance prompt-style" [name?: string@"nu-complete nuance styles"] { pr
 
 # `nuance look` — same as bare `look`.
 def --env "nuance look" [name?: string@"nu-complete nuance looks"] { look $name }
+
+# `nuance terminal [on|full|off]` — also theme the terminal's background, foreground, cursor (and ANSI colors with `full`).
+def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal"] {
+    let cur = ($env.NUANCE_TERMINAL? | default "off")
+    if ($mode | default "") == "" {
+        print $"terminal theming: (ansi attr_bold)($cur)(ansi reset)  \(nuance terminal on|full|off\)"
+        return
+    }
+    if $mode not-in ["on" "full" "off"] {
+        print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, full or off"
+        return
+    }
+    terminal-emit $mode $env.THEME_PALETTE
+    $env.NUANCE_TERMINAL = $mode
+    $mode | save -f (terminal-state-path)
+    print $"(ansi green_bold)✓(ansi reset) terminal theming (ansi attr_bold)($mode)(ansi reset)"
+}
 
 # `nuance transient [on|off|toggle]` — collapse finished prompts to one glyph.
 def --env "nuance transient" [mode?: string@"nu-complete nuance transient"] {

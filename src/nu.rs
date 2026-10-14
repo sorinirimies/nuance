@@ -210,6 +210,7 @@ pub fn uninstall(purge: bool) -> ExitCode {
                 "current-theme.txt",
                 "prompt-style.txt",
                 "transient.txt",
+                "terminal.txt",
                 "modules.txt",
                 "integration.txt",
                 "appearance.txt",
