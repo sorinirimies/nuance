@@ -175,38 +175,38 @@ bump version: (validate-tag version) check-all
 # Full automated release to GitHub — bumps version, commits, tags, and pushes.
 release version: (bump version)
     @echo "Pushing branch and tag to GitHub…"
-    git push origin main
+    git push origin "$(git branch --show-current)"
     git push origin v{{version}}
     @echo "✅ Release v{{version}} pushed — GitHub Actions (release.yml) will build + publish to crates.io."
 
 # Full automated release to Gitea (nexus-lab instance, SSH) only.
 release-gitea-nexus-lab version: (bump version)
     @echo "Pushing branch and tag to Gitea (nexus-lab)…"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab "$(git branch --show-current)"
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab v{{version}}
     @echo "✅ Release v{{version}} pushed to Gitea (nexus-lab)."
 
 # Full automated release to Gitea Microlab only.
 release-gitea-microlab version: (bump version)
     @echo "Pushing branch and tag to Gitea Microlab…"
-    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab "$(git branch --show-current)"
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab v{{version}}
     @echo "✅ Release v{{version}} live on Gitea Microlab."
 
 # Full automated release to Gitea Starscream only.
 release-gitea-starscream version: (bump version)
     @echo "Pushing branch and tag to Gitea Starscream…"
-    git push gitea-starscream main
+    git push gitea-starscream "$(git branch --show-current)"
     git push gitea-starscream v{{version}}
     @echo "✅ Release v{{version}} live on Gitea Starscream."
 
 # Full automated release to GitHub and all Gitea instances.
 release-all version: (bump version)
     @echo "Pushing branch and tag to GitHub and all Gitea instances…"
-    git push origin main
-    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
-    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main
-    git push gitea-starscream main
+    git push origin "$(git branch --show-current)"
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab "$(git branch --show-current)"
+    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab "$(git branch --show-current)"
+    git push gitea-starscream "$(git branch --show-current)"
     git push origin v{{version}}
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab v{{version}}
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab v{{version}}
@@ -235,23 +235,23 @@ remotes:
 
 # Push the current branch to GitHub (origin)
 push:
-    git push origin main
+    git push origin "$(git branch --show-current)"
 
 # Push the current branch to Gitea (nexus-lab instance, http remote)
 push-gitea-nexus-lab-http:
-    git push gitea-nexus-lab-http main
+    git push gitea-nexus-lab-http "$(git branch --show-current)"
 
 # Push to Gitea (nexus-lab, SSH); skips LFS (its endpoint redirects to a dead host)
 push-gitea-nexus-lab:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab "$(git branch --show-current)"
 
 # Push the current branch to Gitea Microlab
 push-gitea-microlab:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main
+    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab "$(git branch --show-current)"
 
 # Push the current branch to Gitea Starscream
 push-gitea-starscream:
-    git push gitea-starscream main
+    git push gitea-starscream "$(git branch --show-current)"
 
 # Push the current branch to all remotes (continues on failure)
 push-all:
@@ -262,10 +262,10 @@ push-all:
     }
     skipped=""
     failed=""
-    git_try origin git push origin main                              || failed="$failed origin"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push gitea-microlab main   || failed="$failed gitea-microlab"
-    git_try gitea-starscream git push gitea-starscream main || failed="$failed gitea-starscream"
+    git_try origin git push origin "$(git branch --show-current)"                              || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push gitea-nexus-lab "$(git branch --show-current)"  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push gitea-microlab "$(git branch --show-current)"   || failed="$failed gitea-microlab"
+    git_try gitea-starscream git push gitea-starscream "$(git branch --show-current)" || failed="$failed gitea-starscream"
     if [ -n "$skipped" ]; then echo "ℹ️  Skipped (not configured):$skipped"; fi
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push to:$failed"
@@ -282,10 +282,10 @@ push-all-force:
     }
     skipped=""
     failed=""
-    git_try origin git push --force origin main                               || failed="$failed origin"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push --force gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push --force gitea-microlab main   || failed="$failed gitea-microlab"
-    git_try gitea-starscream git push --force gitea-starscream main || failed="$failed gitea-starscream"
+    git_try origin git push --force origin "$(git branch --show-current)"                               || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push --force gitea-nexus-lab "$(git branch --show-current)"  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push --force gitea-microlab "$(git branch --show-current)"   || failed="$failed gitea-microlab"
+    git_try gitea-starscream git push --force gitea-starscream "$(git branch --show-current)" || failed="$failed gitea-starscream"
     if [ -n "$skipped" ]; then echo "ℹ️  Skipped (not configured):$skipped"; fi
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to force-push to:$failed"
@@ -295,19 +295,19 @@ push-all-force:
 
 # Pull the current branch from GitHub (origin)
 pull:
-    git pull origin main
+    git pull origin "$(git branch --show-current)"
 
 # Pull the current branch from Gitea (nexus-lab instance, SSH)
 pull-gitea-nexus-lab:
-    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-nexus-lab main
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-nexus-lab "$(git branch --show-current)"
 
 # Pull the current branch from Gitea Microlab
 pull-gitea-microlab:
-    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-microlab main
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-microlab "$(git branch --show-current)"
 
 # Pull the current branch from Gitea Starscream
 pull-gitea-starscream:
-    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-starscream main
+    GIT_LFS_SKIP_SMUDGE=1 git pull gitea-starscream "$(git branch --show-current)"
 
 # Pull the current branch from all remotes (continues on failure)
 pull-all:
@@ -318,10 +318,10 @@ pull-all:
     }
     skipped=""
     failed=""
-    git_try origin git pull origin main                                 || failed="$failed origin"
-    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-nexus-lab git pull gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
-    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-microlab git pull gitea-microlab main   || failed="$failed gitea-microlab"
-    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-starscream git pull gitea-starscream main || failed="$failed gitea-starscream"
+    git_try origin git pull origin "$(git branch --show-current)"                                 || failed="$failed origin"
+    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-nexus-lab git pull gitea-nexus-lab "$(git branch --show-current)"  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-microlab git pull gitea-microlab "$(git branch --show-current)"   || failed="$failed gitea-microlab"
+    GIT_LFS_SKIP_SMUDGE=1 git_try gitea-starscream git pull gitea-starscream "$(git branch --show-current)" || failed="$failed gitea-starscream"
     if [ -n "$skipped" ]; then echo "ℹ️  Skipped (not configured):$skipped"; fi
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to pull from:$failed"
@@ -362,10 +362,10 @@ push-release-all: check-all
     }
     skipped=""
     failed=""
-    git_try origin git push --follow-tags origin main                               || failed="$failed origin"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push --follow-tags gitea-nexus-lab main  || failed="$failed gitea-nexus-lab"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push --follow-tags gitea-microlab main   || failed="$failed gitea-microlab"
-    git_try gitea-starscream git push --follow-tags gitea-starscream main || failed="$failed gitea-starscream"
+    git_try origin git push --follow-tags origin "$(git branch --show-current)"                               || failed="$failed origin"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push --follow-tags gitea-nexus-lab "$(git branch --show-current)"  || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push --follow-tags gitea-microlab "$(git branch --show-current)"   || failed="$failed gitea-microlab"
+    git_try gitea-starscream git push --follow-tags gitea-starscream "$(git branch --show-current)" || failed="$failed gitea-starscream"
     if [ -n "$skipped" ]; then echo "ℹ️  Skipped (not configured):$skipped"; fi
     if [ -n "$failed" ]; then
         echo "⚠️  Failed to push to:$failed"
@@ -375,19 +375,19 @@ push-release-all: check-all
 
 # Force-sync Gitea (nexus-lab instance, SSH) with GitHub
 sync-gitea-nexus-lab:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab main --force
+    GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab "$(git branch --show-current)" --force
     GIT_LFS_SKIP_PUSH=1 git push gitea-nexus-lab --tags --force
     @echo "✅ Gitea (nexus-lab) synced!"
 
 # Force-sync Gitea Microlab with GitHub
 sync-gitea-microlab:
-    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab main --force
+    GIT_LFS_SKIP_PUSH=1 git push gitea-microlab "$(git branch --show-current)" --force
     GIT_LFS_SKIP_PUSH=1 git push gitea-microlab --tags --force
     @echo "✅ Gitea Microlab synced!"
 
 # Force-sync Gitea Starscream with GitHub
 sync-gitea-starscream:
-    git push gitea-starscream main --force
+    git push gitea-starscream "$(git branch --show-current)" --force
     git push gitea-starscream --tags --force
     @echo "✅ Gitea Starscream synced!"
 
@@ -400,11 +400,11 @@ sync-all-gitea:
     }
     skipped=""
     failed=""
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push gitea-nexus-lab main --force   || failed="$failed gitea-nexus-lab"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push gitea-nexus-lab "$(git branch --show-current)" --force   || failed="$failed gitea-nexus-lab"
     GIT_LFS_SKIP_PUSH=1 git_try gitea-nexus-lab git push gitea-nexus-lab --tags --force || failed="$failed gitea-nexus-lab-tags"
-    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push gitea-microlab main --force    || failed="$failed gitea-microlab"
+    GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push gitea-microlab "$(git branch --show-current)" --force    || failed="$failed gitea-microlab"
     GIT_LFS_SKIP_PUSH=1 git_try gitea-microlab git push gitea-microlab --tags --force  || failed="$failed gitea-microlab-tags"
-    git_try gitea-starscream git push gitea-starscream main --force  || failed="$failed gitea-starscream"
+    git_try gitea-starscream git push gitea-starscream "$(git branch --show-current)" --force  || failed="$failed gitea-starscream"
     git_try gitea-starscream git push gitea-starscream --tags --force || failed="$failed gitea-starscream-tags"
     if [ -n "$skipped" ]; then echo "ℹ️  Skipped (not configured):$skipped"; fi
     if [ -n "$failed" ]; then
