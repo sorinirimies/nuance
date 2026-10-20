@@ -103,7 +103,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="$(curl -fsSL https://api.github.com/repos/nushell/nightly/releases?per_page=1 | python3 -c "import sys,json,re; d=json.load(sys.stdin)[0]; print(next(a['browser_download_url'] for a in d['assets'] if re.search(r'x86_64-unknown-linux-gnu\\.tar\\.gz$', a['name'])))")"
+          tag="$(curl -fsSL https://github.com/nushell/nightly/releases.atom | grep -o 'releases/tag/[^"]*' | head -1 | sed 's#.*/tag/##')"
+          path="$(curl -fsSL "https://github.com/nushell/nightly/releases/expanded_assets/${tag}" | grep -o 'href="[^"]*x86_64-unknown-linux-gnu.tar.gz"' | head -1 | cut -d'"' -f2)"
+          url="https://github.com${path}"
           echo "fetching $url"
           curl -fsSL "$url" -o /tmp/nu.tar.gz
           mkdir -p /tmp/nu-extract
