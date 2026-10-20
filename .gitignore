@@ -3,3 +3,6 @@
 docs/gallery-styles.gif
 target/
 .codegraph/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
