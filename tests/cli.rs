@@ -6,12 +6,9 @@ use std::path::Path;
 use std::process::{Command, Output};
 
 fn have_nu() -> bool {
-    Command::new("sh")
-        .arg("-c")
-        .arg("command -v nu >/dev/null 2>&1")
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false)
+    std::env::var_os("PATH").is_some_and(|p| {
+        std::env::split_paths(&p).any(|d| d.join("nu").is_file() || d.join("nu.exe").is_file())
+    })
 }
 
 fn run(home: &Path, args: &[&str]) -> Output {

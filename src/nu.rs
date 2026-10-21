@@ -23,13 +23,47 @@ pub struct PickerItem {
     pub key: String,
 }
 
+/// Is `cmd` an executable file on `PATH`? Pure-Rust (no `sh`), so it also
+/// works on native Windows, where `PATHEXT` extensions are tried too.
 pub fn have(cmd: &str) -> bool {
-    Command::new("sh")
-        .arg("-c")
-        .arg(format!("command -v {cmd} >/dev/null 2>&1"))
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false)
+    std::env::var_os("PATH").is_some_and(|path| find_in_path(cmd, &path))
+}
+
+fn find_in_path(cmd: &str, path: &std::ffi::OsStr) -> bool {
+    let exts: Vec<String> = if cfg!(windows) {
+        std::env::var("PATHEXT")
+            .unwrap_or_else(|_| ".EXE;.CMD;.BAT;.COM".into())
+            .split(';')
+            .map(str::to_string)
+            .collect()
+    } else {
+        Vec::new()
+    };
+    std::env::split_paths(path).any(|dir| {
+        let base = dir.join(cmd);
+        is_executable(&base)
+            || exts
+                .iter()
+                .any(|e| is_executable(&dir.join(format!("{cmd}{e}"))))
+    })
+}
+
+fn is_executable(p: &Path) -> bool {
+    let Ok(meta) = fs::metadata(p) else {
+        return false;
+    };
+    if !meta.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        meta.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
 }
 
 /// Make sure `nu` is available. `nuance-cli` bundles everything it can
@@ -86,9 +120,7 @@ fn autoload_dir() -> Option<PathBuf> {
 }
 
 pub fn is_symlink(p: &Path) -> bool {
-    fs::symlink_metadata(p)
-        .map(|m| m.file_type().is_symlink())
-        .unwrap_or(false)
+    fs::symlink_metadata(p).is_ok_and(|m| m.file_type().is_symlink())
 }
 
 /// Write via a sibling temp file + rename so a crash never leaves a
@@ -238,30 +270,24 @@ pub fn uninstall(purge: bool) -> ExitCode {
 }
 
 pub fn cmd_update(target: &Path) -> ExitCode {
-    match repo_dir(target) {
-        Some(dir) => {
-            println!("\x1b[1;32m==>\x1b[0m updating {} …", dir.display());
-            let status = Command::new("git")
-                .arg("-C")
-                .arg(&dir)
-                .arg("pull")
-                .arg("--ff-only")
-                .status();
-            match status {
-                Ok(s) if s.success() => {
-                    println!(
-                        "\x1b[1;32m\u{2713}\x1b[0m updated — open a new shell (or run: exec nu)"
-                    );
-                    ExitCode::SUCCESS
-                }
-                _ => ExitCode::FAILURE,
-            }
-        }
-        None => {
-            println!("nuance was installed via `cargo install nuance-cli` (no git checkout).");
-            println!("To update:  cargo install --force nuance-cli   then: exec nu");
+    let Some(dir) = repo_dir(target) else {
+        println!("nuance was installed via `cargo install nuance-cli` (no git checkout).");
+        println!("To update:  cargo install --force nuance-cli   then: exec nu");
+        return ExitCode::SUCCESS;
+    };
+    println!("\x1b[1;32m==>\x1b[0m updating {} …", dir.display());
+    let status = Command::new("git")
+        .arg("-C")
+        .arg(&dir)
+        .arg("pull")
+        .arg("--ff-only")
+        .status();
+    match status {
+        Ok(s) if s.success() => {
+            println!("\x1b[1;32m\u{2713}\x1b[0m updated — open a new shell (or run: exec nu)");
             ExitCode::SUCCESS
         }
+        _ => ExitCode::FAILURE,
     }
 }
 
@@ -276,6 +302,32 @@ pub fn quote(args: &[String]) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    #[test]
+    fn find_in_path_requires_an_executable_file() {
+        use std::os::unix::fs::PermissionsExt;
+        let d = std::env::temp_dir().join(format!("nuance-path-{}", std::process::id()));
+        fs::create_dir_all(&d).unwrap();
+        let exe = d.join("tool-x");
+        let plain = d.join("tool-plain");
+        fs::write(&exe, "#!/bin/sh\n").unwrap();
+        fs::write(&plain, "x").unwrap();
+        fs::set_permissions(&exe, fs::Permissions::from_mode(0o755)).unwrap();
+        fs::set_permissions(&plain, fs::Permissions::from_mode(0o644)).unwrap();
+        let path = std::env::join_paths([d.clone()]).unwrap();
+        assert!(find_in_path("tool-x", &path));
+        assert!(!find_in_path("tool-plain", &path), "non-exec file");
+        assert!(!find_in_path("missing", &path));
+        assert!(!find_in_path("tool-x", std::ffi::OsStr::new("")));
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn have_finds_cargo_but_not_nonsense() {
+        assert!(have("cargo"));
+        assert!(!have("definitely-not-a-real-binary-xyz"));
+    }
+
     use super::*;
 
     #[test]

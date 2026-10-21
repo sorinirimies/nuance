@@ -287,7 +287,7 @@ mod tests {
         let mut s = PickerState::new(vec![item("full", "l1")]);
         s.filter = "zzz".to_string();
         s.recompute_filter();
-        assert!(s.filtered.is_empty());
+        assert_eq!(s.filtered.len(), 0);
         s.move_selection(1); // must not panic
         assert!(s.current().is_none());
     }

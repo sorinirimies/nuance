@@ -28,6 +28,21 @@ use std::process::ExitCode;
 use clap::Parser;
 use cli::{Cli, Commands};
 
+fn import(source: &str, name: Option<&str>) -> ExitCode {
+    use std::fmt::Write as _;
+    let mut script = format!("nuance import {}", nu::quote(&[source.to_string()]));
+    if let Some(n) = name {
+        let _ = write!(script, " --name {}", nu::quote(&[n.to_string()]));
+    }
+    with_nu(|target| nu::run_nu(target, &script))
+}
+
+fn completions(shell: clap_complete::Shell) -> ExitCode {
+    use clap::CommandFactory;
+    clap_complete::generate(shell, &mut Cli::command(), "nuance", &mut std::io::stdout());
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
     let raw: Vec<String> = std::env::args().collect();
 
@@ -100,18 +115,8 @@ fn main() -> ExitCode {
             with_nu(|target| nu::run_nu(target, &format!("nuance style {}", nu::quote(&args))))
         }
         Some(Commands::Uninstall { purge }) => nu::uninstall(purge),
-        Some(Commands::Completions { shell }) => {
-            use clap::CommandFactory;
-            clap_complete::generate(shell, &mut Cli::command(), "nuance", &mut std::io::stdout());
-            ExitCode::SUCCESS
-        }
-        Some(Commands::Import { source, name }) => {
-            let mut script = format!("nuance import {}", nu::quote(&[source]));
-            if let Some(n) = name {
-                script.push_str(&format!(" --name {}", nu::quote(&[n])));
-            }
-            with_nu(|target| nu::run_nu(target, &script))
-        }
+        Some(Commands::Completions { shell }) => completions(shell),
+        Some(Commands::Import { source, name }) => import(&source, name.as_deref()),
         Some(Commands::Here { args }) => {
             with_nu(|target| nu::run_nu(target, &format!("nuance here {}", nu::quote(&args))))
         }
@@ -169,40 +174,38 @@ fn pick_or_apply(
     picker_expr: &str,
     apply_prefix: &str,
 ) -> ExitCode {
-    with_nu(|target| match name {
-        Some(n) => {
+    with_nu(|target| {
+        if let Some(n) = name {
             let script = format!("{apply_prefix} {}", nu::quote(&[n]));
-            nu::run_nu(target, &script)
+            return nu::run_nu(target, &script);
         }
-        None => {
-            let items = match nu::fetch_picker_items(target, picker_expr) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("nuance: failed to load {label} previews: {e}");
-                    return ExitCode::FAILURE;
-                }
-            };
-            match tui::pick(items, label) {
-                Ok(Some(choice)) => {
-                    // The theme picker always leads with a synthetic "sync
-                    // with terminal" entry (key "__sync__", added in
-                    // `theme-picker-items` in nushell-prompt.nu) so it's
-                    // the same choice whether you're inside `nu` or here.
-                    let script = if choice == "__sync__" {
-                        "nuance sync theme".to_string()
-                    } else {
-                        format!("{apply_prefix} {}", nu::quote(&[choice]))
-                    };
-                    nu::run_nu(target, &script)
-                }
-                Ok(None) => {
-                    println!("cancelled.");
-                    ExitCode::SUCCESS
-                }
-                Err(e) => {
-                    eprintln!("nuance: tui error: {e}");
-                    ExitCode::FAILURE
-                }
+        let items = match nu::fetch_picker_items(target, picker_expr) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("nuance: failed to load {label} previews: {e}");
+                return ExitCode::FAILURE;
+            }
+        };
+        match tui::pick(items, label) {
+            Ok(Some(choice)) => {
+                // The theme picker always leads with a synthetic "sync
+                // with terminal" entry (key "__sync__", added in
+                // `theme-picker-items` in nushell-prompt.nu) so it's
+                // the same choice whether you're inside `nu` or here.
+                let script = if choice == "__sync__" {
+                    "nuance sync theme".to_string()
+                } else {
+                    format!("{apply_prefix} {}", nu::quote(&[choice]))
+                };
+                nu::run_nu(target, &script)
+            }
+            Ok(None) => {
+                println!("cancelled.");
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("nuance: tui error: {e}");
+                ExitCode::FAILURE
             }
         }
     })

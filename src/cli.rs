@@ -300,7 +300,7 @@ mod tests {
         ));
         match p(&["nuance", "appearance", "dracula", "tokyo-night-day"]) {
             Some(Commands::Appearance { args }) => {
-                assert_eq!(args, vec!["dracula", "tokyo-night-day"])
+                assert_eq!(args, vec!["dracula", "tokyo-night-day"]);
             }
             other => panic!("unexpected: {other:?}"),
         }
