@@ -65,7 +65,7 @@ def render-left [] {
         }
         "compact" => {
             let parts = ($full_dir | path split)
-            let dir = if (($parts | length) > 2) { $"…/($parts | last 2 | path join)" } else { $full_dir }
+            let dir = if (($parts | length) > 2) { $"…/($parts | last 2 | str join '/')" } else { $full_dir }
             $"(ansi {fg: $p.path attr: b})($dir)(ansi reset)(git-segment --counts)"
         }
         "lambda" => {

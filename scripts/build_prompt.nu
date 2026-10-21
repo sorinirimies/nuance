@@ -6,7 +6,7 @@
 #   nu scripts/build_prompt.nu --check   # exit 1 if nushell-prompt.nu is stale (used by test.nu)
 def main [--check] {
     let root = ($env.FILE_PWD | path dirname)
-    let parts = (glob ($root | path join "nu" "*.nu") | sort)
+    let parts = (ls ($root | path join "nu") | get name | where {|f| $f | str ends-with ".nu" } | sort)
     let out = ($parts | each {|f| open --raw $f } | str join "")
     let target = ($root | path join "nushell-prompt.nu")
     if $check {
