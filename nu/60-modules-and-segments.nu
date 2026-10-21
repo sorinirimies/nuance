@@ -270,7 +270,9 @@ def display-width [s: string] {
 }
 def shorten-path [path: string, budget: int] {
     if $budget <= 0 or (display-width $path) <= $budget { return $path }
-    let parts = ($path | path split)
+    let split = ($path | path split)
+    # Windows' `path split` drops the leading "/" of a POSIX-style path
+    let parts = (if ($path | str starts-with "/") and (($split | first) != "/") { $split | prepend "/" } else { $split })
     let n = ($parts | length)
     if $n <= 2 { return $path }
     let rooted = (($parts | first) == "/")

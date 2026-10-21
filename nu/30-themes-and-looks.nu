@@ -515,7 +515,8 @@ def --env "nuance configure" [] {
 # Show a path with the home directory as ~ (macOS reports /tmp and /private/tmp
 # for the same place, so compare without a leading /private).
 def tilde [path: string, home?: string] {
-    let strip = {|x| $x | str replace --regex '^/private(/|$)' '$1' }
+    let win = ($nu.os-info.name == "windows")
+    let strip = {|x| (if $win { $x | str replace --all '\' '/' } else { $x }) | str replace --regex '^/private(/|$)' '$1' }
     let h = (do $strip ($home | default $nu.home-dir))
     let q = (do $strip $path)
     if ($q == $h) { "~" } else if ($q | str starts-with $"($h)/") { $"~($q | str replace $h '')" } else { $path }
