@@ -93,6 +93,10 @@ test:
 test-nu: check-nu
     nu test.nu
 
+# Fuzz a target for 60s (ansi_parse | nu_quote); needs nightly + cargo-fuzz
+fuzz target='ansi_parse':
+    cargo +nightly fuzz run {{target}} -- -max_total_time=60
+
 # Run both suites
 test-all: test test-nu
     @echo "✅ All Rust and Nushell tests passed!"

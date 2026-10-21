@@ -254,12 +254,16 @@ macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `gsettings`. Two suites run in CI on **Ubuntu + macOS** — `nu test.nu`
 (themes/styles/looks/helpers, golden snapshots of 1,300 rendered prompts, across
 Nushell **0.111**, **0.114** and nightly) and `cargo test` (the `nuance` CLI/TUI,
-57 unit + integration tests):
+69 unit + integration tests):
 
 ```sh
 nu test.nu       # ✓ all checks passed — 72 themes, 50 styles, 72 looks
-cargo test       # ✓ 57 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
+cargo test       # ✓ 69 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
+
+The ANSI parser and Nushell arg quoting are also fuzzed (`cargo-fuzz`, nightly
+CI + on PRs touching them): `just fuzz ansi_parse` or `just fuzz nu_quote`. The
+Windows job runs the Nushell suite too.
 
 ## How it works
 
