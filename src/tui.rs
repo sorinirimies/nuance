@@ -67,9 +67,13 @@ impl PickerState {
         if self.filtered.is_empty() {
             return;
         }
-        let len = self.filtered.len() as i32;
-        let next = (self.selected as i32 + delta).rem_euclid(len);
-        self.selected = next as usize;
+        let len = self.filtered.len();
+        let step = usize::try_from(delta.unsigned_abs()).unwrap_or(0) % len;
+        self.selected = if delta >= 0 {
+            (self.selected + step) % len
+        } else {
+            (self.selected + len - step) % len
+        };
     }
 }
 
@@ -247,6 +251,20 @@ mod tests {
         assert_eq!(s.selected, 0);
         s.move_selection(1);
         assert_eq!(s.selected, 1);
+    }
+
+    #[test]
+    fn move_selection_handles_large_and_extreme_deltas() {
+        let mut s = PickerState::new(vec![item("a", "l"), item("b", "l"), item("c", "l")]);
+        s.recompute_filter();
+        s.move_selection(10); // 10 % 3 = 1
+        assert_eq!(s.selected, 1);
+        s.move_selection(-10); // back to 0
+        assert_eq!(s.selected, 0);
+        s.move_selection(i32::MIN);
+        assert!(s.selected < 3);
+        s.move_selection(i32::MAX);
+        assert!(s.selected < 3);
     }
 
     #[test]

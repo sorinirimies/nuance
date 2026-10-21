@@ -53,6 +53,11 @@ pub fn parse_line(input: &str) -> Line<'static> {
     Line::from(spans)
 }
 
+/// Clamp an SGR colour channel into 0..=255 (out-of-range must not wrap).
+fn chan(v: i64) -> u8 {
+    u8::try_from(v.clamp(0, 255)).unwrap_or(u8::MAX)
+}
+
 /// Apply a `;`-separated list of SGR codes (e.g. `"1;38;2;137;180;250"`) to
 /// `style` in place.
 fn apply_codes(codes_str: &str, style: &mut Style) {
@@ -67,13 +72,19 @@ fn apply_codes(codes_str: &str, style: &mut Style) {
             1 => *style = style.add_modifier(Modifier::BOLD),
             22 => *style = style.remove_modifier(Modifier::BOLD),
             38 if codes.get(i + 1) == Some(&2) && i + 4 < codes.len() => {
-                let (r, g, b) = (codes[i + 2] as u8, codes[i + 3] as u8, codes[i + 4] as u8);
-                *style = style.fg(Color::Rgb(r, g, b));
+                *style = style.fg(Color::Rgb(
+                    chan(codes[i + 2]),
+                    chan(codes[i + 3]),
+                    chan(codes[i + 4]),
+                ));
                 i += 4;
             }
             48 if codes.get(i + 1) == Some(&2) && i + 4 < codes.len() => {
-                let (r, g, b) = (codes[i + 2] as u8, codes[i + 3] as u8, codes[i + 4] as u8);
-                *style = style.bg(Color::Rgb(r, g, b));
+                *style = style.bg(Color::Rgb(
+                    chan(codes[i + 2]),
+                    chan(codes[i + 3]),
+                    chan(codes[i + 4]),
+                ));
                 i += 4;
             }
             39 => *style = Style { fg: None, ..*style },
@@ -95,8 +106,12 @@ pub fn strip(input: &str) -> String {
             while j < chars.len() && chars[j] != 'm' {
                 j += 1;
             }
-            i = j + 1;
-            continue;
+            // Unterminated sequence: keep it as literal text, exactly like
+            // `parse_line` does, instead of swallowing the rest of the line.
+            if j < chars.len() {
+                i = j + 1;
+                continue;
+            }
         }
         out.push(chars[i]);
         i += 1;
@@ -150,5 +165,68 @@ mod tests {
         assert_eq!(line.spans.len(), 2);
         assert_eq!(line.spans[0].style.fg, Some(Color::Rgb(1, 2, 3)));
         assert_eq!(line.spans[1].style.fg, None);
+    }
+
+    fn text(line: &Line<'_>) -> String {
+        line.spans.iter().map(|s| s.content.as_ref()).collect()
+    }
+
+    #[test]
+    fn out_of_range_channels_clamp_instead_of_wrapping() {
+        let line = parse_line("\x1b[38;2;300;-5;256mx");
+        assert_eq!(line.spans[0].style.fg, Some(Color::Rgb(255, 0, 255)));
+    }
+
+    #[test]
+    fn applies_bg_color_and_clears_it_with_49() {
+        let line = parse_line("\x1b[48;2;1;2;3ma\x1b[49mb");
+        assert_eq!(line.spans[0].style.bg, Some(Color::Rgb(1, 2, 3)));
+        assert_eq!(line.spans[1].style.bg, None);
+    }
+
+    #[test]
+    fn code_39_clears_fg_and_22_clears_bold() {
+        let line = parse_line("\x1b[1;38;2;1;2;3ma\x1b[39;22mb");
+        assert_eq!(line.spans[1].style.fg, None);
+        assert!(!line.spans[1].style.add_modifier.contains(Modifier::BOLD));
+    }
+
+    #[test]
+    fn truncated_truecolor_sequence_is_ignored() {
+        let line = parse_line("\x1b[38;2;1;2mx");
+        assert_eq!(line.spans[0].style.fg, None);
+        assert_eq!(text(&line), "x");
+    }
+
+    #[test]
+    fn unknown_codes_are_ignored() {
+        let line = parse_line("\x1b[4;53;999mx");
+        assert_eq!(line.spans[0].style, Style::default());
+    }
+
+    #[test]
+    fn unterminated_escape_stays_literal_in_both_parsers() {
+        let s = "ab\x1b[1;38 tail";
+        assert_eq!(strip(s), s);
+        assert_eq!(text(&parse_line(s)), s);
+    }
+
+    #[test]
+    fn lone_escape_and_empty_input() {
+        assert_eq!(strip("\x1b"), "\x1b");
+        assert_eq!(parse_line("").spans.len(), 1);
+        assert_eq!(text(&parse_line("")), "");
+    }
+
+    #[test]
+    fn strip_agrees_with_parse_line_text() {
+        for s in [
+            "\x1b[1mA\x1b[0m\x1b[38;2;1;2;3mB",
+            "x\x1b[",
+            "\x1b[\x1b[0mz",
+            "ünï\x1b[0mcode 项目",
+        ] {
+            assert_eq!(strip(s), text(&parse_line(s)), "{s:?}");
+        }
     }
 }
