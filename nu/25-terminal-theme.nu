@@ -56,6 +56,10 @@ def tmux-passthrough? [] {
 
 def ghostty-dir [] { ($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config")) | path join "ghostty" }
 
+def ghostty-reload [] {
+    if ($env.NUANCE_NO_RELOAD? | default "" | is-empty) { ^pkill -USR2 -x ghostty | complete | ignore }
+}
+
 def terminal-ghostty-conf [mode: string, p: record] {
     mut lines = [$"background = ($p.bg)" $"foreground = ($p.fg)" $"cursor-color = ($p.fg)"]
     if $mode == "full" {
@@ -69,7 +73,7 @@ def terminal-ghostty-apply [mode: string, p: record] {
     let overlay = ($dir | path join "nuance-terminal.conf")
     let main = ($dir | path join "config")
     if $mode == "off" {
-        if ($overlay | path exists) { rm -f $overlay; ^pkill -USR2 -x ghostty | complete | ignore }
+        if ($overlay | path exists) { rm -f $overlay; ghostty-reload }
         return
     }
     let want = (terminal-ghostty-conf $mode $p)
@@ -80,7 +84,7 @@ def terminal-ghostty-apply [mode: string, p: record] {
     let inc = "config-file = ?nuance-terminal.conf"
     let cur = (if ($main | path exists) { open --raw $main } else { "" })
     if not ($cur | str contains $inc) { $"($cur | str trim --right)\n($inc)\n" | save -f $main }
-    ^pkill -USR2 -x ghostty | complete | ignore
+    ghostty-reload
 }
 
 # Multiplexers eat OSC color sequences, so:

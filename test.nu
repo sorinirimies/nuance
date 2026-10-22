@@ -2,10 +2,26 @@
 # test.nu — validates nuance: every theme, style and look is well-formed,
 # the prompt renders, and helpers behave. Exits non-zero on any failure.
 # Run:  nu test.nu
-source nushell-prompt.nu
+
+# ── hermetic: nothing here may touch your real nuance/Ghostty state ──────────
+# Snapshot the real state first; the very end of this file asserts it is unchanged.
+let real_cfg = $nu.default-config-dir
+let real_ghostty = (($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config")) | path join "ghostty")
+let snap = {||
+    [$real_cfg $real_ghostty] | each {|d|
+        if ($d | path exists) { ls -a $d | where type == file | each {|f| { f: $f.name, s: ($f.size | into int), m: ($f.modified | into int) } } } else { [] }
+    } | flatten
+}
+let real_before = (do $snap)
+
+# Point every state/cache/theme dir — and Ghostty's config dir — at throwaways
+# BEFORE sourcing, so startup (theme-apply, terminal-follow) can't write the real ones.
 $env.NUANCE_THEMES_DIR = (mktemp -d)
-$env.NUANCE_CONFIG_DIR = (mktemp -d)   # state files (theme/style/modules/…) never touch your real config
+$env.NUANCE_CONFIG_DIR = (mktemp -d)
 $env.NUANCE_CACHE_DIR = (mktemp -d)
+$env.XDG_CONFIG_HOME = (mktemp -d)
+$env.NUANCE_NO_RELOAD = "1"      # never SIGUSR2 a real Ghostty
+source nushell-prompt.nu
 
 mut errors = []
 
@@ -739,6 +755,19 @@ for row in ($gmap | transpose k v) {
     let got = (ghostty-map-name $row.k)
     if ($got != $row.v) { $errors = ($errors | append $"ghostty map '($row.k)' -> '($got)' (want '($row.v)')") }
 }
+
+# ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
+let gdir = (ghostty-dir)
+mkdir $gdir
+"theme = Gruvbox Dark Hard\n" | save -f ($gdir | path join "config")
+terminal-ghostty-apply "full" (theme-get "dracula").palette
+if not (($gdir | path join "nuance-terminal.conf") | path exists) { $errors = ($errors | append "ghostty overlay not written") }
+if not ((open --raw ($gdir | path join "config")) | str contains "config-file = ?nuance-terminal.conf") { $errors = ($errors | append "ghostty config include missing") }
+terminal-ghostty-apply "off" (theme-get "dracula").palette
+if (($gdir | path join "nuance-terminal.conf") | path exists) { $errors = ($errors | append "terminal off must remove the ghostty overlay") }
+
+# ── the suite must not have touched real state ──
+if (do $snap) != $real_before { $errors = ($errors | append "test run modified your real nuance/Ghostty config files") }
 
 # ── report ──
 if ($errors | is-empty) {
