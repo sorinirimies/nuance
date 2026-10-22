@@ -225,6 +225,48 @@ mod tests {
         }
     }
 
+    fn render(state: &PickerState, w: u16, h: u16) -> String {
+        use ratatui::backend::TestBackend;
+        let mut term = Terminal::new(TestBackend::new(w, h)).unwrap();
+        term.draw(|f| draw(f, state, "Pick a style")).unwrap();
+        let buf = term.backend().buffer().clone();
+        (0..h)
+            .map(|y| {
+                (0..w)
+                    .map(|x| buf[(x, y)].symbol().to_string())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    #[test]
+    fn draw_shows_title_keys_and_filter() {
+        let mut s = PickerState::new(vec![item("full", "FULL"), item("compact", "COMPACT")]);
+        s.filter = "com".into();
+        s.recompute_filter();
+        let out = render(&s, 80, 20);
+        assert!(out.contains("Pick a style"), "{out}");
+        assert!(out.contains("compact"), "{out}");
+        assert!(
+            !out.contains("full"),
+            "filtered-out item must not render:\n{out}"
+        );
+    }
+
+    #[test]
+    fn draw_renders_preview_of_selected_item() {
+        let s = PickerState::new(vec![item("full", "PREVIEW-TEXT")]);
+        assert!(render(&s, 100, 20).contains("PREVIEW-TEXT"));
+    }
+
+    #[test]
+    fn draw_survives_tiny_and_empty_states() {
+        let s = PickerState::new(vec![]);
+        let _ = render(&s, 10, 3);
+        let _ = render(&s, 1, 1);
+    }
+
     #[test]
     fn filter_empty_matches_everything() {
         let mut s = PickerState::new(vec![item("full", "l1"), item("compact", "l2")]);
