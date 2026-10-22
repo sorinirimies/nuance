@@ -441,6 +441,8 @@ def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal"] {
     $env.NUANCE_TERMINAL = $mode
     $mode | save -f (terminal-state-path)
     print $"(ansi green_bold)✓(ansi reset) terminal theming (ansi attr_bold)($mode)(ansi reset)"
+    let note = (terminal-mux-note)
+    if $mode != "off" and ($note | is-not-empty) { print $"(ansi yellow_bold)!(ansi reset) ($note)" }
 }
 
 # `nuance transient [on|off|toggle]` — collapse finished prompts to one glyph.
@@ -554,6 +556,7 @@ def "nuance doctor" [--clear-errors] {
         { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }
         { check: "theme", status: "info", detail: $"($env.THEME_NAME? | default 'unknown') \((if $saved_theme == 'auto' { 'auto-follow' } else { 'pinned' }))" }
         { check: "prompt style", status: "info", detail: ($env.PROMPT_STYLE? | default "full") }
+        (let note = (terminal-mux-note); { check: "terminal theming", status: (if ($note | is-not-empty) and (($env.NUANCE_TERMINAL? | default "off") != "off") { "warn" } else { "info" }), detail: $"($env.NUANCE_TERMINAL? | default 'off')(if ($note | is-not-empty) { ' — ' + $note } else { '' })" })
         { check: "transient prompt", status: "info", detail: ($env.NUANCE_TRANSIENT? | default "off") }
         { check: "modules", status: "info", detail: (if (enabled-modules | is-empty) { "none enabled" } else { enabled-modules | str join ", " }) }
         { check: "terminal theme", status: "info", detail: (if ($ghostty | is-empty) { "no Ghostty theme detected" } else { $"Ghostty → ($ghostty)" }) }

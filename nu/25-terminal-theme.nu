@@ -33,8 +33,85 @@ def terminal-sequences [mode: string, p: record] {
 }
 
 # Emit to the terminal (only when stdout is a TTY; never into pipes/scripts).
+# Zellij swallows OSC color sequences, so inside zellij on Ghostty we theme
+# via Ghostty's own config instead: write an include file, make sure the main
+# config includes it, and reload Ghostty (SIGUSR2). This recolors the whole
+# Ghostty app (all windows), not just this pane. `off` removes the file.
+# Which multiplexer (if any) sits between nu and the terminal.
+def terminal-mux [] {
+    if ($env.ZELLIJ? | default "" | is-not-empty) { "zellij" } else if ($env.TMUX? | default "" | is-not-empty) { "tmux" } else if ($env.STY? | default "" | is-not-empty) { "screen" } else { "" }
+}
+
+# The outer terminal is Ghostty (TERM_PROGRAM is "tmux" inside tmux, so also
+# check the variables Ghostty exports to its shells).
+def ghostty-host? [] {
+    (($env.TERM_PROGRAM? | default "") == "ghostty") or ($env.GHOSTTY_RESOURCES_DIR? | default "" | is-not-empty) or ($env.GHOSTTY_BIN_DIR? | default "" | is-not-empty)
+}
+
+# tmux >= 3.3 forwards DCS passthrough only with allow-passthrough on; try to
+# enable it for this pane. True when tmux accepted it.
+def tmux-passthrough? [] {
+    (^tmux set-option -p allow-passthrough on | complete).exit_code == 0
+}
+
+def ghostty-dir [] { ($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config")) | path join "ghostty" }
+
+def terminal-ghostty-conf [mode: string, p: record] {
+    mut lines = [$"background = ($p.bg)" $"foreground = ($p.fg)" $"cursor-color = ($p.fg)"]
+    if $mode == "full" {
+        for e in (terminal-ansi $p | enumerate) { $lines = ($lines | append $"palette = ($e.index)=($e.item)") }
+    }
+    ($lines | str join "\n") + "\n"
+}
+
+def terminal-ghostty-apply [mode: string, p: record] {
+    let dir = (ghostty-dir)
+    let overlay = ($dir | path join "nuance-terminal.conf")
+    let main = ($dir | path join "config")
+    if $mode == "off" {
+        if ($overlay | path exists) { rm -f $overlay; ^pkill -USR2 -x ghostty | complete | ignore }
+        return
+    }
+    let want = (terminal-ghostty-conf $mode $p)
+    let have = (if ($overlay | path exists) { open --raw $overlay } else { "" })
+    if $have == $want { return }
+    mkdir $dir
+    $want | save -f $overlay
+    let inc = "config-file = ?nuance-terminal.conf"
+    let cur = (if ($main | path exists) { open --raw $main } else { "" })
+    if not ($cur | str contains $inc) { $"($cur | str trim --right)\n($inc)\n" | save -f $main }
+    ^pkill -USR2 -x ghostty | complete | ignore
+}
+
+# Multiplexers eat OSC color sequences, so:
+#   tmux    DCS passthrough (allow-passthrough is switched on for the pane)
+#   screen  DCS passthrough
+#   zellij  no passthrough exists → on Ghostty, theme via Ghostty's config
+# Anything we can't route falls back to the plain sequences.
 def terminal-emit [mode: string, p: record] {
-    if (is-terminal --stdout) { print -n (terminal-sequences $mode $p) }
+    if not (is-terminal --stdout) { return }
+    let seq = (terminal-sequences $mode $p)
+    let esc = (char --unicode "1b")
+    match (terminal-mux) {
+        "tmux" => {
+            if (tmux-passthrough?) {
+                print -n $"($esc)Ptmux;($seq | str replace --all $esc ($esc + $esc))($esc)\\"
+            } else if (ghostty-host?) { terminal-ghostty-apply $mode $p }
+        }
+        "screen" => { print -n $"($esc)P($seq)($esc)\\" }
+        "zellij" => { if (ghostty-host?) { terminal-ghostty-apply $mode $p } }
+        _ => { print -n $seq }
+    }
+}
+
+# Why the screen may not recolor. Returns a hint string, or "" when none.
+def terminal-mux-note [] {
+    match (terminal-mux) {
+        "zellij" => { if (ghostty-host?) { "zellij: no color passthrough — themed via Ghostty's config (nuance-terminal.conf) + reload; affects all Ghostty windows." } else { "zellij swallows the terminal color sequences, so only the prompt is themed (no workaround outside Ghostty)." } }
+        "tmux" => { "tmux: colors go via DCS passthrough (needs tmux >= 3.3; nuance enables allow-passthrough per pane)." }
+        "screen" => { "GNU screen: colors forwarded via DCS passthrough; some builds ignore it." }
+        _ => { "" }
+    }
 }
 
 # Called on every theme change: re-skin the screen when the mode is on/full.

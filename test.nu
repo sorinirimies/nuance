@@ -164,9 +164,12 @@ for t in (theme-list) {
     if ($on | str contains "]4;") { $errors = ($errors | append $"theme '($t)': terminal 'on' must not touch ANSI palette") }
     if (($full | split row "]4;" | length) - 1) != 16 { $errors = ($errors | append $"theme '($t)': terminal 'full' must set 16 ANSI colors") }
 }
+# zellij+Ghostty overlay: pure conf generator
+let gconf = (terminal-ghostty-conf "full" (theme-get "dracula").palette)
+if (($gconf | lines | where {|l| $l starts-with "palette = " } | length) != 16) or not ($gconf | str contains "background = ") { $errors = ($errors | append "ghostty overlay must set bg/fg and 16 palette entries") }
 let off_seq = (terminal-sequences "off" (theme-get "dracula").palette)
 if not ($off_seq | str contains "]111") or not ($off_seq | str contains "]104") { $errors = ($errors | append "terminal off must emit reset sequences") }
-if (($env.NUANCE_TERMINAL? | default "off") != "off") { $errors = ($errors | append "terminal theming must be off by default") }
+if ((try { open (terminal-state-path) | str trim } catch { "off" }) != "off") { $errors = ($errors | append "terminal theming must be off by default") }
 
 # ── transient prompt ──
 transient-apply "on"
