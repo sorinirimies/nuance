@@ -4,6 +4,16 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.8.0](https://github.com/sorinirimies/nuance/compare/v0.7.1...v0.8.0) — 2026-10-22
+
+### ✨ Features
+
+- **terminal:** Theme the screen through tmux/screen (DCS passthrough) and zellij (Ghostty config overlay); doctor row; hermetic test ([`9d37cb2`](https://github.com/sorinirimies/nuance/commit/9d37cb2d149defe41ed8272bf566f33d2d1185e8))
+
+### 🧪 Tests
+
+- **tui:** Render tests via TestBackend; docs: test count ([`121106e`](https://github.com/sorinirimies/nuance/commit/121106eab9b9a379287ebb77fc3a6e868eb8c982))
+
 ## [0.7.1](https://github.com/sorinirimies/nuance/compare/v0.6.1...v0.7.1) — 2026-10-21
 
 ### 🐛 Bug fixes
