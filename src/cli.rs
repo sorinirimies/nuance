@@ -118,6 +118,12 @@ pub enum Commands {
     Terminal {
         /// on | full | off — omit to show the current state
         mode: Option<String>,
+        /// Also allow the app-wide route (Ghostty config + reload) — the only way under zellij
+        #[arg(long)]
+        all_windows: bool,
+        /// Apply to this nu shell only; don't save it for new shells
+        #[arg(long)]
+        session: bool,
     },
     /// Situational prompt segments: list | enable | disable | clear [name…]
     Modules {
@@ -153,7 +159,7 @@ pub fn usage() -> &'static str {
   nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme
   nuance here [theme [style]]  pin a theme to this directory tree (.nuance)
   nuance transient [on|off]    collapse finished prompts to one glyph
-  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)
+  nuance terminal [on|full|off] [--all-windows] also theme terminal bg/fg/cursor (full: ANSI colors)
   nuance modules [enable|disable|list|clear] [name…]
                                situational segments: status jobs ssh root venv nix lang k8s docker cloud pkg battery
   nuance sync                  follow the terminal's theme (auto-follow)
@@ -297,6 +303,25 @@ mod tests {
         assert!(matches!(
             p(&["nuance", "doctor", "--clear-errors"]),
             Some(Commands::Doctor { clear_errors: true })
+        ));
+        match p(&["nuance", "terminal", "full", "--all-windows", "--session"]) {
+            Some(Commands::Terminal {
+                mode,
+                all_windows,
+                session,
+            }) => {
+                assert_eq!(mode.as_deref(), Some("full"));
+                assert!(all_windows && session);
+            }
+            other => panic!("unexpected: {other:?}"),
+        }
+        assert!(matches!(
+            p(&["nuance", "terminal", "on"]),
+            Some(Commands::Terminal {
+                all_windows: false,
+                session: false,
+                ..
+            })
         ));
         match p(&["nuance", "appearance", "dracula", "tokyo-night-day"]) {
             Some(Commands::Appearance { args }) => {

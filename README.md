@@ -36,12 +36,15 @@ nuance terminal off    # reset to your terminal's own colors
 It re-applies on every theme/look change and at shell startup, via OSC
 10/11/12/4 escape sequences (only when stdout is a TTY). Works in Ghostty,
 iTerm2, kitty, WezTerm, Alacritty and foot; Terminal.app ignores most of it;
-**multiplexers** are handled: tmux and GNU screen get DCS passthrough (nuance
-switches tmux's `allow-passthrough` on for the pane); zellij has no passthrough,
-so on Ghostty nuance writes `nuance-terminal.conf` next to your Ghostty config
-(adds `config-file = ?nuance-terminal.conf`) and reloads Ghostty — that recolors
-every Ghostty window; `nuance terminal off` removes it. `nuance doctor` shows
-which route is in use. With it on, nuance's theme wins over
+**multiplexers** are handled: tmux and GNU screen get DCS passthrough to the
+current pane (nuance switches tmux's `allow-passthrough` on for it). zellij has
+no per-pane colors, so by default only the prompt is themed there; opt in to
+the app-wide route with `nuance terminal full --all-windows` — on Ghostty that
+writes `nuance-terminal.conf` next to your Ghostty config (adds
+`config-file = ?nuance-terminal.conf`) and reloads, recoloring *every* Ghostty
+window; `nuance terminal off` removes it. Add `--session` to apply to the
+current nu shell only (nothing is saved, new shells are untouched).
+`nuance doctor` shows which route is in use. With it on, nuance's theme wins over
 your terminal's own colors.
 
 ## Installation

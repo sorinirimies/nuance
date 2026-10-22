@@ -925,14 +925,19 @@ def terminal-emit [mode: string, p: record] {
     if not (is-terminal --stdout) { return }
     let seq = (terminal-sequences $mode $p)
     let esc = (char --unicode "1b")
+    let wide = (($env.NUANCE_TERMINAL_SCOPE? | default "pane") == "all" and (ghostty-host?))
     match (terminal-mux) {
         "tmux" => {
             if (tmux-passthrough?) {
                 print -n $"($esc)Ptmux;($seq | str replace --all $esc ($esc + $esc))($esc)\\"
-            } else if (ghostty-host?) { terminal-ghostty-apply $mode $p }
+            } else if $wide { terminal-ghostty-apply $mode $p }
         }
         "screen" => { print -n $"($esc)P($seq)($esc)\\" }
-        "zellij" => { if (ghostty-host?) { terminal-ghostty-apply $mode $p } }
+        "zellij" => {
+            # no per-pane colors exist; only touch Ghostty when explicitly asked,
+            # but always allow `off` to remove a previous overlay
+            if $wide or $mode == "off" { terminal-ghostty-apply $mode $p }
+        }
         _ => { print -n $seq }
     }
 }
@@ -940,8 +945,14 @@ def terminal-emit [mode: string, p: record] {
 # Why the screen may not recolor. Returns a hint string, or "" when none.
 def terminal-mux-note [] {
     match (terminal-mux) {
-        "zellij" => { if (ghostty-host?) { "zellij: no color passthrough — themed via Ghostty's config (nuance-terminal.conf) + reload; affects all Ghostty windows." } else { "zellij swallows the terminal color sequences, so only the prompt is themed (no workaround outside Ghostty)." } }
-        "tmux" => { "tmux: colors go via DCS passthrough (needs tmux >= 3.3; nuance enables allow-passthrough per pane)." }
+        "zellij" => {
+            if (($env.NUANCE_TERMINAL_SCOPE? | default "pane") == "all") and (ghostty-host?) {
+                "zellij: themed via Ghostty's config (nuance-terminal.conf) + reload — this affects ALL Ghostty windows."
+            } else {
+                "zellij has no per-pane colors, so only the prompt is themed. To theme Ghostty anyway (all windows): nuance terminal full --all-windows"
+            }
+        }
+        "tmux" => { "tmux: colors go via DCS passthrough to this pane (needs tmux >= 3.3; nuance enables allow-passthrough per pane)." }
         "screen" => { "GNU screen: colors forwarded via DCS passthrough; some builds ignore it." }
         _ => { "" }
     }
@@ -953,6 +964,11 @@ def terminal-follow [p: record] {
     if $m != "off" { terminal-emit $m $p }
 }
 
+def terminal-scope-path [] { ($env.NUANCE_CONFIG_DIR? | default $nu.default-config-dir) | path join "terminal-scope.txt" }
+
+# "pane" (default): only the pane nu runs in may change. "all": also allow the
+# app-wide Ghostty-config route (the only option under zellij).
+$env.NUANCE_TERMINAL_SCOPE = (try { open (terminal-scope-path) | str trim } catch { "pane" })
 $env.NUANCE_TERMINAL = (try { open (terminal-state-path) | str trim } catch { "off" })
 # ── User themes (nuance import …) ─────────────────────────────
 # One .nuon file per theme in <config>/nuance/themes (override the directory
@@ -1382,8 +1398,8 @@ def --env "nuance prompt-style" [name?: string@"nu-complete nuance styles"] { pr
 # `nuance look` — same as bare `look`.
 def --env "nuance look" [name?: string@"nu-complete nuance looks"] { look $name }
 
-# `nuance terminal [on|full|off]` — also theme the terminal's background, foreground, cursor (and ANSI colors with `full`).
-def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal"] {
+# `nuance terminal [on|full|off] [--all-windows]` — also theme the terminal's background, foreground, cursor (and ANSI colors with `full`).
+def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal", --all-windows, --session] {
     let cur = ($env.NUANCE_TERMINAL? | default "off")
     if ($mode | default "") == "" {
         print $"terminal theming: (ansi attr_bold)($cur)(ansi reset)  \(nuance terminal on|full|off\)"
@@ -1393,10 +1409,17 @@ def --env "nuance terminal" [mode?: string@"nu-complete nuance terminal"] {
         print $"(ansi red)unknown mode:(ansi reset) ($mode)  — use on, full or off"
         return
     }
+    let scope = (if $all_windows { "all" } else { "pane" })
+    $env.NUANCE_TERMINAL_SCOPE = $scope
     terminal-emit $mode $env.THEME_PALETTE
     $env.NUANCE_TERMINAL = $mode
-    $mode | save -f (terminal-state-path)
-    print $"(ansi green_bold)✓(ansi reset) terminal theming (ansi attr_bold)($mode)(ansi reset)"
+    # --session: this nu shell only — nothing is persisted, new shells are untouched
+    if not $session {
+        $scope | save -f (terminal-scope-path)
+        $mode | save -f (terminal-state-path)
+    }
+    let where = (if $session { " (this shell only)" } else { "" })
+    print $"(ansi green_bold)✓(ansi reset) terminal theming (ansi attr_bold)($mode)(ansi reset)($where)"
     let note = (terminal-mux-note)
     if $mode != "off" and ($note | is-not-empty) { print $"(ansi yellow_bold)!(ansi reset) ($note)" }
 }

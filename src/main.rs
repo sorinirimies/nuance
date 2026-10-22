@@ -124,9 +124,25 @@ fn main() -> ExitCode {
             let args: Vec<String> = mode.into_iter().collect();
             with_nu(|target| nu::run_nu(target, &format!("nuance transient {}", nu::quote(&args))))
         }
-        Some(Commands::Terminal { mode }) => {
+        Some(Commands::Terminal {
+            mode,
+            all_windows,
+            session,
+        }) => {
             let args: Vec<String> = mode.into_iter().collect();
-            with_nu(|target| nu::run_nu(target, &format!("nuance terminal {}", nu::quote(&args))))
+            let mut flag = String::new();
+            if all_windows {
+                flag.push_str(" --all-windows");
+            }
+            if session {
+                flag.push_str(" --session");
+            }
+            with_nu(|target| {
+                nu::run_nu(
+                    target,
+                    &format!("nuance terminal {}{flag}", nu::quote(&args)),
+                )
+            })
         }
         Some(Commands::Modules { action, names }) => {
             let args: Vec<String> = action.into_iter().chain(names).collect();
