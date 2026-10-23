@@ -1,30 +1,38 @@
-name: fuzz
+name: Fuzz
 
 on:
   schedule:
     - cron: "0 4 * * *"
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["fuzz/**", "src/**", "Cargo.lock"]
   pull_request:
-    paths: ["fuzz/**", "src/ansi.rs", "src/nu.rs"]
+    paths: ["fuzz/**", "src/**", "Cargo.lock"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   fuzz:
+    name: cargo fuzz (smoke)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ansi_parse, nu_quote]
     steps:
-      - uses: actions/checkout@v4
-      - name: Install nightly + cargo-fuzz
+      - uses: actions/checkout@v7
+      - name: Install Rust nightly
         run: |
-          rustup toolchain install nightly --profile minimal
-          cargo install cargo-fuzz --locked
-      - name: Fuzz ${{ matrix.target }}
-        run: cargo +nightly fuzz run ${{ matrix.target }} -- -max_total_time=${{ github.event_name == 'schedule' && 300 || 60 }}
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Fuzz each target for 60s
+        run: |
+          for t in $(cargo +nightly fuzz list); do
+            cargo +nightly fuzz run "$t" -- -max_total_time=60
+          done
       - name: Upload crashes
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: fuzz-artifacts-${{ matrix.target }}
+          name: fuzz-artifacts
           path: fuzz/artifacts/
