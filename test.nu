@@ -756,6 +756,74 @@ for row in ($gmap | transpose k v) {
     if ($got != $row.v) { $errors = ($errors | append $"ghostty map '($row.k)' -> '($got)' (want '($row.v)')") }
 }
 
+# ── multiplexer routing (pure) ──
+let rp = (theme-get "dracula").palette
+let esc = (char --unicode "1b")
+let routes = [
+  [mux wide pass mode kind];
+  ["" false false "full" "osc"]
+  ["" true false "full" "osc"]
+  ["tmux" false true "full" "dcs-tmux"]
+  ["tmux" true true "full" "dcs-tmux"]
+  ["tmux" false false "full" "none"]
+  ["tmux" true false "full" "ghostty"]
+  ["tmux" false false "off" "none"]
+  ["screen" false false "full" "dcs-screen"]
+  ["zellij" false false "full" "none"]
+  ["zellij" false false "on" "none"]
+  ["zellij" true false "full" "ghostty"]
+  ["zellij" false false "off" "ghostty"]
+]
+for r in $routes {
+    let got = (terminal-route $r.mode $rp $r.mux $r.wide $r.pass)
+    if $got.kind != $r.kind { $errors = ($errors | append $"route mux='($r.mux)' wide=($r.wide) pass=($r.pass) mode=($r.mode): got ($got.kind), want ($r.kind)") }
+}
+let tm = (terminal-route "full" $rp "tmux" false true).bytes
+if not ($tm | str starts-with $"($esc)Ptmux;($esc)($esc)]10;") or not ($tm | str ends-with $"($esc)\\") { $errors = ($errors | append "tmux passthrough must be DCS tmux; with every ESC doubled, ST-terminated") }
+let sc = (terminal-route "full" $rp "screen" false false).bytes
+if not ($sc | str starts-with $"($esc)P($esc)]10;") { $errors = ($errors | append "screen route must wrap in DCS") }
+for k in ["zellij" "tmux" "screen" ""] {
+    let n = (with-env { ZELLIJ: (if $k == "zellij" { "0" } else { "" }), TMUX: (if $k == "tmux" { "1" } else { "" }), STY: (if $k == "screen" { "1" } else { "" }) } { terminal-mux })
+    if $n != $k { $errors = ($errors | append $"terminal-mux detection: want '($k)' got '($n)'") }
+}
+
+# ── real multiplexers (skipped when not installed): detection inside the real thing ──
+let nu_bin = (which nu | get 0.path)
+let probe_dir = (mktemp -d)
+let nuance_file = ($env.PWD | path join "nushell-prompt.nu")
+for m in ["tmux" "screen"] {
+    if (which $m | is-empty) { print $"(ansi yellow)skip(ansi reset) real ($m) not installed"; continue }
+    let out = ($probe_dir | path join $"($m).out")
+    let others = (if $m == "tmux" { "-u ZELLIJ -u STY" } else { "-u ZELLIJ -u TMUX" })   # outer mux vars must not win
+    let cmd = $"env ($others) ($nu_bin) -n -c 'source ($nuance_file); terminal-mux | save -f ($out)'"
+    if $m == "tmux" {
+        ^tmux -L nuance-test new-session -d -s t $cmd | complete | ignore
+    } else {
+        ^screen -dmS nuance-test sh -c $cmd | complete | ignore
+    }
+    mut waited = 0
+    while not ($out | path exists) and $waited < 50 { sleep 100ms; $waited += 1 }
+    let got = (try { open --raw $out | str trim } catch { "<none>" })
+    if $got != $m { $errors = ($errors | append $"real ($m): terminal-mux inside it returned '($got)', want '($m)'") }
+    if $m == "tmux" { ^tmux -L nuance-test kill-server | complete | ignore } else { ^screen -S nuance-test -X quit | complete | ignore }
+}
+
+# ── end-to-end: real tmux must forward our OSC 11 (via DCS passthrough) to the outer pty ──
+if (which tmux | is-not-empty) and (which script | is-not-empty) {
+    let e2e = (mktemp -d)
+    let inner = $"nu -n -c 'source ($nuance_file); nuance terminal full --session; sleep 1sec'"
+    let tmux_cmd = $"tmux -L nuance-e2e -f /dev/null new-session \"($inner)\""
+    let env_pre = $"env -u ZELLIJ -u STY TERM=xterm-256color NUANCE_CONFIG_DIR=($e2e)"
+    if $nu.os-info.name == "macos" {
+        ^sh -c $"($env_pre) script -q ($e2e)/out ($tmux_cmd) </dev/null >/dev/null 2>&1" | complete | ignore
+    } else {
+        ^sh -c $"($env_pre) script -qec '($tmux_cmd)' ($e2e)/out </dev/null >/dev/null 2>&1" | complete | ignore
+    }
+    ^tmux -L nuance-e2e kill-server | complete | ignore
+    let outer = (try { open --raw ($e2e | path join "out") | decode utf-8 } catch { "" })
+    if not ($outer | str contains $"($esc)]11;#") { $errors = ($errors | append "real tmux did not forward the OSC 11 background sequence to the outer terminal") }
+} else { print $"(ansi yellow)skip(ansi reset) tmux e2e (needs tmux + script)" }
+
 # ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
 let gdir = (ghostty-dir)
 mkdir $gdir

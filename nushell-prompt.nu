@@ -916,30 +916,34 @@ def terminal-ghostty-apply [mode: string, p: record] {
     ghostty-reload
 }
 
-# Multiplexers eat OSC color sequences, so:
-#   tmux    DCS passthrough (allow-passthrough is switched on for the pane)
+# Pure routing decision. mux: tmux|screen|zellij|"" · wide: app-wide Ghostty
+# route allowed and available · tmux_pass: tmux accepted allow-passthrough.
+# Returns { kind, bytes }: kind ∈ osc | dcs-tmux | dcs-screen | ghostty | none.
+#   tmux    DCS passthrough to this pane (falls back to ghostty only if `wide`)
 #   screen  DCS passthrough
-#   zellij  no passthrough exists → on Ghostty, theme via Ghostty's config
-# Anything we can't route falls back to the plain sequences.
-def terminal-emit [mode: string, p: record] {
-    if not (is-terminal --stdout) { return }
+#   zellij  no per-pane colors → ghostty only if `wide` (or `off`, to clean up)
+def terminal-route [mode: string, p: record, mux: string, wide: bool, tmux_pass: bool] {
     let seq = (terminal-sequences $mode $p)
     let esc = (char --unicode "1b")
-    let wide = (($env.NUANCE_TERMINAL_SCOPE? | default "pane") == "all" and (ghostty-host?))
-    match (terminal-mux) {
+    match $mux {
         "tmux" => {
-            if (tmux-passthrough?) {
-                print -n $"($esc)Ptmux;($seq | str replace --all $esc ($esc + $esc))($esc)\\"
-            } else if $wide { terminal-ghostty-apply $mode $p }
+            if $tmux_pass {
+                { kind: "dcs-tmux", bytes: $"($esc)Ptmux;($seq | str replace --all $esc ($esc + $esc))($esc)\\" }
+            } else if $wide { { kind: "ghostty", bytes: "" } } else { { kind: "none", bytes: "" } }
         }
-        "screen" => { print -n $"($esc)P($seq)($esc)\\" }
-        "zellij" => {
-            # no per-pane colors exist; only touch Ghostty when explicitly asked,
-            # but always allow `off` to remove a previous overlay
-            if $wide or $mode == "off" { terminal-ghostty-apply $mode $p }
-        }
-        _ => { print -n $seq }
+        "screen" => { { kind: "dcs-screen", bytes: $"($esc)P($seq)($esc)\\" } }
+        "zellij" => { if $wide or $mode == "off" { { kind: "ghostty", bytes: "" } } else { { kind: "none", bytes: "" } } }
+        _ => { { kind: "osc", bytes: $seq } }
     }
+}
+
+def terminal-emit [mode: string, p: record] {
+    if not (is-terminal --stdout) { return }
+    let mux = (terminal-mux)
+    let wide = (($env.NUANCE_TERMINAL_SCOPE? | default "pane") == "all" and (ghostty-host?))
+    let pass = (if $mux == "tmux" { tmux-passthrough? } else { false })
+    let r = (terminal-route $mode $p $mux $wide $pass)
+    if $r.kind == "ghostty" { terminal-ghostty-apply $mode $p } else if $r.bytes != "" { print -n $r.bytes }
 }
 
 # Why the screen may not recolor. Returns a hint string, or "" when none.
