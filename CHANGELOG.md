@@ -4,6 +4,23 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.8.1](https://github.com/sorinirimies/nuance/compare/v0.8.0...v0.8.1) — 2026-10-23
+
+### ✨ Features
+
+- **terminal:** Per-pane by default, opt-in --all-windows (zellij/Ghostty), --session for this shell only ([`5c12250`](https://github.com/sorinirimies/nuance/commit/5c12250b9100af4620ff2b4d2f6eb60b3235c0db))
+
+### 🧪 Tests
+
+- Fix skip message interpolation ([`02b5bc6`](https://github.com/sorinirimies/nuance/commit/02b5bc675edc0bee34c683c5f89acbf9031f54e2))
+- Tmux OSC e2e is local-only (flaky on headless CI); detection tests stay in CI ([`337aaf3`](https://github.com/sorinirimies/nuance/commit/337aaf3410f630c3f23f56f596916a4d1ea0a0ba))
+- **terminal:** Table-driven multiplexer routing, real tmux/screen detection, tmux OSC e2e; CI installs tmux+screen ([`10e41ef`](https://github.com/sorinirimies/nuance/commit/10e41efd1fb878bcbfd6c3a1d4c68f51fdded010))
+- Make test.nu hermetic (state/Ghostty dirs set before sourcing, no reload), assert real config untouched, cover overlay apply/off ([`b8b09f0`](https://github.com/sorinirimies/nuance/commit/b8b09f0d33e255930b61dc401210ec2a5456fdba))
+
+### 🔄 CI and release
+
+- Align fuzz/security with tokenburn+gitkraft (auto-discover fuzz targets, push trigger, gitea fuzz, dependabot + auto-merge) ([`124bb13`](https://github.com/sorinirimies/nuance/commit/124bb1331864ce2de8bcc25357853c305b86fdb3))
+
 ## [0.8.0](https://github.com/sorinirimies/nuance/compare/v0.7.1...v0.8.0) — 2026-10-22
 
 ### ✨ Features
