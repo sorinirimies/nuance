@@ -825,7 +825,7 @@ if $e2e_ok and (which tmux | is-not-empty) and (which script | is-not-empty) {
     ^tmux -L nuance-e2e kill-server | complete | ignore
     let outer = (try { open --raw ($e2e | path join "out") | decode utf-8 } catch { "" })
     if not ($outer | str contains $"($esc)]11;#") { $errors = ($errors | append "real tmux did not forward the OSC 11 background sequence to the outer terminal") }
-} else { print $"(ansi yellow)skip(ansi reset) tmux e2e (local only: needs tmux + script, not CI)" }
+} else { print $"(ansi yellow)skip(ansi reset) tmux e2e \(local only: needs tmux + script, not CI\)" }
 
 # ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
 let gdir = (ghostty-dir)
