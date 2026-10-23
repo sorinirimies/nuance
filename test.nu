@@ -809,7 +809,10 @@ for m in ["tmux" "screen"] {
 }
 
 # ── end-to-end: real tmux must forward our OSC 11 (via DCS passthrough) to the outer pty ──
-if (which tmux | is-not-empty) and (which script | is-not-empty) {
+# Needs a real pty + timing; flaky on headless CI runners, so it is a local check
+# there (run it with NUANCE_E2E=1 to force it).
+let e2e_ok = (($env.CI? | default "" | is-empty) or ($env.NUANCE_E2E? | default "" | is-not-empty))
+if $e2e_ok and (which tmux | is-not-empty) and (which script | is-not-empty) {
     let e2e = (mktemp -d)
     let inner = $"nu -n -c 'source ($nuance_file); nuance terminal full --session; sleep 1sec'"
     let tmux_cmd = $"tmux -L nuance-e2e -f /dev/null new-session \"($inner)\""
@@ -822,7 +825,7 @@ if (which tmux | is-not-empty) and (which script | is-not-empty) {
     ^tmux -L nuance-e2e kill-server | complete | ignore
     let outer = (try { open --raw ($e2e | path join "out") | decode utf-8 } catch { "" })
     if not ($outer | str contains $"($esc)]11;#") { $errors = ($errors | append "real tmux did not forward the OSC 11 background sequence to the outer terminal") }
-} else { print $"(ansi yellow)skip(ansi reset) tmux e2e (needs tmux + script)" }
+} else { print $"(ansi yellow)skip(ansi reset) tmux e2e (local only: needs tmux + script, not CI)" }
 
 # ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
 let gdir = (ghostty-dir)
