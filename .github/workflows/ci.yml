@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        nu: ["0.111.0", "0.114.1"]
+        nu: ["0.115.0", "0.116.1"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
       - name: Install Nushell
         shell: pwsh
         run: |
-          $ver = "0.114.1"
+          $ver = "0.116.1"
           $url = "https://github.com/nushell/nushell/releases/download/$ver/nu-$ver-x86_64-pc-windows-msvc.zip"
           Invoke-WebRequest $url -OutFile nu.zip
           Expand-Archive nu.zip -DestinationPath nu-extract
@@ -138,7 +138,7 @@ jobs:
           arch="$(uname -m)"; case "$arch" in x86_64|amd64) arch=x86_64 ;; arm64|aarch64) arch=aarch64 ;; esac
           case "$(uname -s)" in Linux) plat=unknown-linux-gnu ;; Darwin) plat=apple-darwin ;; *) echo "unsupported OS"; exit 1 ;; esac
           target="${arch}-${plat}"
-          ver="0.114.1"
+          ver="0.116.1"
           url="https://github.com/nushell/nushell/releases/download/${ver}/nu-${ver}-${target}.tar.gz"
           echo "fetching $url"
           curl -fsSL "$url" -o /tmp/nu.tar.gz

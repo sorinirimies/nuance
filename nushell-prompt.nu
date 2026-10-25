@@ -3305,7 +3305,7 @@ def with-local [body: closure] {
 # after NUANCE_GIT_SLOW_MS), the prompt draws instantly from what is cheap —
 # the last full result remembered for this repo, else just the branch — and a
 # background job (`job spawn`) computes the real status and repaints the prompt
-# in place via `commandline set-prompt`. Needs Nushell >= 0.112; on older
+# in place via `commandline set-prompt`. Needs Nushell >= 0.115; on older
 # versions, or with `$env.NUANCE_ASYNC = "off"`, the prompt stays synchronous.
 # A job started for an older prompt is killed when the next prompt is drawn.
 def async-job-desc [] { "nuance-git" }

@@ -225,7 +225,7 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   `git = "off"` in a `.nuance`); a repo whose `git status` is slow is remembered
   for a day and scanned without untracked files. `nuance doctor --clear-errors`
   forgets.
-- **Async git** (Nushell ≥ 0.112): the prompt draws instantly with the branch (or the last
+- **Async git** (Nushell ≥ 0.115): the prompt draws instantly with the branch (or the last
   known status for that repo), then a background job computes the full `git status`
   and repaints it in place — big repos never block. Disable with
   `$env.NUANCE_ASYNC = "off"`.
@@ -265,7 +265,7 @@ built-ins; the Ghostty config is found at `~/.config/ghostty/config` or the
 macOS `Library/…` path; light/dark detection uses macOS `defaults` or GNOME
 `gsettings`. Two suites run in CI on **Ubuntu + macOS** — `nu test.nu`
 (themes/styles/looks/helpers, golden snapshots of 1,300 rendered prompts, across
-Nushell **0.111**, **0.114** and nightly) and `cargo test` (the `nuance` CLI/TUI,
+Nushell **0.115**, **0.116** and nightly) and `cargo test` (the `nuance` CLI/TUI,
 72 unit + integration tests):
 
 ```sh
