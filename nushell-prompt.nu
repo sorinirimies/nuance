@@ -3313,6 +3313,7 @@ def async-git-on [] {
     (($env.NUANCE_ASYNC? | default "on") != "off") and (scope commands | where name == "commandline set-prompt" | is-not-empty)
 }
 def git-last-path [] { (nuance-cache-dir) | path join "git-last.json" }
+def git-active-path [] { (nuance-cache-dir) | path join "git-active.json" }
 def git-last-read [gd: string] {
     try {
         let c = (open --raw (git-last-path) | from json)
@@ -3322,8 +3323,35 @@ def git-last-read [gd: string] {
 def git-last-write [gd: string, g: record] {
     try { mkdir (nuance-cache-dir); { gd: $gd, info: $g } | to json --raw | save -f (git-last-path) }
 }
+# Record tracking the currently active background status job: { gd: string, id: int }
+def git-active-read [] {
+    try {
+        let a = (open --raw (git-active-path) | from json)
+        if ($a.id? | is-not-empty) and (job list | where id == $a.id | is-not-empty) { $a } else { null }
+    } catch { null }
+}
+def git-active-write [gd: string, id: int] {
+    try { mkdir (nuance-cache-dir); { gd: $gd, id: $id } | to json --raw | save -f (git-active-path) }
+}
+def git-active-clear [] {
+    try { rm -f (git-active-path) }
+}
 def async-git-cancel [] {
     try { job list | where description == (async-job-desc) | each {|j| job kill $j.id } | ignore }
+    git-active-clear
+}
+# Dim/mute the palette colors used by the git segment so stale/placeholder
+# info is visibly muted until background refresh completes.
+def palette-dim-git [pal: record] {
+    let sep = ($pal.sep? | default "#888888")
+    let git_roles = [git modified added deleted ahead behind stash conflict untracked ok]
+    mut out = $pal
+    for r in $git_roles {
+        if ($r in $out) {
+            $out = ($out | upsert $r $sep)
+        }
+    }
+    $out
 }
 # Placeholder git record for the instant draw, or null when async doesn't apply
 # (feature off, git disabled/light, not in a repo).
@@ -3338,36 +3366,57 @@ def async-git-plan [] {
 # Render left+right from the full git record and push them over the placeholder
 # prompt. The record is cached so the next prompt in this repo draws final.
 def async-git-launch [plan: record] {
-    job spawn --description (async-job-desc) {||
+    let jid = (job spawn --description (async-job-desc) {||
         try {
             with-local {
                 let g = (git-info)
                 git-last-write $plan.gd $g
+                git-active-clear
                 if $g != $plan.placeholder {
-                    with-env { NUANCE_GIT: $g } {
-                        let l = (finalize (safe-run "left prompt" { left-prompt-core } { "" }))
-                        let r = (finalize (safe-run "right prompt" { right-prompt-core } { "" }))
-                        commandline set-prompt $l --right $r
+                    # Verify user is still in the same repository before repainting
+                    let current_gd = (git-dir-find)
+                    if $current_gd == $plan.gd {
+                        with-env { NUANCE_GIT: $g } {
+                            let l = (finalize (safe-run "left prompt" { left-prompt-core } { "" }))
+                            let r = (finalize (safe-run "right prompt" { right-prompt-core } { "" }))
+                            commandline set-prompt $l --right $r
+                        }
                     }
                 }
             }
         }
-    } | ignore
+    })
+    git-active-write $plan.gd $jid
 }
 def left-prompt-async [] {
-    async-git-cancel
     let plan = (async-git-plan)
-    if $plan == null { return (left-prompt-core) }
-    let out = (with-env { NUANCE_GIT: $plan.placeholder } { left-prompt-core })
+    if $plan == null {
+        async-git-cancel
+        return (left-prompt-core)
+    }
+    # Check if a background job is already running
+    let active = (git-active-read)
+    if $active != null {
+        if $active.gd == $plan.gd {
+            # Same repo: let the running job continue! Render placeholder with dimmed git colors.
+            let dimmed_palette = (palette-dim-git $env.THEME_PALETTE)
+            return (with-env { NUANCE_GIT: $plan.placeholder, THEME_PALETTE: $dimmed_palette } { left-prompt-core })
+        } else {
+            # Switched repo/directory: cancel old job
+            async-git-cancel
+        }
+    }
+    # No job running for this repo: launch one and render dimmed placeholder
     async-git-launch $plan
-    $out
+    let dimmed_palette = (palette-dim-git $env.THEME_PALETTE)
+    with-env { NUANCE_GIT: $plan.placeholder, THEME_PALETTE: $dimmed_palette } { left-prompt-core }
 }
 def right-prompt-async [] {
     let plan = (async-git-plan)
     if $plan == null { return (right-prompt-core) }
-    with-env { NUANCE_GIT: $plan.placeholder } { right-prompt-core }
+    let dimmed_palette = (palette-dim-git $env.THEME_PALETTE)
+    with-env { NUANCE_GIT: $plan.placeholder, THEME_PALETTE: $dimmed_palette } { right-prompt-core }
 }
-
 def create_left_prompt [] {
     finalize (safe-run "left prompt" { with-local { left-prompt-async } } { $"(($env.PWD | str replace $nu.home-dir '~')) " })
 }

@@ -592,6 +592,10 @@ if $mt_fake != ["rust 9.9.9" null] { $errors = ($errors | append "NUANCE_FAKE_MO
 for m in (module-defs) { if ($m.role not-in (palette-seg-roles)) { $errors = ($errors | append $"module ($m.name): bad role") } }
 
 # ── async git ──
+let dim_test = (palette-dim-git { git: "#111111", path: "#222222", sep: "#999999" })
+if $dim_test.git != "#999999" or $dim_test.path != "#222222" {
+    $errors = ($errors | append "palette-dim-git failed to dim git role or touched non-git role")
+}
 if (with-env { NUANCE_ASYNC: "off" } { async-git-on }) { $errors = ($errors | append "NUANCE_ASYNC=off should disable async git") }
 if (with-env { NUANCE_ASYNC: "off" } { async-git-plan }) != null { $errors = ($errors | append "async-git-plan should be null when off") }
 let ag_plan = (with-env { NUANCE_ASYNC: "on", PROMPT_GIT: "light" } { async-git-plan })
