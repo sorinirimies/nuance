@@ -591,6 +591,12 @@ if $pv_rust != "1.2.3" or $pv_node != "4.5.6" { $errors = ($errors | append $"pk
 if $mt_fake != ["rust 9.9.9" null] { $errors = ($errors | append "NUANCE_FAKE_MODULES hook wrong") }
 for m in (module-defs) { if ($m.role not-in (palette-seg-roles)) { $errors = ($errors | append $"module ($m.name): bad role") } }
 
+# ── async git ──
+if (with-env { NUANCE_ASYNC: "off" } { async-git-on }) { $errors = ($errors | append "NUANCE_ASYNC=off should disable async git") }
+if (with-env { NUANCE_ASYNC: "off" } { async-git-plan }) != null { $errors = ($errors | append "async-git-plan should be null when off") }
+let ag_plan = (with-env { NUANCE_ASYNC: "on", PROMPT_GIT: "light" } { async-git-plan })
+if $ag_plan != null { $errors = ($errors | append "async-git-plan should be null in light git mode") }
+
 # ── vi mode + transient glyphs ──
 if ((vi-glyph "❯") != "❮") or ((vi-glyph "▶") != "◀") or ((vi-glyph "zz") != "❮") { $errors = ($errors | append "vi-glyph wrong") }
 let tr_dir = (with-env { NUANCE_TRANSIENT: "dir", PROMPT_STYLE: "full" } { transient-left | ansi strip })

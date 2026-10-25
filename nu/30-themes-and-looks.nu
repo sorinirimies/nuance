@@ -565,6 +565,7 @@ def "nuance doctor" [--clear-errors] {
         { check: "prompt style", status: "info", detail: ($env.PROMPT_STYLE? | default "full") }
         (let note = (terminal-mux-note); { check: "terminal theming", status: (if ($note | is-not-empty) and (($env.NUANCE_TERMINAL? | default "off") != "off") { "warn" } else { "info" }), detail: $"($env.NUANCE_TERMINAL? | default 'off')(if ($note | is-not-empty) { ' — ' + $note } else { '' })" })
         { check: "transient prompt", status: "info", detail: ($env.NUANCE_TRANSIENT? | default "off") }
+        { check: "async git", status: "info", detail: (if (async-git-on) { "on (background git status, prompt repaints in place)" } else { "off (synchronous git status)" }) }
         { check: "modules", status: "info", detail: (if (enabled-modules | is-empty) { "none enabled" } else { enabled-modules | str join ", " }) }
         { check: "terminal theme", status: "info", detail: (if ($ghostty | is-empty) { "no Ghostty theme detected" } else { $"Ghostty → ($ghostty)" }) }
         { check: "imported themes", status: "info", detail: $"(user-theme-names | length) in (tilde (user-themes-dir))" }

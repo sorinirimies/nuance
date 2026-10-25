@@ -225,6 +225,10 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   `git = "off"` in a `.nuance`); a repo whose `git status` is slow is remembered
   for a day and scanned without untracked files. `nuance doctor --clear-errors`
   forgets.
+- **Async git** (Nushell ≥ 0.112): the prompt draws instantly with the branch (or the last
+  known status for that repo), then a background job computes the full `git status`
+  and repaints it in place — big repos never block. Disable with
+  `$env.NUANCE_ASYNC = "off"`.
 - **Light/dark switching** (`nuance appearance <dark> <light>`) and **shareable
   looks** (`nuance export` / `nuance import "nuance:1:…"`).
 

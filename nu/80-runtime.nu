@@ -139,11 +139,79 @@ def with-local [body: closure] {
     if $o == null { do $body } else { with-env $o { do $body } }
 }
 
+# ── Async git ────────────────────────────────────────────────
+# `git status` can be slow in big repos. Instead of blocking (or giving up
+# after NUANCE_GIT_SLOW_MS), the prompt draws instantly from what is cheap —
+# the last full result remembered for this repo, else just the branch — and a
+# background job (`job spawn`) computes the real status and repaints the prompt
+# in place via `commandline set-prompt`. Needs Nushell >= 0.112; on older
+# versions, or with `$env.NUANCE_ASYNC = "off"`, the prompt stays synchronous.
+# A job started for an older prompt is killed when the next prompt is drawn.
+def async-job-desc [] { "nuance-git" }
+def async-git-on [] {
+    (($env.NUANCE_ASYNC? | default "on") != "off") and (scope commands | where name == "commandline set-prompt" | is-not-empty)
+}
+def git-last-path [] { (nuance-cache-dir) | path join "git-last.json" }
+def git-last-read [gd: string] {
+    try {
+        let c = (open --raw (git-last-path) | from json)
+        if $c.gd == $gd { $c.info } else { null }
+    } catch { null }
+}
+def git-last-write [gd: string, g: record] {
+    try { mkdir (nuance-cache-dir); { gd: $gd, info: $g } | to json --raw | save -f (git-last-path) }
+}
+def async-git-cancel [] {
+    try { job list | where description == (async-job-desc) | each {|j| job kill $j.id } | ignore }
+}
+# Placeholder git record for the instant draw, or null when async doesn't apply
+# (feature off, git disabled/light, not in a repo).
+def async-git-plan [] {
+    if not (async-git-on) { return null }
+    if ($env.NUANCE_GIT? | default null) != null { return null }
+    if ($env.PROMPT_GIT? | default "full") != "full" { return null }
+    let gd = (git-dir-find)
+    if $gd == null { return null }
+    { gd: $gd, placeholder: ((git-last-read $gd) | default (git-info --light)) }
+}
+# Render left+right from the full git record and push them over the placeholder
+# prompt. The record is cached so the next prompt in this repo draws final.
+def async-git-launch [plan: record] {
+    job spawn --description (async-job-desc) {||
+        try {
+            with-local {
+                let g = (git-info)
+                git-last-write $plan.gd $g
+                if $g != $plan.placeholder {
+                    with-env { NUANCE_GIT: $g } {
+                        let l = (finalize (safe-run "left prompt" { left-prompt-core } { "" }))
+                        let r = (finalize (safe-run "right prompt" { right-prompt-core } { "" }))
+                        commandline set-prompt $l --right $r
+                    }
+                }
+            }
+        }
+    } | ignore
+}
+def left-prompt-async [] {
+    async-git-cancel
+    let plan = (async-git-plan)
+    if $plan == null { return (left-prompt-core) }
+    let out = (with-env { NUANCE_GIT: $plan.placeholder } { left-prompt-core })
+    async-git-launch $plan
+    $out
+}
+def right-prompt-async [] {
+    let plan = (async-git-plan)
+    if $plan == null { return (right-prompt-core) }
+    with-env { NUANCE_GIT: $plan.placeholder } { right-prompt-core }
+}
+
 def create_left_prompt [] {
-    finalize (safe-run "left prompt" { with-local { left-prompt-core } } { $"(($env.PWD | str replace $nu.home-dir '~')) " })
+    finalize (safe-run "left prompt" { with-local { left-prompt-async } } { $"(($env.PWD | str replace $nu.home-dir '~')) " })
 }
 def create_right_prompt [] {
-    finalize (safe-run "right prompt" { with-local { right-prompt-core } } { "" })
+    finalize (safe-run "right prompt" { with-local { right-prompt-async } } { "" })
 }
 def prompt-indicator [] {
     finalize (safe-run "indicator" { with-local { indicator-core } } { "❯ " })
