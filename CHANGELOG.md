@@ -12,6 +12,7 @@ All notable changes to this project are documented here. It is generated from
 
 ### 🔄 CI and release
 
+- Bump minimum Nushell to 0.115 for async prompt updates ([`1b365ef`](https://github.com/sorinirimies/nuance/commit/1b365ef941dc558a35d9743729b4e2b0a1c07ff9))
 - **release:** Build x86_64-apple-darwin on macos-latest (macos-13 runners are retired; job never started) ([`7430a7c`](https://github.com/sorinirimies/nuance/commit/7430a7c717fd73b72705c1ee9dc0a0bd2fe3a231))
 
 ## [0.8.1](https://github.com/sorinirimies/nuance/compare/v0.8.0...v0.8.1) — 2026-10-23
