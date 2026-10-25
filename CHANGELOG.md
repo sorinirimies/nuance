@@ -4,6 +4,18 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.9.1](https://github.com/sorinirimies/nuance/compare/v0.9.0...v0.9.1) — 2026-10-25
+
+### 🐛 Bug fixes
+
+- **async:** Reuse in-flight git status job across quick prompts, dim pending status ([`771ffee`](https://github.com/sorinirimies/nuance/commit/771ffeeb055649429297f52586271773ac4bd13a))
+
+### 🔄 CI and release
+
+- Enable auto-merge for github-actions updates (including majors) ([`8f2538f`](https://github.com/sorinirimies/nuance/commit/8f2538fcdbc426923cdd56eef020c366e4f7a45f))
+- Bump dependabot/fetch-metadata from 2 to 3 (#3) ([`6103573`](https://github.com/sorinirimies/nuance/commit/61035735e92c5fe2f3b536546e76f2f6d0accc83))
+- Bump actions/checkout from 4 to 7 (#2) ([`cfc9543`](https://github.com/sorinirimies/nuance/commit/cfc9543ea0b4b31f9f678bb242d58dc321a54430))
+
 ## [0.9.0](https://github.com/sorinirimies/nuance/compare/v0.8.1...v0.9.0) — 2026-10-25
 
 ### ✨ Features
