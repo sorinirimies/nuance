@@ -17,7 +17,7 @@ use crossterm::terminal::{
 };
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 use ratatui::{Frame, Terminal};
@@ -105,8 +105,14 @@ fn run_loop(
     state: &mut PickerState,
     title: &str,
 ) -> io::Result<Option<String>> {
+    // Picker chrome follows `NUANCE_UI_THEME` (any tui-nuances theme);
+    // Ctrl-T / Ctrl-Y cycle forward / back since plain keys feed the filter.
+    let mut ui = std::env::var("NUANCE_UI_THEME")
+        .ok()
+        .and_then(|n| tui_nuances::Theme::by_name(&n))
+        .unwrap_or_default();
     loop {
-        terminal.draw(|f| draw(f, state, title))?;
+        terminal.draw(|f| draw_themed(f, state, title, &ui))?;
 
         if let Event::Key(key) = event::read()? {
             if key.kind != KeyEventKind::Press {
@@ -116,6 +122,12 @@ fn run_loop(
                 KeyCode::Esc => return Ok(None),
                 KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     return Ok(None)
+                }
+                KeyCode::Char('t') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    ui = ui.next();
+                }
+                KeyCode::Char('y') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    ui = ui.prev();
                 }
                 KeyCode::Enter => return Ok(state.current().map(|it| it.key.clone())),
                 KeyCode::Up => {
@@ -138,7 +150,12 @@ fn run_loop(
     }
 }
 
+#[cfg(test)]
 fn draw(f: &mut Frame, state: &PickerState, title: &str) {
+    draw_themed(f, state, title, &tui_nuances::Theme::default());
+}
+
+fn draw_themed(f: &mut Frame, state: &PickerState, title: &str, ui: &tui_nuances::Theme) {
     let area = f.area();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -149,25 +166,31 @@ fn draw(f: &mut Frame, state: &PickerState, title: &str) {
         ])
         .split(area);
 
-    draw_filter(f, chunks[0], state, title);
-    draw_list(f, chunks[1], state);
-    draw_preview(f, chunks[2], state);
+    draw_filter(f, chunks[0], state, title, ui);
+    draw_list(f, chunks[1], state, ui);
+    draw_preview(f, chunks[2], state, ui);
 }
 
-fn draw_filter(f: &mut Frame, area: Rect, state: &PickerState, title: &str) {
+fn draw_filter(
+    f: &mut Frame,
+    area: Rect,
+    state: &PickerState,
+    title: &str,
+    ui: &tui_nuances::Theme,
+) {
     let text = format!("/{}", state.filter);
     let p = Paragraph::new(text).block(
         Block::default()
             .borders(Borders::ALL)
             .title(format!(
-                " {title} — type to filter, ↑↓ move, Enter pick, Esc cancel "
+                " {title} — type to filter, ↑↓ move, Enter pick, ^T theme, Esc cancel "
             ))
-            .border_style(Style::default().fg(Color::DarkGray)),
+            .border_style(Style::default().fg(ui.border)),
     );
     f.render_widget(p, area);
 }
 
-fn draw_list(f: &mut Frame, area: Rect, state: &PickerState) {
+fn draw_list(f: &mut Frame, area: Rect, state: &PickerState, ui: &tui_nuances::Theme) {
     let items: Vec<ListItem> = state
         .filtered
         .iter()
@@ -190,20 +213,30 @@ fn draw_list(f: &mut Frame, area: Rect, state: &PickerState) {
     }
 
     let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(format!(
-            " {} match{} ",
-            state.filtered.len(),
-            if state.filtered.len() == 1 { "" } else { "es" }
-        )))
-        .highlight_style(Style::default().add_modifier(Modifier::BOLD | Modifier::REVERSED))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(ui.border))
+                .title(format!(
+                    " {} match{} ",
+                    state.filtered.len(),
+                    if state.filtered.len() == 1 { "" } else { "es" }
+                )),
+        )
+        .highlight_style(
+            Style::default()
+                .fg(ui.accent)
+                .add_modifier(Modifier::BOLD | Modifier::REVERSED),
+        )
         .highlight_symbol("\u{276f} ");
 
     f.render_stateful_widget(list, area, &mut list_state);
 }
 
-fn draw_preview(f: &mut Frame, area: Rect, state: &PickerState) {
+fn draw_preview(f: &mut Frame, area: Rect, state: &PickerState, ui: &tui_nuances::Theme) {
     let block = Block::default()
         .borders(Borders::ALL)
+        .border_style(Style::default().fg(ui.border))
         .title(" live preview ");
     let line = match state.current() {
         Some(it) => ansi::parse_line(&it.label),
