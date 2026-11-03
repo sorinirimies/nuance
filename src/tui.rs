@@ -79,7 +79,7 @@ impl PickerState {
 
 /// Run the interactive picker. Returns `Ok(Some(key))` if the user picked an
 /// item, `Ok(None)` if they cancelled (Esc/Ctrl-C).
-pub fn pick(items: Vec<PickerItem>, title: &str) -> io::Result<Option<String>> {
+pub(crate) fn pick(items: Vec<PickerItem>, title: &str) -> io::Result<Option<String>> {
     if items.is_empty() {
         return Ok(None);
     }

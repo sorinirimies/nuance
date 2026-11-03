@@ -36,6 +36,8 @@ tempfile = "3"
 [lints.rust]
 unsafe_code = "forbid"
 missing_debug_implementations = "warn"
+# `pub` only for what another crate uses; then dead_code finds the rest.
+unreachable_pub = "warn"
 
 [lints.clippy]
 dbg_macro = "warn"
