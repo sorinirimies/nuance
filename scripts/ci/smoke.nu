@@ -3,7 +3,8 @@
 # nuance — Smoke-test the built CLI in a throwaway HOME
 # ──────────────────────────────────────────────────────────────────────────────
 # Runs target/debug/nuance (build it first) with a fresh HOME: help, then set a
-# theme, a prompt style and a look, and checks the look was persisted.
+# theme, a prompt style and a look, and checks the look was persisted. Skipped
+# on Windows, which nuance does not support.
 #
 # Usage: nu scripts/ci/smoke.nu
 # ──────────────────────────────────────────────────────────────────────────────
@@ -22,8 +23,11 @@ export def current_look [config_dir: string]: nothing -> any {
 }
 
 def main [] {
-    let exe = if $nu.os-info.name == "windows" { "nuance.exe" } else { "nuance" }
-    let bin = "target" | path join "debug" $exe | path expand
+    if $nu.os-info.name == "windows" {
+        print "smoke=skipped (windows)"
+        return
+    }
+    let bin = "target" | path join "debug" "nuance" | path expand
     let home = mktemp -d
     with-env {HOME: $home, USERPROFILE: $home} {
         for c in $CHECKS {

@@ -52,6 +52,12 @@ def "test package: gnu builds linux natively, arm64 on an arm runner" [] {
     assert equal (gitea_targets gnu) [x86_64-unknown-linux-gnu]
 }
 
+def "test package: without windows the matrix has no windows target" [] {
+    let m = release_matrix musl --no-windows
+    assert equal ($m | length) 4
+    assert not ($m.target | any {|t| $t | str contains windows })
+}
+
 def "test package: the release workflow builds the matrix from project.nu" [] {
     let root = ($env.CURRENT_FILE | path dirname | path join ".." "..")
     let wf = (open --raw ($root | path join ".github" "workflows" "release.yml"))

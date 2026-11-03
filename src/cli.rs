@@ -5,6 +5,7 @@ use clap::{Parser, Subcommand};
 #[derive(Parser, Debug)]
 #[command(
     name = "nuance",
+    version,
     about = "nuance — themeable, git-aware Nushell prompt",
     long_about = None,
     disable_help_subcommand = true
