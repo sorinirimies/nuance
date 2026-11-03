@@ -7,6 +7,7 @@
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![ci](https://github.com/sorinirimies/nuance/actions/workflows/ci.yml/badge.svg)
 [![Audit](https://github.com/sorinirimies/nuance/actions/workflows/security.yml/badge.svg)](https://github.com/sorinirimies/nuance/actions/workflows/security.yml)
+[![Fuzz](https://github.com/sorinirimies/nuance/actions/workflows/fuzz.yml/badge.svg)](https://github.com/sorinirimies/nuance/actions/workflows/fuzz.yml)
 ![crates.io](https://img.shields.io/crates/v/nuance-cli.svg)
 [![Downloads](https://img.shields.io/crates/d/nuance-cli?label=downloads)](https://crates.io/crates/nuance-cli)
 
