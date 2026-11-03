@@ -1,121 +1,64 @@
 name: Release
 
+# Gitea runners are Linux only: this builds the Linux binaries (gitea_targets in
+# scripts/project.nu) and publishes a Gitea release with them. The full set (macOS, Windows) comes from
+# the GitHub release.
+
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.2.0)"
+        required: true
 
-permissions:
-  contents: write
-
-# ubuntu-latest only — this Gitea runner has no macos-latest label.
-# The GitHub-hosted release (.github/workflows/release.yml) still builds
-# macOS binaries too; this one covers the linux-x86_64 build + a Gitea
-# Release, and optionally publishes to crates.io if CRATES_IO_TOKEN is set
-# as a Gitea repo secret.
+env:
+  CARGO_TERM_COLOR: always
+  RUSTUP_MAX_RETRIES: "10"
+  CARGO_NET_RETRY: "10"
 
 jobs:
-  test:
-    name: test
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt, clippy
-      - run: cargo fmt -- --check
-      - run: cargo clippy --all-targets -- -D warnings
-      - run: cargo test --locked
-
-  build:
-    name: build and release
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
           fetch-depth: 0
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - name: Build release binary
-        run: cargo build --release --locked
-
-      - name: Package binary
+      - name: Install Rust stable + targets
         run: |
-          tar -C target/release -czvf nuance-cli-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz nuance
-
-      # Create the release + upload the asset via Gitea's own REST API
-      # directly (curl), instead of the legacy GitHub actions/create-release
-      # + actions/upload-release-asset actions. Those compute their API base
-      # URL internally rather than using this instance's real address, which
-      # is the same class of misconfiguration we already hit with the LFS
-      # batch endpoint (silently resolving to an unreachable internal host)
-      # -- `${{ github.server_url }}` is what Gitea Actions actually sets to
-      # point at itself, so use that instead of trusting a third-party
-      # action to get it right.
-      - name: Create Gitea Release + upload asset
+          for i in 1 2 3 4 5; do
+            curl --proto '=https' --tlsv1.2 -sSf --retry 5 --retry-all-errors --retry-delay 5 https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && break
+            [ $i = 5 ] && exit 1
+            echo "rustup install failed, retrying..."; sleep 15
+          done
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          . "$HOME/.cargo/env"
+          rustup component add rustfmt clippy
+          rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Nushell, zig, cargo-zigbuild, git-cliff
+        run: |
+          V=0.116.1
+          curl -fsSL --retry 5 https://github.com/nushell/nushell/releases/download/$V/nu-$V-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C /tmp
+          sudo install -m 0755 /tmp/nu-$V-x86_64-unknown-linux-gnu/nu /usr/local/bin/nu || install -m 0755 /tmp/nu-$V-x86_64-unknown-linux-gnu/nu $HOME/.cargo/bin/nu
+          python3 -m pip install --user --break-system-packages ziglang || python3 -m pip install --user ziglang
+          cargo install cargo-zigbuild git-cliff --locked
+      - name: Install system packages
+        run: nu scripts/ci/apt.nu
+      - name: Validate tag
+        id: v
+        run: nu scripts/ci/validate_tag.nu "${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+      - name: Versions match the tag
+        run: nu scripts/ci/check_versions.nu "${{ steps.v.outputs.tag }}"
+      - name: Quality gate
+        run: nu scripts/ci/quality_gate.nu
+      - name: Build and package
+        run: nu scripts/ci/build_release.nu gitea --out dist
+      - name: Release notes
+        run: nu scripts/ci/release_notes.nu ${{ steps.v.outputs.tag }}
+      - name: Create Gitea release
         env:
           GITEA_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITEA_SERVER: ${{ github.server_url }}
-          REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          set -e
-          asset="nuance-cli-${TAG}-x86_64-unknown-linux-gnu.tar.gz"
-          api="${GITEA_SERVER}/api/v1/repos/${REPO}"
-
-          # `-f` hides the response body on error, which makes failures
-          # here undiagnosable from the log alone -- use -w to capture the
-          # HTTP status separately instead, and always print the body.
-          create_out="$(curl -s -w '\n%{http_code}' -X POST "${api}/releases" \
-            -H "Authorization: token ${GITEA_TOKEN}" \
-            -H 'Content-Type: application/json' \
-            -d "{\"tag_name\":\"${TAG}\",\"name\":\"${TAG}\",\"draft\":false,\"prerelease\":false}")"
-          create_status="$(echo "$create_out" | tail -1)"
-          resp="$(echo "$create_out" | sed '$d')"
-          echo "create release: HTTP ${create_status}"
-          echo "$resp"
-
-          if [ "$create_status" != "201" ]; then
-            # Already exists (e.g. a re-run after a previous failed upload) --
-            # look up its id instead.
-            lookup_out="$(curl -s -w '\n%{http_code}' "${api}/releases/tags/${TAG}" -H "Authorization: token ${GITEA_TOKEN}")"
-            lookup_status="$(echo "$lookup_out" | tail -1)"
-            resp="$(echo "$lookup_out" | sed '$d')"
-            echo "lookup release: HTTP ${lookup_status}"
-            echo "$resp"
-          fi
-
-          release_id="$(echo "$resp" | grep -o '"id":[0-9]*' | head -1 | grep -o '[0-9]*')"
-          [ -n "$release_id" ] || { echo "::error::could not determine release id"; exit 1; }
-          echo "release_id=${release_id}"
-
-          upload_out="$(curl -s -w '\n%{http_code}' -X POST "${api}/releases/${release_id}/assets?name=${asset}" \
-            -H "Authorization: token ${GITEA_TOKEN}" \
-            -F "attachment=@${asset}")"
-          upload_status="$(echo "$upload_out" | tail -1)"
-          echo "upload asset: HTTP ${upload_status}"
-          echo "$upload_out" | sed '$d'
-          [ "$upload_status" = "201" ] || { echo "::error::asset upload failed (HTTP ${upload_status})"; exit 1; }
-
-      # `secrets` isn't allowed directly in a step-level `if:` condition, so
-      # check presence in a run step first and branch on its output instead.
-      - name: Check for CRATES_IO_TOKEN
-        id: check_token
-        run: |
-          if [ -n "${{ secrets.CRATES_IO_TOKEN }}" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_token=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish to crates.io
-        if: steps.check_token.outputs.has_token == 'true'
-        env:
-          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-        run: cargo publish --token "$CRATES_IO_TOKEN"
-
-      - name: Skip crates.io publish
-        if: steps.check_token.outputs.has_token != 'true'
-        run: echo "CRATES_IO_TOKEN not set — add it as a Gitea repo secret to enable auto-publish."
+        run: nu scripts/ci/gitea_release.nu ${{ steps.v.outputs.tag }} --api "${{ github.server_url }}/api/v1/repos/${{ github.repository }}" --dir dist

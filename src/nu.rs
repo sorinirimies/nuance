@@ -89,7 +89,9 @@ pub fn ensure_nu() -> Result<(), String> {
                 .to_string(),
         );
     }
-    eprintln!("\x1b[1;33m!\x1b[0m  nu not found — installing it with `cargo install nu --locked` (one-time, ~1-2 min)…");
+    eprintln!(
+        "\x1b[1;33m!\x1b[0m  nu not found — installing it with `cargo install nu --locked` (one-time, ~1-2 min)…"
+    );
     let status = Command::new("cargo")
         .arg("install")
         .arg("nu")
@@ -236,26 +238,24 @@ pub fn uninstall(purge: bool) -> ExitCode {
             removed.push(target);
         }
     }
-    if purge {
-        if let Some(cfg) = nu_capture("$nu.default-config-dir").map(PathBuf::from) {
-            for f in [
-                "current-theme.txt",
-                "prompt-style.txt",
-                "transient.txt",
-                "terminal.txt",
-                "modules.txt",
-                "integration.txt",
-                "appearance.txt",
-            ] {
-                let p = cfg.join(f);
-                if p.exists() && fs::remove_file(&p).is_ok() {
-                    removed.push(p);
-                }
+    if purge && let Some(cfg) = nu_capture("$nu.default-config-dir").map(PathBuf::from) {
+        for f in [
+            "current-theme.txt",
+            "prompt-style.txt",
+            "transient.txt",
+            "terminal.txt",
+            "modules.txt",
+            "integration.txt",
+            "appearance.txt",
+        ] {
+            let p = cfg.join(f);
+            if p.exists() && fs::remove_file(&p).is_ok() {
+                removed.push(p);
             }
-            let nuance_dir = cfg.join("nuance");
-            if nuance_dir.is_dir() && fs::remove_dir_all(&nuance_dir).is_ok() {
-                removed.push(nuance_dir);
-            }
+        }
+        let nuance_dir = cfg.join("nuance");
+        if nuance_dir.is_dir() && fs::remove_dir_all(&nuance_dir).is_ok() {
+            removed.push(nuance_dir);
         }
     }
     if removed.is_empty() {
@@ -264,7 +264,9 @@ pub fn uninstall(purge: bool) -> ExitCode {
         for p in &removed {
             println!("\x1b[1;32m\u{2713}\x1b[0m removed {}", p.display());
         }
-        println!("open a new shell (or run: exec nu) — the nuance binary itself stays; remove it with `cargo uninstall nuance-cli`.");
+        println!(
+            "open a new shell (or run: exec nu) — the nuance binary itself stays; remove it with `cargo uninstall nuance-cli`."
+        );
     }
     ExitCode::SUCCESS
 }

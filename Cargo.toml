@@ -1,10 +1,12 @@
 [package]
 name        = "nuance-cli"
 version     = "0.9.1"
-edition     = "2021"
+edition     = "2024"
+rust-version = "1.90"
 authors     = ["Sorin Irimies <sorinirimies@gmail.com>"]
 license     = "MIT"
 repository  = "https://github.com/sorinirimies/nuance"
+homepage    = "https://github.com/sorinirimies/nuance"
 description = "Install-free CLI + ratatui TUI for nuance — the themeable, git-aware Nushell prompt. `cargo install nuance-cli` gives you `nuance`, with a live-preview theme/style/look picker, usable from any shell."
 categories  = ["command-line-utilities"]
 keywords    = ["nushell", "prompt", "theme", "cli", "shell"]
@@ -30,3 +32,12 @@ serde_json = "1.0.154"
 
 [dev-dependencies]
 tempfile = "3"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"

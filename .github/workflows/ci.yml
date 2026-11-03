@@ -1,169 +1,142 @@
-name: test
+name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  push:
+    branches: [main, master, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  nushell:
-    name: nushell (${{ matrix.os }}, nu ${{ matrix.nu }})
+  # fmt + clippy + tests + versions + nu tests —
+  # the same script `just check-all` runs.
+  gate:
+    name: quality gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: "0.116.1"
+      - name: Install system packages
+        run: nu scripts/ci/apt.nu
+      - name: Quality gate
+        run: nu scripts/ci/quality_gate.nu
+
+  # The binary ships for all three systems: paths, line endings and process
+  # handling differ there.
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # nuance's own tests drive the prompt through `nu`.
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: "0.116.1"
+      - name: cargo test --workspace
+        run: cargo test --workspace --all-features
+      - name: Smoke test the CLI
+        run: nu scripts/ci/smoke.nu
+
+  # The Linux release binaries are static musl ones (any distro); skipped when
+  # scripts/project.nu sets LINUX to "gnu".
+  musl:
+    name: musl (static)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install musl tools
+        run: |
+          sudo apt-get -o Acquire::Retries=5 update -qq
+          sudo apt-get -o Acquire::Retries=5 install -y --no-install-recommends musl-tools
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+      - uses: Swatinem/rust-cache@v2
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: "0.116.1"
+      - name: Install system packages
+        run: nu scripts/ci/apt.nu
+      - name: Build, statically linked and runs
+        run: nu scripts/ci/check_static.nu x86_64-unknown-linux-musl --build
+
+  msrv:
+    name: MSRV (1.90)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # @master + toolchain, not @1.90: Dependabot would bump a version ref.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.90"
+      - uses: Swatinem/rust-cache@v2
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: "0.116.1"
+      - name: Install system packages
+        run: nu scripts/ci/apt.nu
+      - name: cargo check
+        run: cargo check --workspace --locked
+
+  # nuance's prompt: its Nushell suite on each supported Nushell version.
+  prompt:
+    name: prompt (${{ matrix.os }}, nu ${{ matrix.nu }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         nu: ["0.115.0", "0.116.1"]
-    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install Nushell ${{ matrix.nu }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          arch="$(uname -m)"; case "$arch" in x86_64|amd64) arch=x86_64 ;; arm64|aarch64) arch=aarch64 ;; esac
-          case "$(uname -s)" in Linux) plat=unknown-linux-gnu ;; Darwin) plat=apple-darwin ;; *) echo "unsupported OS"; exit 1 ;; esac
-          target="${arch}-${plat}"
-          ver="${{ matrix.nu }}"
-          url="https://github.com/nushell/nushell/releases/download/${ver}/nu-${ver}-${target}.tar.gz"
-          echo "fetching $url"
-          curl -fsSL "$url" -o /tmp/nu.tar.gz
-          mkdir -p /tmp/nu-extract
-          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
-          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
-          mkdir -p "$HOME/.local/bin"
-          cp "$bin" "$HOME/.local/bin/nu"
-          chmod +x "$HOME/.local/bin/nu"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/nu" --version
-
-      - name: Install multiplexers (tmux, screen) for the terminal-theming tests
-        shell: bash
-        run: |
-          if [ "$(uname -s)" = "Linux" ]; then sudo apt-get update -qq && sudo apt-get install -y -qq tmux screen; else brew install tmux || true; fi
-          tmux -V || true
-
-      - name: Nushell suite
-        shell: bash
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: ${{ matrix.nu }}
+      - name: Install tmux and screen
+        run: nu scripts/ci/multiplexers.nu
+      - name: Prompt suite
         run: nu test.nu
+      - name: Install into the autoload dir
+        run: nu scripts/ci/verify_install.nu
 
-      - name: Verify install (symlink into autoload)
-        shell: bash
-        run: |
-          nu scripts/install.nu
-          DIR="$(nu -n -c '$nu.user-autoload-dirs | get 0')"
-          test -e "$DIR/nushell-prompt.nu" && echo "✓ installed at $DIR/nushell-prompt.nu"
-
-  # Early warning for Nushell breaking/deprecating something we use. Allowed to
-  # fail: a red nightly job is a heads-up, not a blocker.
-  nushell-nightly:
-    name: nushell nightly (allowed to fail)
+  # Early warning for Nushell changes: a red run is a heads-up, not a blocker.
+  prompt-nightly:
+    name: prompt (nu nightly, allowed to fail)
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install Nushell nightly
-        shell: bash
-        run: |
-          set -euo pipefail
-          url="$(curl -fsSL https://api.github.com/repos/nushell/nightly/releases?per_page=1 | python3 -c "import sys,json,re; d=json.load(sys.stdin)[0]; print(next(a['browser_download_url'] for a in d['assets'] if re.search(r'x86_64-unknown-linux-gnu\\.tar\\.gz$', a['name'])))")"
-          echo "fetching $url"
-          curl -fsSL "$url" -o /tmp/nu.tar.gz
-          mkdir -p /tmp/nu-extract
-          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
-          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
-          mkdir -p "$HOME/.local/bin"
-          cp "$bin" "$HOME/.local/bin/nu"
-          chmod +x "$HOME/.local/bin/nu"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/nu" --version
-
-      - name: Nushell suite (nightly)
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: nightly
+      - name: Prompt suite
         run: nu test.nu
 
-  # Experimental: does the prompt suite pass on Windows? Allowed to fail.
-  nushell-windows:
-    name: nushell on windows (experimental)
+  prompt-windows:
+    name: prompt (windows, experimental)
     runs-on: windows-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install Nushell
-        shell: pwsh
-        run: |
-          $ver = "0.116.1"
-          $url = "https://github.com/nushell/nushell/releases/download/$ver/nu-$ver-x86_64-pc-windows-msvc.zip"
-          Invoke-WebRequest $url -OutFile nu.zip
-          Expand-Archive nu.zip -DestinationPath nu-extract
-          $bin = (Get-ChildItem -Recurse nu-extract -Filter nu.exe | Select-Object -First 1).DirectoryName
-          echo $bin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
-
-      - name: Nushell suite
-        shell: pwsh
-        run: nu test.nu
-
-  cli:
-    name: nuance-cli (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - uses: hustcer/setup-nu@v3
         with:
-          components: rustfmt, clippy
-
-      - name: Cache Cargo dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Check formatting
-        run: cargo fmt -- --check
-
-      - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Build
-        run: cargo build --locked
-
-      - name: Install Nushell (needed by nuance's own tests)
-        shell: bash
-        run: |
-          set -euo pipefail
-          arch="$(uname -m)"; case "$arch" in x86_64|amd64) arch=x86_64 ;; arm64|aarch64) arch=aarch64 ;; esac
-          case "$(uname -s)" in Linux) plat=unknown-linux-gnu ;; Darwin) plat=apple-darwin ;; *) echo "unsupported OS"; exit 1 ;; esac
-          target="${arch}-${plat}"
-          ver="0.116.1"
-          url="https://github.com/nushell/nushell/releases/download/${ver}/nu-${ver}-${target}.tar.gz"
-          echo "fetching $url"
-          curl -fsSL "$url" -o /tmp/nu.tar.gz
-          mkdir -p /tmp/nu-extract
-          tar -xzf /tmp/nu.tar.gz -C /tmp/nu-extract
-          bin="$(find /tmp/nu-extract -type f -name nu | head -1)"
-          mkdir -p "$HOME/.local/bin"
-          cp "$bin" "$HOME/.local/bin/nu"
-          chmod +x "$HOME/.local/bin/nu"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/nu" --version
-
-      - name: Unit + integration tests
-        run: cargo test --locked
-
-      - name: Smoke test (install + set theme/style/look via cargo-built CLI)
-        shell: bash
-        run: |
-          export HOME="$RUNNER_TEMP/nuance-cli-home"
-          mkdir -p "$HOME"
-          BIN=target/debug/nuance
-          "$BIN" help | grep -q 'nuance theme'
-          "$BIN" theme gruvbox | grep -q gruvbox
-          "$BIN" prompt-style powerline | grep -q powerline
-          "$BIN" look cyberpunk | grep -q cyberpunk
-          CFG="$(HOME="$HOME" nu -n -c '$nu.default-config-dir')"
-          [ "$(cat "$CFG/current-theme.txt")" = "cyberpunk" ]
-          echo "✓ nuance-cli smoke test passed"
+          version: "0.116.1"
+      - name: Prompt suite
+        run: nu test.nu
