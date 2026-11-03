@@ -3,7 +3,6 @@
 use libfuzzer_sys::fuzz_target;
 
 #[path = "../../src/ansi.rs"]
-#[allow(dead_code)] // The CLI's module; the target calls only the parser.
 mod ansi;
 
 fuzz_target!(|data: &str| {
