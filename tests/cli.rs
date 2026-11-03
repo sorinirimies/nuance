@@ -2,6 +2,9 @@
 //! old POSIX `scripts/nuance` shell CLI + `test.bats` used to check, now that
 //! this Rust binary is the only any-shell CLI (see the repo README).
 
+// Windows is not a target for nuance; these drive it through a Unix HOME.
+#![cfg(unix)]
+
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -60,6 +63,18 @@ fn help_prints_usage() {
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("nuance theme"));
     assert!(stdout.contains("update"));
+}
+
+#[test]
+fn version_prints_the_crate_version() {
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["--version"]);
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert_eq!(
+        stdout.trim(),
+        format!("nuance {}", env!("CARGO_PKG_VERSION"))
+    );
 }
 
 #[test]

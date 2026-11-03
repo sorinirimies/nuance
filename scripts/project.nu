@@ -26,8 +26,11 @@ export const APT = []
 # (glibc, built natively; for GUI apps, which can not link statically).
 export const LINUX = "musl"
 
+# Ship a Windows archive. false for tools that do not support Windows.
+export const WINDOWS = false
+
 # The GitHub release build matrix for a LINUX flavour, one row per target.
-export def release_matrix [linux: string]: nothing -> list<record> {
+export def release_matrix [linux: string, --no-windows]: nothing -> list<record> {
     let lin = if $linux == "gnu" {
         [
             {runner: ubuntu-latest, target: x86_64-unknown-linux-gnu, zig: false}
@@ -44,7 +47,7 @@ export def release_matrix [linux: string]: nothing -> list<record> {
         {runner: macos-latest, target: x86_64-apple-darwin, zig: false}
         ...$lin
         {runner: windows-latest, target: x86_64-pc-windows-msvc, zig: false}
-    ]
+    ] | where {|r| not ($no_windows and ($r.target | str contains windows)) }
 }
 
 # The Linux targets Gitea (one x86-64 runner) builds for a LINUX flavour.
@@ -59,7 +62,8 @@ export def bin_crates []: nothing -> list<string> {
 
 # `matrix=<json>` for $GITHUB_OUTPUT.
 def "main matrix" [] {
-    print $"matrix=({include: (release_matrix $LINUX)} | to json --raw)"
+    let m = if $WINDOWS { release_matrix $LINUX } else { release_matrix $LINUX --no-windows }
+    print $"matrix=({include: $m} | to json --raw)"
 }
 
 def "main gitea-targets" [] {
