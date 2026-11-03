@@ -10,13 +10,13 @@ use clap::{Parser, Subcommand};
     long_about = None,
     disable_help_subcommand = true
 )]
-pub struct Cli {
+pub(crate) struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum Commands {
+pub(crate) enum Commands {
     /// Pick a theme (ratatui TUI with live preview), or set + pin one by name
     Theme {
         /// Theme name, e.g. gruvbox, catppuccin-mocha, dracula
@@ -139,7 +139,7 @@ pub enum Commands {
     Update,
 }
 
-pub fn usage() -> &'static str {
+pub(crate) fn usage() -> &'static str {
     "nuance — themeable, git-aware Nushell prompt
 
   nuance theme [name]          ratatui picker w/ live preview, or set + pin one

@@ -11,7 +11,7 @@ use ratatui::text::{Line, Span};
 /// ratatui `Line` with per-span styling. Unsupported/unknown codes are
 /// ignored rather than erroring — the goal is "looks right for what nu
 /// actually emits", not a full terminal emulator.
-pub fn parse_line(input: &str) -> Line<'static> {
+pub(crate) fn parse_line(input: &str) -> Line<'static> {
     let mut spans: Vec<Span<'static>> = Vec::new();
     let mut style = Style::default();
     let mut current = String::new();
@@ -96,7 +96,7 @@ fn apply_codes(codes_str: &str, style: &mut Style) {
 }
 
 /// Strip all ANSI SGR sequences, leaving plain text (used for fuzzy matching).
-pub fn strip(input: &str) -> String {
+pub(crate) fn strip(input: &str) -> String {
     let mut out = String::with_capacity(input.len());
     let chars: Vec<char> = input.chars().collect();
     let mut i = 0;

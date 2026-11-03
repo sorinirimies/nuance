@@ -18,14 +18,14 @@ const FILE: &str = "nushell-prompt.nu";
 /// A single entry in an interactive picker: a stable key (theme/style/look
 /// name) plus its live-rendered ANSI preview line.
 #[derive(Debug, Clone, Deserialize)]
-pub struct PickerItem {
+pub(crate) struct PickerItem {
     pub label: String,
     pub key: String,
 }
 
 /// Is `cmd` an executable file on `PATH`? Pure-Rust (no `sh`), so it also
 /// works on native Windows, where `PATHEXT` extensions are tried too.
-pub fn have(cmd: &str) -> bool {
+pub(crate) fn have(cmd: &str) -> bool {
     std::env::var_os("PATH").is_some_and(|path| find_in_path(cmd, &path))
 }
 
@@ -71,7 +71,7 @@ fn is_executable(p: &Path) -> bool {
 /// statically link in — if it's missing and `cargo` is available (it must
 /// be, since that's how you got this binary), offer to install it so the
 /// whole flow stays a single `cargo install nuance-cli` away from working.
-pub fn ensure_nu() -> Result<(), String> {
+pub(crate) fn ensure_nu() -> Result<(), String> {
     if have("nu") {
         return Ok(());
     }
@@ -121,13 +121,13 @@ fn autoload_dir() -> Option<PathBuf> {
     nu_capture("$nu.user-autoload-dirs | get 0").map(PathBuf::from)
 }
 
-pub fn is_symlink(p: &Path) -> bool {
+pub(crate) fn is_symlink(p: &Path) -> bool {
     fs::symlink_metadata(p).is_ok_and(|m| m.file_type().is_symlink())
 }
 
 /// Write via a sibling temp file + rename so a crash never leaves a
 /// half-written autoload script (Nushell would choke on it at startup).
-pub fn write_atomic(target: &Path, bytes: &[u8]) -> Result<(), String> {
+pub(crate) fn write_atomic(target: &Path, bytes: &[u8]) -> Result<(), String> {
     let tmp = target.with_extension("nu.tmp");
     fs::write(&tmp, bytes).map_err(|e| format!("write {}: {e}", tmp.display()))?;
     fs::rename(&tmp, target).map_err(|e| {
@@ -140,7 +140,7 @@ pub fn write_atomic(target: &Path, bytes: &[u8]) -> Result<(), String> {
 /// the embedded script into the autoload directory. If the user already has
 /// their own clone symlinked/copied there, leave it alone — it's the source
 /// of truth (e.g. for `nuance update` on a git checkout).
-pub fn ensure_installed() -> Result<PathBuf, String> {
+pub(crate) fn ensure_installed() -> Result<PathBuf, String> {
     let dir = autoload_dir().ok_or_else(|| {
         "could not resolve Nushell's autoload directory — is `nu` installed and on PATH?"
             .to_string()
@@ -160,7 +160,7 @@ pub fn ensure_installed() -> Result<PathBuf, String> {
 
 /// Resolve the git checkout backing the autoload file, if any (so `update`
 /// can `git pull` a real clone instead of the vendored copy).
-pub fn repo_dir(target: &Path) -> Option<PathBuf> {
+pub(crate) fn repo_dir(target: &Path) -> Option<PathBuf> {
     if !is_symlink(target) {
         return None;
     }
@@ -175,7 +175,7 @@ pub fn repo_dir(target: &Path) -> Option<PathBuf> {
 
 /// Run a nuance command inside a throwaway Nushell, inheriting stdio
 /// (persists any state files it writes, e.g. current-theme.txt).
-pub fn run_nu(file: &Path, script: &str) -> ExitCode {
+pub(crate) fn run_nu(file: &Path, script: &str) -> ExitCode {
     let full = format!("source \"{}\"; {script}", file.display());
     match Command::new("nu").arg("-n").arg("-c").arg(&full).status() {
         Ok(status) if status.success() => ExitCode::SUCCESS,
@@ -200,7 +200,7 @@ pub fn run_nu(file: &Path, script: &str) -> ExitCode {
 /// which would otherwise be invalid JSON — so `nu_expr`'s items are piped
 /// through the `escape-esc` helper (defined in nushell-prompt.nu) before
 /// serializing, and un-escaped again here after parsing.
-pub fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>, String> {
+pub(crate) fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>, String> {
     let script = format!(
         "source \"{}\"; ({nu_expr}) | each {{|r| {{key: $r.key, label: (escape-esc $r.label)}}}} | to json",
         file.display()
@@ -226,7 +226,7 @@ pub fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>,
 /// Remove nuance from Nushell's autoload directory. With `purge`, also delete
 /// the state files and the `nuance/` directory (imported themes, user styles).
 /// Deliberately does not go through `with_nu`, which would (re)install first.
-pub fn uninstall(purge: bool) -> ExitCode {
+pub(crate) fn uninstall(purge: bool) -> ExitCode {
     if let Err(e) = ensure_nu() {
         eprintln!("nuance: {e}");
         return ExitCode::FAILURE;
@@ -271,7 +271,7 @@ pub fn uninstall(purge: bool) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-pub fn cmd_update(target: &Path) -> ExitCode {
+pub(crate) fn cmd_update(target: &Path) -> ExitCode {
     let Some(dir) = repo_dir(target) else {
         println!("nuance was installed via `cargo install nuance-cli` (no git checkout).");
         println!("To update:  cargo install --force nuance-cli   then: exec nu");
@@ -295,7 +295,7 @@ pub fn cmd_update(target: &Path) -> ExitCode {
 
 /// Quote a list of args as a space-separated sequence of double-quoted
 /// Nushell string literals, safe to splice into a `nu -c` script.
-pub fn quote(args: &[String]) -> String {
+pub(crate) fn quote(args: &[String]) -> String {
     args.iter()
         .map(|a| format!("\"{}\"", a.replace('\\', "\\\\").replace('"', "\\\"")))
         .collect::<Vec<_>>()
