@@ -24,7 +24,8 @@ jobs:
         with:
           components: rustfmt,clippy
       - uses: Swatinem/rust-cache@v2
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: "0.116.1"
       - name: Install system packages
@@ -46,7 +47,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # nuance's own tests drive the prompt through `nu`.
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: "0.116.1"
       - name: cargo test --workspace
@@ -69,7 +71,8 @@ jobs:
         with:
           targets: x86_64-unknown-linux-musl
       - uses: Swatinem/rust-cache@v2
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: "0.116.1"
       - name: Install system packages
@@ -87,7 +90,8 @@ jobs:
         with:
           toolchain: "1.90"
       - uses: Swatinem/rust-cache@v2
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: "0.116.1"
       - name: Install system packages
@@ -106,7 +110,8 @@ jobs:
         nu: ["0.115.0", "0.116.1"]
     steps:
       - uses: actions/checkout@v7
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: ${{ matrix.nu }}
       - name: Install tmux and screen
@@ -123,7 +128,8 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: nightly
       - name: Prompt suite
@@ -135,7 +141,8 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
-      - uses: hustcer/setup-nu@v3
+      - name: Install Nushell
+        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: "0.116.1"
       - name: Prompt suite
