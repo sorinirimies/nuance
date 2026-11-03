@@ -2,8 +2,9 @@
 #
 # Commits must follow Conventional Commits to appear in the changelog:
 #     <type>(<optional scope>)!: <summary>
-# Types: feat fix perf refactor docs test build ci chore. Anything else is
-# dropped silently (see `filter_unconventional` / `filter_commits` below).
+# Types: feat fix perf refactor docs test build ci chore, plus project-specific
+# component prefixes (add them to the "Components" parser below, e.g. cli / gui /
+# web). Anything else is dropped silently (see `filter_unconventional` / `filter_commits` below).
 #
 # Preview the next release:  just changelog-preview     Regenerate:  just changelog
 
@@ -84,6 +85,8 @@ commit_parsers = [
     { message = "^feat",                            group = "<!-- 01 -->✨ Features" },
     { message = "^fix",                             group = "<!-- 02 -->🐛 Bug fixes" },
     { message = "^perf",                            group = "<!-- 03 -->⚡ Performance" },
+    # Commits prefixed with the component they touch ("cli: …", "gui(theme): …")
+    { message = "^(cli|gui|web|tui)(\\(.+\\))?!?:", group = "<!-- 04 -->🧩 Components" },
     { message = "^refactor",                        group = "<!-- 05 -->♻️ Refactor" },
 
     # ── how it is built and shipped ──────────────────────────────────────────

@@ -17,6 +17,10 @@
 //! if it's missing, `nuance` offers to `cargo install nu --locked` for you,
 //! since `cargo` is guaranteed to be present (that's how you got `nuance`).
 
+// The `///` comments on the clap types are the --help text: `<name>` and
+// `[style]` there are CLI placeholders, not HTML or intra-doc links.
+#![allow(rustdoc::invalid_html_tags, rustdoc::broken_intra_doc_links)]
+
 mod ansi;
 mod cli;
 mod nu;

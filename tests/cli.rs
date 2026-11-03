@@ -295,19 +295,21 @@ fn list_and_current_emit_json() {
     assert!(out.status.success());
     let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).expect("valid JSON");
     assert!(v.as_array().unwrap().len() >= 60, "expected many themes");
-    assert!(v
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|t| t["name"] == "gruvbox" && t["light"] == false));
+    assert!(
+        v.as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["name"] == "gruvbox" && t["light"] == false)
+    );
 
     let out = run(home.path(), &["list", "styles", "--json"]);
     let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).unwrap();
-    assert!(v
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|s| s["name"] == "powerline"));
+    assert!(
+        v.as_array()
+            .unwrap()
+            .iter()
+            .any(|s| s["name"] == "powerline")
+    );
 
     let out = run(home.path(), &["current", "--json"]);
     let v: serde_json::Value = serde_json::from_str(stdout(&out).trim()).unwrap();
