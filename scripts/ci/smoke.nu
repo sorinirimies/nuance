@@ -3,8 +3,7 @@
 # nuance — Smoke-test the built CLI in a throwaway HOME
 # ──────────────────────────────────────────────────────────────────────────────
 # Runs target/debug/nuance (build it first) with a fresh HOME: help, then set a
-# theme, a prompt style and a look, and checks the look was persisted. Skipped
-# on Windows, which nuance does not support.
+# theme, a prompt style and a look, and checks the look was persisted.
 #
 # Usage: nu scripts/ci/smoke.nu
 # ──────────────────────────────────────────────────────────────────────────────
@@ -23,13 +22,12 @@ export def current_look [config_dir: string]: nothing -> any {
 }
 
 def main [] {
-    if $nu.os-info.name == "windows" {
-        print "smoke=skipped (windows)"
-        return
-    }
     let bin = "target" | path join "debug" "nuance" | path expand
-    let home = mktemp -d
-    with-env {HOME: $home, USERPROFILE: $home} {
+    # A space in the path (like "Maya Nadia Sorin VR") guards the Windows
+    # `source "C:\Users\..."` regression.
+    let home = mktemp -d | path join "nuance home" | tee { mkdir $in }
+    let appdata = $home | path join "AppData" "Roaming" | tee { mkdir $in }
+    with-env {HOME: $home, USERPROFILE: $home, APPDATA: $appdata, XDG_CONFIG_HOME: ($home | path join ".config")} {
         for c in $CHECKS {
             let out = ^$bin ...$c.args | complete
             if $out.exit_code != 0 or not ($out.stdout | str contains $c.expect) {

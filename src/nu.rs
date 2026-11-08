@@ -176,7 +176,7 @@ pub(crate) fn repo_dir(target: &Path) -> Option<PathBuf> {
 /// Run a nuance command inside a throwaway Nushell, inheriting stdio
 /// (persists any state files it writes, e.g. current-theme.txt).
 pub(crate) fn run_nu(file: &Path, script: &str) -> ExitCode {
-    let full = format!("source \"{}\"; {script}", file.display());
+    let full = format!("source `{}`; {script}", file.display());
     match Command::new("nu").arg("-n").arg("-c").arg(&full).status() {
         Ok(status) if status.success() => ExitCode::SUCCESS,
         Ok(_) => ExitCode::FAILURE,
@@ -202,7 +202,7 @@ pub(crate) fn run_nu(file: &Path, script: &str) -> ExitCode {
 /// serializing, and un-escaped again here after parsing.
 pub(crate) fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>, String> {
     let script = format!(
-        "source \"{}\"; ({nu_expr}) | each {{|r| {{key: $r.key, label: (escape-esc $r.label)}}}} | to json",
+        "source `{}`; ({nu_expr}) | each {{|r| {{key: $r.key, label: (escape-esc $r.label)}}}} | to json",
         file.display()
     );
     let out = Command::new("nu")
@@ -423,5 +423,34 @@ mod tests {
     fn picker_item_deserializes_key_field() {
         let item: PickerItem = serde_json::from_str(r#"{"label":"l","key":"full"}"#).unwrap();
         assert_eq!(item.key, "full");
+    }
+
+    /// Regression: a path with spaces and backslash-letter sequences
+    /// (`C:\Users\Maya Nadia\AppData`) must survive `source`.
+    #[test]
+    fn fetch_picker_items_sources_path_with_spaces_and_backslashes() {
+        if Command::new("nu").arg("--version").output().is_err() {
+            eprintln!("skipped: nu not installed");
+            return;
+        }
+        let base = std::env::temp_dir().join(format!("nuance Maya Nadia {}", std::process::id()));
+        // On Windows `\AppData` nests; on unix it is one odd directory name.
+        let dir = if cfg!(windows) {
+            base.join("AppData\\Roaming")
+        } else {
+            base.join("a\\AppData\\Roaming")
+        };
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("prompt.nu");
+        fs::write(
+            &file,
+            "def escape-esc [s] { $s }\ndef items [] { [{key: k1, label: L1}] }\n",
+        )
+        .unwrap();
+        let items = fetch_picker_items(&file, "items");
+        let _ = fs::remove_dir_all(&base);
+        let items = items.unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].key, "k1");
     }
 }
