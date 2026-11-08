@@ -63,6 +63,10 @@ fmt-check:
 clippy:
     cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+# Clippy for Windows, macOS and Linux from this host
+cross-check:
+    nu scripts/ci/cross_check.nu
+
 # Rust and Nu tests
 test-all-nu: test test-nu
     @echo "✅ All Rust and Nu tests passed!"

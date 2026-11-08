@@ -63,8 +63,10 @@ nuance theme            # first run vendors the prompt into Nushell's autoload d
 This gives you a `nuance` binary usable from any shell. Running any
 subcommand (`theme`, `prompt-style`, `look`, …) the first time vendors the
 prompt into Nushell's autoload dir — no clone, no separate installer script.
-If Nushell itself isn't installed yet, `nuance` offers to `cargo install nu`
-for you. It ships its own `ratatui` picker with an instant live preview per
+After `cargo install --force nuance-cli` the next command refreshes that copy
+(unless you edited it or it's a symlink to a checkout). If Nushell itself isn't
+installed yet, `nuance` offers to install it — with `winget` on Windows, `brew`
+on macOS/Linux, else `cargo install nu`. It ships its own `ratatui` picker with an instant live preview per
 candidate:
 
 ![nuance-cli picker](docs/cli.gif)
@@ -130,7 +132,7 @@ nuance integration [on|off]   # window title, cwd reporting, semantic prompt mar
 nuance style new mine         # create your own segment style
 nuance sync            # follow the terminal's theme (auto-follow)
 nuance update          # git pull the checkout, then: exec nu
-nuance uninstall [--purge]    # remove nuance from Nushell's autoload dir
+nuance uninstall [--purge]    # remove nuance from Nushell's autoload dir (--purge: settings + caches too)
 nuance completions zsh        # shell completions for the CLI (bash, zsh, fish, …)
 ```
 
@@ -316,7 +318,8 @@ opening a PR.
 
 There's also a [`justfile`](justfile) (`cargo install just`) wrapping the
 common tasks — `just --list` to see them all: `just check-all` (fmt +
-clippy + both test suites), `just changelog`, `just tape welcome` / `just tapes-all` (re-record every demo GIF),
+clippy + both test suites), `just cross-check` (clippy for Windows, macOS and
+Linux from any host), `just changelog`, `just tape welcome` / `just tapes-all` (re-record every demo GIF),
 `just release 0.2.0`.
 
 Project layout: `nu/*.nu` (the prompt itself, in numbered parts) →

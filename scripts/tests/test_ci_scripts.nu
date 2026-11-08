@@ -7,6 +7,7 @@ use runner.nu *
 use ../ci/deps_update.nu [present commit_message]
 use ../ci/publish_crate.nu [already_published package_args]
 use ../ci/apt.nu [commands]
+use ../ci/cross_check.nu
 use ../ci/check_static.nu [is_static]
 use ../ci/gitea_release.nu [release_payload]
 use ../ci/auto_merge.nu [decide checks_green sweep_action]
@@ -117,3 +118,21 @@ def "test actions_update: v1 does not touch v10" [] {
 }
 
 def main [] { run-tests }
+
+def "test cross_check: nothing to check runs nothing" [] {
+    assert equal (cross_check commands []) []
+}
+
+def "test cross_check: one rustup add, then clippy per target" [] {
+    let c = cross_check commands [a b]
+    assert equal $c.0 [rustup target add a b]
+    assert equal ($c | length) 3
+    assert equal ($c.2 | take 6) [cargo clippy --locked --all-targets --target b]
+    assert ($c.2 | str join " " | str ends-with "-- -D warnings")
+}
+
+def "test cross_check: covers windows, macos and linux" [] {
+    for os in [windows apple linux] {
+        assert ($cross_check.TARGETS | any {|t| $t | str contains $os }) $os
+    }
+}

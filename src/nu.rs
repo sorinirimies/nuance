@@ -75,32 +75,53 @@ pub(crate) fn ensure_nu() -> Result<(), String> {
     if have("nu") {
         return Ok(());
     }
-    if !have("cargo") {
+    let Some(install) = nu_installer(std::env::consts::OS, have) else {
         return Err(
-            "Nushell (`nu`) is required and `cargo` isn't on PATH to auto-install it.\n\
+            "Nushell (`nu`) is required and no installer (winget, brew, cargo) is on PATH.\n\
              Install it yourself: https://www.nushell.sh"
                 .to_string(),
         );
-    }
+    };
+    let shown = install.join(" ");
     if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
-        return Err(
+        return Err(format!(
             "Nushell (`nu`) is required; refusing to auto-install in a non-interactive session.\n\
-             Run `cargo install nu --locked` or see https://www.nushell.sh"
-                .to_string(),
-        );
+             Run `{shown}` or see https://www.nushell.sh"
+        ));
     }
-    eprintln!(
-        "\x1b[1;33m!\x1b[0m  nu not found — installing it with `cargo install nu --locked` (one-time, ~1-2 min)…"
-    );
-    let status = Command::new("cargo")
-        .arg("install")
-        .arg("nu")
-        .arg("--locked")
-        .status();
-    match status {
-        Ok(s) if s.success() => Ok(()),
-        _ => Err("failed to install Nushell via `cargo install nu --locked`".to_string()),
+    eprintln!("\x1b[1;33m!\x1b[0m  nu not found — installing it with `{shown}` (one-time)…");
+    match Command::new(install[0]).args(&install[1..]).status() {
+        Ok(s) if s.success() && have("nu") => Ok(()),
+        Ok(s) if s.success() => Err(format!(
+            "`{shown}` succeeded but `nu` is not on PATH yet — open a new terminal and retry"
+        )),
+        _ => Err(format!("failed to install Nushell via `{shown}`")),
     }
+}
+
+/// How to install Nushell on `os`: the platform package manager when present
+/// (a prebuilt binary in seconds), else `cargo install` (a 1-2 min build).
+pub(crate) fn nu_installer(
+    os: &str,
+    have: impl Fn(&str) -> bool,
+) -> Option<&'static [&'static str]> {
+    const WINGET: &[&str] = &[
+        "winget",
+        "install",
+        "--id",
+        "Nushell.Nushell",
+        "-e",
+        "--accept-source-agreements",
+        "--accept-package-agreements",
+    ];
+    const BREW: &[&str] = &["brew", "install", "nushell"];
+    const CARGO: &[&str] = &["cargo", "install", "nu", "--locked"];
+    let candidates: &[&'static [&'static str]] = match os {
+        "windows" => &[WINGET, CARGO],
+        "macos" | "linux" => &[BREW, CARGO],
+        _ => &[CARGO],
+    };
+    candidates.iter().copied().find(|c| have(c[0]))
 }
 
 /// Run `nu -n -c "<script>"` and capture stdout, trimmed.
@@ -117,8 +138,66 @@ fn nu_capture(script: &str) -> Option<String> {
     Some(String::from_utf8_lossy(&out.stdout).trim().to_string())
 }
 
+/// Nushell's autoload directory. Asking `nu` costs a process start (~20 ms)
+/// on every command, so the answer is cached in the per-user cache dir,
+/// keyed by the `nu` binary and the variables that move Nushell's config dir.
 fn autoload_dir() -> Option<PathBuf> {
-    nu_capture("$nu.user-autoload-dirs | get 0").map(PathBuf::from)
+    let cache = user_cache_dir().map(|d| {
+        d.join("nuance")
+            .join(format!("autoload-{}.txt", dirs_key()))
+    });
+    if let Some(c) = &cache
+        && let Ok(s) = fs::read_to_string(c)
+    {
+        let dir = PathBuf::from(s.trim());
+        if dir.is_dir() {
+            return Some(dir);
+        }
+    }
+    let dir = nu_capture("$nu.user-autoload-dirs | get 0").map(PathBuf::from)?;
+    if let Some(c) = &cache
+        && let Some(parent) = c.parent()
+        && fs::create_dir_all(parent).is_ok()
+    {
+        let _ = fs::write(c, dir.display().to_string());
+    }
+    Some(dir)
+}
+
+/// Everything that can change `$nu.user-autoload-dirs`.
+fn dirs_key() -> String {
+    let mut k = String::new();
+    for v in [
+        "PATH",
+        "XDG_CONFIG_HOME",
+        "XDG_DATA_HOME",
+        "HOME",
+        "APPDATA",
+        "USERPROFILE",
+    ] {
+        k.push_str(&std::env::var(v).unwrap_or_default());
+        k.push('\0');
+    }
+    fnv1a(k.as_bytes())
+}
+
+/// The per-user cache directory (never a shared one like /tmp: the cached
+/// path decides where nuance writes and sources code).
+fn user_cache_dir() -> Option<PathBuf> {
+    let env = |k: &str| {
+        std::env::var_os(k)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
+    cache_dir_for(std::env::consts::OS, env)
+}
+
+fn cache_dir_for(os: &str, env: impl Fn(&str) -> Option<PathBuf>) -> Option<PathBuf> {
+    match os {
+        "windows" => env("LOCALAPPDATA"),
+        "macos" => env("HOME").map(|h| h.join("Library").join("Caches")),
+        _ => env("XDG_CACHE_HOME").or_else(|| env("HOME").map(|h| h.join(".cache"))),
+    }
 }
 
 pub(crate) fn is_symlink(p: &Path) -> bool {
@@ -158,6 +237,27 @@ pub(crate) fn ensure_installed() -> Result<PathBuf, String> {
         Vendored::Current | Vendored::UserOwned => {}
     }
     Ok(target)
+}
+
+/// Doctor hint when the autoload copy is not the one this binary carries
+/// (an install from before the refresh stamp, or a hand-edited copy).
+pub(crate) fn drift_hint(target: &Path) -> Option<String> {
+    drift_hint_for(target, NUSHELL_PROMPT)
+}
+
+fn drift_hint_for(target: &Path, script: &str) -> Option<String> {
+    if is_symlink(target) {
+        return None;
+    }
+    let current = fs::read(target).ok()?;
+    (current != script.as_bytes()).then(|| {
+        format!(
+            "{} differs from the script bundled with nuance {} — to replace it: \
+             delete it, then run any nuance command",
+            target.display(),
+            env!("CARGO_PKG_VERSION")
+        )
+    })
 }
 
 /// What [`vendor`] did with the autoload file.
@@ -313,24 +413,22 @@ pub(crate) fn uninstall(purge: bool) -> ExitCode {
         }
         let _ = fs::remove_file(stamp_path(&target));
     }
-    if purge && let Some(cfg) = nu_capture("$nu.default-config-dir").map(PathBuf::from) {
-        for f in [
-            "current-theme.txt",
-            "prompt-style.txt",
-            "transient.txt",
-            "terminal.txt",
-            "modules.txt",
-            "integration.txt",
-            "appearance.txt",
-        ] {
-            let p = cfg.join(f);
-            if p.exists() && fs::remove_file(&p).is_ok() {
+    if purge {
+        for p in state_paths() {
+            let gone = if p.is_dir() {
+                fs::remove_dir_all(&p).is_ok()
+            } else {
+                p.exists() && fs::remove_file(&p).is_ok()
+            };
+            if gone {
                 removed.push(p);
             }
         }
-        let nuance_dir = cfg.join("nuance");
-        if nuance_dir.is_dir() && fs::remove_dir_all(&nuance_dir).is_ok() {
-            removed.push(nuance_dir);
+        if let Some(d) = user_cache_dir().map(|d| d.join("nuance"))
+            && d.is_dir()
+            && fs::remove_dir_all(&d).is_ok()
+        {
+            removed.push(d);
         }
     }
     if removed.is_empty() {
@@ -344,6 +442,23 @@ pub(crate) fn uninstall(purge: bool) -> ExitCode {
         );
     }
     ExitCode::SUCCESS
+}
+
+/// The state files and directories nuance writes, as listed by the script's
+/// own `nuance-state-paths` (the bundled copy, so it works after the autoload
+/// file is gone and honors `NUANCE_CONFIG_DIR` / `NUANCE_CACHE_DIR`).
+fn state_paths() -> Vec<PathBuf> {
+    let tmp = std::env::temp_dir().join(format!("nuance-uninstall-{}.nu", std::process::id()));
+    if fs::write(&tmp, NUSHELL_PROMPT).is_err() {
+        return Vec::new();
+    }
+    let out = nu_capture(&format!(
+        "{}; nuance-state-paths | to json",
+        source_cmd(&tmp)
+    ));
+    let _ = fs::remove_file(&tmp);
+    out.and_then(|j| serde_json::from_str::<Vec<PathBuf>>(&j).ok())
+        .unwrap_or_default()
 }
 
 pub(crate) fn cmd_update(target: &Path) -> ExitCode {
@@ -635,5 +750,70 @@ mod tests {
         let items = fetch_picker_items(&file, "items");
         let _ = fs::remove_dir_all(&d);
         assert_eq!(items.unwrap()[0].key, "k");
+    }
+
+    #[test]
+    fn nu_installer_prefers_package_manager() {
+        let all = |_: &str| true;
+        assert_eq!(nu_installer("windows", all).unwrap()[0], "winget");
+        assert_eq!(nu_installer("macos", all).unwrap()[0], "brew");
+        assert_eq!(nu_installer("linux", all).unwrap()[0], "brew");
+        assert_eq!(nu_installer("freebsd", all).unwrap()[0], "cargo");
+    }
+
+    #[test]
+    fn nu_installer_falls_back_to_cargo_then_none() {
+        let cargo_only = |c: &str| c == "cargo";
+        assert_eq!(nu_installer("windows", cargo_only).unwrap()[0], "cargo");
+        assert_eq!(nu_installer("macos", cargo_only).unwrap()[0], "cargo");
+        assert!(nu_installer("linux", |_: &str| false).is_none());
+    }
+
+    #[test]
+    fn cache_dir_per_os() {
+        let env = |k: &str| match k {
+            "HOME" => Some(PathBuf::from("/h")),
+            "LOCALAPPDATA" => Some(PathBuf::from("/l")),
+            _ => None,
+        };
+        assert_eq!(cache_dir_for("windows", env), Some(PathBuf::from("/l")));
+        assert_eq!(
+            cache_dir_for("macos", env),
+            Some(Path::new("/h").join("Library").join("Caches"))
+        );
+        assert_eq!(
+            cache_dir_for("linux", env),
+            Some(Path::new("/h").join(".cache"))
+        );
+        let xdg = |k: &str| (k == "XDG_CACHE_HOME").then(|| PathBuf::from("/x"));
+        assert_eq!(cache_dir_for("linux", xdg), Some(PathBuf::from("/x")));
+        assert_eq!(cache_dir_for("windows", |_: &str| None), None);
+    }
+
+    #[test]
+    fn drift_hint_only_for_differing_regular_file() {
+        let d = scratch("drift");
+        let t = d.join(FILE);
+        assert_eq!(
+            drift_hint_for(&t, "v1"),
+            None,
+            "missing file: nothing to say"
+        );
+        fs::write(&t, "v1").unwrap();
+        assert_eq!(drift_hint_for(&t, "v1"), None);
+        fs::write(&t, "old").unwrap();
+        assert!(drift_hint_for(&t, "v1").unwrap().contains("differs"));
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn state_paths_come_from_the_script() {
+        if Command::new("nu").arg("--version").output().is_err() {
+            eprintln!("skipped: nu not installed");
+            return;
+        }
+        let paths = state_paths();
+        assert_eq!(paths.len(), 9, "{paths:?}");
+        assert!(paths.iter().any(|p| p.ends_with("current-theme.txt")));
     }
 }

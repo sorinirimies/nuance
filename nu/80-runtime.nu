@@ -286,6 +286,16 @@ integration-apply (try { open (integration-state-path) | str trim } catch { "on"
 # Once you press Enter, the finished prompt collapses to a single colored
 # glyph so scrollback stays clean (powerlevel10k / starship "transient").
 # Uses Nushell's TRANSIENT_PROMPT_* variables. Toggle: `nuance transient`.
+# Everything nuance writes outside the autoload dir; `nuance uninstall --purge`
+# removes these (the Rust CLI asks for this list instead of keeping its own).
+def nuance-state-paths [] {
+    [
+        (theme-state-path) (prompt-style-path) (transient-state-path) (terminal-state-path)
+        (modules-state-path) (integration-state-path) (appearance-path)
+        ((nuance-config-dir) | path join "nuance") (nuance-cache-dir)
+    ]
+}
+
 def transient-state-path [] { (nuance-config-dir) | path join "transient.txt" }
 # Mirror a style's indicator glyph for Vi normal mode (❯ → ❮).
 def vi-glyph [g: string] {

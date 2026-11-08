@@ -48,6 +48,12 @@ fn completions(shell: clap_complete::Shell) -> ExitCode {
 }
 
 fn main() -> ExitCode {
+    // The legacy Windows console (conhost) prints ANSI escapes literally until
+    // virtual-terminal processing is on; this turns it on for this console,
+    // which the `nu` children share. A no-op elsewhere.
+    #[cfg(windows)]
+    let _ = crossterm::ansi_support::supports_ansi();
+
     let raw: Vec<String> = std::env::args().collect();
 
     // Fast-path "help" / no-args to keep exact historical output + exit
@@ -78,6 +84,9 @@ fn main() -> ExitCode {
         }
         Some(Commands::Configure) => with_nu(|target| nu::run_nu(target, "nuance configure")),
         Some(Commands::Doctor { clear_errors }) => with_nu(|target| {
+            if let Some(hint) = nu::drift_hint(target) {
+                eprintln!("\x1b[1;33m!\x1b[0m  {hint}");
+            }
             nu::run_nu(
                 target,
                 if clear_errors {

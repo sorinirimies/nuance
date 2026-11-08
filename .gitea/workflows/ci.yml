@@ -44,6 +44,35 @@ jobs:
         run: nu scripts/ci/quality_gate.nu
 
   # nuance's prompt: its Nushell suite with the multiplexers installed.
+  # Gitea has only Linux runners: type-check the Windows and macOS code paths
+  # (`#[cfg(windows)]`, `#[cfg(unix)]`) by cross-target clippy instead.
+  cross:
+    name: cross-check (windows, macos, linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust stable (+ rustfmt, clippy)
+        run: |
+          for i in 1 2 3 4 5; do
+            curl --proto '=https' --tlsv1.2 -sSf --retry 5 --retry-all-errors --retry-delay 5 https://sh.rustup.rs | sh -s -- -y --default-toolchain stable && break
+            [ $i = 5 ] && exit 1
+            echo "rustup install failed, retrying..."; sleep 15
+          done
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          . "$HOME/.cargo/env"
+          rustup component add rustfmt clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Nushell
+        run: |
+          V=0.116.1
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/dl.tgz https://github.com/nushell/nushell/releases/download/$V/nu-$V-x86_64-unknown-linux-gnu.tar.gz && tar -xzf /tmp/dl.tgz -C /tmp
+          sudo install -m 0755 /tmp/nu-$V-x86_64-unknown-linux-gnu/nu /usr/local/bin/nu || { mkdir -p $HOME/.cargo/bin; install -m 0755 /tmp/nu-$V-x86_64-unknown-linux-gnu/nu $HOME/.cargo/bin/nu; }
+          nu --version
+      - name: Install system packages
+        run: nu scripts/ci/apt.nu
+      - name: Clippy for every OS
+        run: nu scripts/ci/cross_check.nu
+
   prompt:
     name: prompt
     runs-on: ubuntu-latest

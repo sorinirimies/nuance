@@ -110,23 +110,50 @@ def pkg-version [start?: string] {
     ""
 }
 
-# Battery percentage or null (no battery). Cached for a minute — `pmset` is slow.
+# Battery percentage or null (no battery). Cached for a minute — `pmset` and
+# PowerShell are slow. On Windows a stale value is shown while a background
+# job refreshes it, so the prompt never waits ~300 ms for PowerShell.
 def battery-percent [] {
-    let f = ((nuance-cache-dir) | path join "battery.txt")
+    let f = (battery-cache-path)
     let now = (date now | format date "%s" | into int)
-    if ($f | path exists) {
-        let c = (open --raw $f | str trim | split row " ")
-        if ($c | length) == 2 and (($now - ($c.0 | into int)) < 60) {
-            return (if $c.1 == "none" { null } else { $c.1 | into int })
-        }
+    let cached = (if ($f | path exists) { battery-parse-cache (open --raw $f) } else { null })
+    if $cached != null and (($now - $cached.at) < 60) { return $cached.pct }
+    if $cached != null and $nu.os-info.name == "windows" {
+        try { job spawn { battery-refresh } | ignore } catch { }
+        return $cached.pct
     }
+    battery-refresh
+}
+
+def battery-cache-path [] { (nuance-cache-dir) | path join "battery.txt" }
+
+# "<epoch> <pct|none>" → { at, pct } or null when malformed.
+def battery-parse-cache [text: string] {
+    let c = ($text | str trim | split row " ")
+    if ($c | length) != 2 { return null }
+    try {
+        { at: ($c.0 | into int), pct: (if $c.1 == "none" { null } else { $c.1 | into int }) }
+    } catch { null }
+}
+
+# Output of `(Get-CimInstance Win32_Battery).EstimatedChargeRemaining`:
+# a number per battery, nothing on a desktop.
+def battery-parse-windows [text: string] {
+    let n = ($text | lines | str trim | where ($it =~ '^\d+$') | get 0? | default null)
+    if $n == null { null } else { $n | into int }
+}
+
+def battery-refresh [] {
     let pct = if ("/sys/class/power_supply" | path exists) {
         let bats = (glob "/sys/class/power_supply/BAT*/capacity")
         if ($bats | is-empty) { null } else { try { open --raw ($bats | first) | str trim | into int } catch { null } }
+    } else if $nu.os-info.name == "windows" {
+        battery-parse-windows (ext powershell -NoProfile -NonInteractive -Command "(Get-CimInstance Win32_Battery).EstimatedChargeRemaining" | get stdout)
     } else if (which pmset | is-not-empty) {
         (ext pmset -g batt | get stdout | parse -r '(?<p>\d+)%' | get p.0? | default null | if $in == null { null } else { $in | into int })
     } else { null }
-    try { mkdir (nuance-cache-dir); $"($now) ($pct | default 'none')" | save -f $f }
+    let now = (date now | format date "%s" | into int)
+    try { mkdir (nuance-cache-dir); $"($now) ($pct | default 'none')" | save -f (battery-cache-path) }
     $pct
 }
 

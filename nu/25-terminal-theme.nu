@@ -54,7 +54,19 @@ def tmux-passthrough? [] {
     (^tmux set-option -p allow-passthrough on | complete).exit_code == 0
 }
 
-def ghostty-dir [] { ($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config")) | path join "ghostty" }
+# Ghostty's config directory. It reads $XDG_CONFIG_HOME/ghostty everywhere and,
+# on macOS, also ~/Library/Application Support/com.mitchellh.ghostty (loaded
+# last, so it wins). An explicit $XDG_CONFIG_HOME always wins; otherwise macOS
+# uses the Application Support dir when the user's config lives only there.
+def ghostty-dir [] { ghostty-dir-for $nu.os-info.name $nu.home-dir ($env.XDG_CONFIG_HOME? | default "") }
+
+def ghostty-dir-for [os: string, home: string, xdg: string] {
+    if $xdg != "" { return ($xdg | path join "ghostty") }
+    let dot = ($home | path join ".config" "ghostty")
+    if $os != "macos" { return $dot }
+    let app = ($home | path join "Library" "Application Support" "com.mitchellh.ghostty")
+    if (($app | path join "config") | path exists) and not (($dot | path join "config") | path exists) { $app } else { $dot }
+}
 
 def ghostty-reload [] {
     if ($env.NUANCE_NO_RELOAD? | default "" | is-empty) { ext pkill -USR2 -x ghostty | ignore }

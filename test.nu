@@ -838,6 +838,24 @@ if $e2e_ok and (which tmux | is-not-empty) and (which script | is-not-empty) {
     if not ($outer | str contains $"($esc)]11;#") { $errors = ($errors | append "real tmux did not forward the OSC 11 background sequence to the outer terminal") }
 } else { print $"(ansi yellow)skip(ansi reset) tmux e2e \(local only: needs tmux + script, not CI\)" }
 
+# ── Ghostty config dir per OS ──
+let gh_home = (mktemp -d)
+let gh_app = ($gh_home | path join "Library" "Application Support" "com.mitchellh.ghostty")
+if (ghostty-dir-for "macos" $gh_home "") != ($gh_home | path join ".config" "ghostty") { $errors = ($errors | append "ghostty-dir: macOS without any config must use ~/.config/ghostty") }
+mkdir $gh_app; "" | save -f ($gh_app | path join "config")
+if (ghostty-dir-for "macos" $gh_home "") != $gh_app { $errors = ($errors | append "ghostty-dir: macOS must use Application Support when the config lives only there") }
+if (ghostty-dir-for "linux" $gh_home "") != ($gh_home | path join ".config" "ghostty") { $errors = ($errors | append "ghostty-dir: Linux ignores Application Support") }
+if (ghostty-dir-for "macos" $gh_home "/x") != ("/x" | path join "ghostty") { $errors = ($errors | append "ghostty-dir: an explicit XDG_CONFIG_HOME wins") }
+rm -rf $gh_home
+
+# ── Battery parsing (Windows PowerShell output, cache file) ──
+if (battery-parse-windows "\r\n87\r\n") != 87 or (battery-parse-windows "") != null { $errors = ($errors | append "battery-parse-windows must read the first number, null on a desktop") }
+if (battery-parse-cache "12 none") != {at: 12, pct: null} or (battery-parse-cache "12 55") != {at: 12, pct: 55} or (battery-parse-cache "junk") != null { $errors = ($errors | append "battery-parse-cache wrong") }
+
+# ── State paths for `nuance uninstall --purge` all live under the config/cache dirs ──
+let sp = (nuance-state-paths)
+if ($sp | length) != 9 or ($sp | any {|p| not (($p | str starts-with (nuance-config-dir)) or ($p | str starts-with (nuance-cache-dir))) }) { $errors = ($errors | append $"nuance-state-paths must list 9 paths under the config/cache dirs: ($sp)") }
+
 # ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
 let gdir = (ghostty-dir)
 mkdir $gdir
