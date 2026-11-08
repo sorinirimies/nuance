@@ -1,0 +1,46 @@
+# Rendered by scripts/ci/distro.nu and pushed to sorinirimies/homebrew-tap.
+class Nuance < Formula
+  desc "Themeable, git-aware Nushell prompt with a live-preview theme picker"
+  homepage "https://github.com/sorinirimies/nuance"
+  license "MIT"
+
+  depends_on "nushell"
+
+  on_macos do
+    on_arm do
+      url "https://github.com/sorinirimies/nuance/releases/download/v@VERSION@/nuance-aarch64-apple-darwin.tar.gz"
+      sha256 "@SHA_MACOS_ARM@"
+    end
+    on_intel do
+      url "https://github.com/sorinirimies/nuance/releases/download/v@VERSION@/nuance-x86_64-apple-darwin.tar.gz"
+      sha256 "@SHA_MACOS_X86@"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/sorinirimies/nuance/releases/download/v@VERSION@/nuance-aarch64-unknown-linux-musl.tar.gz"
+      sha256 "@SHA_LINUX_ARM@"
+    end
+    on_intel do
+      url "https://github.com/sorinirimies/nuance/releases/download/v@VERSION@/nuance-x86_64-unknown-linux-musl.tar.gz"
+      sha256 "@SHA_LINUX_X86@"
+    end
+  end
+
+  def install
+    bin.install "nuance"
+    generate_completions_from_executable(bin/"nuance", "completions")
+  end
+
+  def caveats
+    <<~EOS
+      Run any nuance command once (e.g. `nuance theme`) to install the prompt
+      into Nushell's autoload directory, then open a new `nu` shell.
+    EOS
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/nuance --version")
+  end
+end

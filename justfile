@@ -63,6 +63,12 @@ fmt-check:
 clippy:
     cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+# Render the Homebrew/Scoop/AUR manifests for a published release into dist/manifests
+manifests version:
+    rm -rf dist/release-{{ version }}
+    gh release download v{{ version }} -D dist/release-{{ version }} -p '*.tar.gz' -p '*.zip'
+    nu scripts/ci/distro.nu manifests {{ version }} --dir dist/release-{{ version }} --out dist/manifests
+
 # Clippy for Windows, macOS and Linux from this host
 cross-check:
     nu scripts/ci/cross_check.nu

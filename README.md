@@ -50,8 +50,21 @@ your terminal's own colors.
 
 ## Installation
 
-Three ways to get `nuance` — no bash scripts checked into this repo either
-way, just `cargo`, plain Nushell, or a curl/wget one-liner:
+**With a package manager** (prebuilt binary + shell completions; pulls in
+Nushell where the manager has it):
+
+| | |
+|---|---|
+| macOS / Linux (Homebrew) | `brew install sorinirimies/tap/nuance` |
+| Windows (Scoop) | `scoop bucket add sorinirimies https://github.com/sorinirimies/scoop-bucket` then `scoop install nuance` |
+| Arch Linux (AUR) | `yay -S nuance-bin` (or `paru -S nuance-bin`) |
+| Debian / Ubuntu | `.deb` from the [latest release](https://github.com/sorinirimies/nuance/releases/latest): `sudo apt install ./nuance_*_amd64.deb` |
+| Fedora / openSUSE | `.rpm` from the [latest release](https://github.com/sorinirimies/nuance/releases/latest): `sudo dnf install ./nuance-*.x86_64.rpm` |
+
+Then run `nuance theme` once to install the prompt into Nushell's autoload dir.
+
+Or one of three ways without a package manager — no bash scripts checked into
+this repo either way, just `cargo`, plain Nushell, or a curl/wget one-liner:
 
 **Have Rust/Cargo?**
 
