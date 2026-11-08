@@ -27,7 +27,7 @@ export const APT = []
 export const LINUX = "musl"
 
 # Ship a Windows archive. false for tools that do not support Windows.
-export const WINDOWS = false
+export const WINDOWS = true
 
 # The GitHub release build matrix for a LINUX flavour, one row per target.
 export def release_matrix [linux: string, --no-windows]: nothing -> list<record> {

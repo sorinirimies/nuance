@@ -2,9 +2,6 @@
 //! old POSIX `scripts/nuance` shell CLI + `test.bats` used to check, now that
 //! this Rust binary is the only any-shell CLI (see the repo README).
 
-// Windows is not a target for nuance; these drive it through a Unix HOME.
-#![cfg(unix)]
-
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -14,44 +11,46 @@ fn have_nu() -> bool {
     })
 }
 
+/// Point every per-user directory nuance or Nushell may read at `home`, on
+/// all three OSes: HOME and XDG_* (Linux/macOS; Nushell honors XDG_CONFIG_HOME
+/// on Windows too), USERPROFILE/APPDATA/LOCALAPPDATA (Windows).
+fn isolate<'a>(cmd: &'a mut Command, home: &Path) -> &'a mut Command {
+    cmd.env("HOME", home)
+        .env("USERPROFILE", home)
+        .env("APPDATA", home.join("AppData").join("Roaming"))
+        .env("LOCALAPPDATA", home.join("AppData").join("Local"))
+        .env("XDG_CONFIG_HOME", home.join(".config"))
+        .env("XDG_CACHE_HOME", home.join(".cache"))
+        .env("XDG_DATA_HOME", home.join(".local").join("share"))
+}
+
 fn run(home: &Path, args: &[&str]) -> Output {
     run_in(home, home, args)
 }
 
 /// Like `run`, but with an explicit working directory (for `nuance here`).
 fn run_in(home: &Path, cwd: &Path, args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_nuance"))
-        .current_dir(cwd)
-        .args(args)
-        .env("HOME", home)
-        // Force full isolation from the outer environment: on Linux, Nushell
-        // (and XDG-aware tools generally) prefer XDG_CONFIG_HOME/XDG_CACHE_HOME
-        // over deriving a path from HOME when those vars are set — if the CI
-        // runner has them set globally, every test's subprocess would collide
-        // on the *same real* config dir despite each test using its own
-        // tempdir HOME, causing flaky cross-test failures under `cargo test`'s
-        // default parallelism (e.g. prompt_style_sets seeing a value written
-        // by a concurrently-running look_applies_preset). Pin them under the
-        // same per-test tempdir so HOME is the only thing that matters.
-        .env("XDG_CONFIG_HOME", home.join(".config"))
-        .env("XDG_CACHE_HOME", home.join(".cache"))
-        .env("XDG_DATA_HOME", home.join(".local/share"))
-        // Windows isn't a target for this CLI, but keep HOME-only override simple/portable.
-        .output()
-        .expect("failed to run nuance binary")
+    // Force full isolation from the outer environment: on Linux, Nushell
+    // (and XDG-aware tools generally) prefer XDG_CONFIG_HOME/XDG_CACHE_HOME
+    // over deriving a path from HOME, so a runner with those set globally
+    // would make parallel tests collide on one real config dir.
+    isolate(
+        Command::new(env!("CARGO_BIN_EXE_nuance"))
+            .current_dir(cwd)
+            .args(args),
+        home,
+    )
+    .output()
+    .expect("failed to run nuance binary")
 }
 
 fn config_dir(home: &Path) -> String {
-    let out = Command::new("nu")
-        .arg("-n")
-        .arg("-c")
-        .arg("$nu.default-config-dir")
-        .env("HOME", home)
-        .env("XDG_CONFIG_HOME", home.join(".config"))
-        .env("XDG_CACHE_HOME", home.join(".cache"))
-        .env("XDG_DATA_HOME", home.join(".local/share"))
-        .output()
-        .expect("failed to run nu");
+    let out = isolate(
+        Command::new("nu").args(["-n", "-c", "$nu.default-config-dir"]),
+        home,
+    )
+    .output()
+    .expect("failed to run nu");
     String::from_utf8_lossy(&out.stdout).trim().to_string()
 }
 
@@ -155,16 +154,12 @@ fn first_run_vendors_prompt_script_into_autoload_dir() {
     let home = tempfile::tempdir().unwrap();
     let out = run(home.path(), &["theme", "gruvbox"]);
     assert!(out.status.success());
-    let dir = Command::new("nu")
-        .arg("-n")
-        .arg("-c")
-        .arg("$nu.user-autoload-dirs | get 0")
-        .env("HOME", home.path())
-        .env("XDG_CONFIG_HOME", home.path().join(".config"))
-        .env("XDG_CACHE_HOME", home.path().join(".cache"))
-        .env("XDG_DATA_HOME", home.path().join(".local/share"))
-        .output()
-        .unwrap();
+    let dir = isolate(
+        Command::new("nu").args(["-n", "-c", "$nu.user-autoload-dirs | get 0"]),
+        home.path(),
+    )
+    .output()
+    .unwrap();
     let dir = String::from_utf8_lossy(&dir.stdout).trim().to_string();
     assert!(Path::new(&dir).join("nushell-prompt.nu").exists());
 }

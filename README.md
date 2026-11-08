@@ -74,7 +74,8 @@ candidate:
 See the crate's docs on [crates.io](https://crates.io/crates/nuance-cli) for
 details. No cargo? Prebuilt binaries are attached to every
 [release](https://github.com/sorinirimies/nuance/releases) — download the
-tarball for your OS/arch, extract `nuance`, put it on your `PATH`.
+archive for your OS/arch (`.tar.gz` for macOS/Linux, `.zip` with `nuance.exe`
+for Windows), extract it and put the binary on your `PATH`.
 
 **Already have Nushell?** No clone needed — curl or wget the pure-Nushell
 installer and run it directly (downloads to a real file first, so it runs
@@ -279,8 +280,9 @@ cargo test       # ✓ 72 passed (cli.rs, ansi.rs, nu.rs, tui.rs, tests/cli.rs)
 ```
 
 The ANSI parser and Nushell arg quoting are also fuzzed (`cargo-fuzz`, nightly
-CI + on PRs touching them): `just fuzz ansi_parse` or `just fuzz nu_quote`. The
-Windows job runs the Nushell suite too.
+CI + on PRs touching them): `just fuzz ansi_parse` or `just fuzz nu_quote`. CI runs
+the Rust tests, the CLI integration tests and the Nushell suite on Linux, macOS
+and Windows.
 
 ## How it works
 
