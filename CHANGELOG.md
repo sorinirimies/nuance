@@ -4,6 +4,12 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.11.1](https://github.com/sorinirimies/nuance/compare/v0.11.0...v0.11.1) — 2026-11-08
+
+### 📦 Build
+
+- **release:** .deb/.rpm packages, Homebrew tap, Scoop bucket and AUR nuance-bin ([`84d7291`](https://github.com/sorinirimies/nuance/commit/84d729196992ab9cec0ced4ec0f6e6b3dd2a0853))
+
 ## [0.11.0](https://github.com/sorinirimies/nuance/compare/v0.10.0...v0.11.0) — 2026-11-08
 
 ### ✨ Features
