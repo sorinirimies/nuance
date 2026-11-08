@@ -813,7 +813,8 @@ mod tests {
             return;
         }
         let paths = state_paths();
-        assert_eq!(paths.len(), 9, "{paths:?}");
+        assert_eq!(paths.len(), 10, "{paths:?}");
+        assert!(paths.iter().any(|p| p.ends_with("icons.txt")));
         assert!(paths.iter().any(|p| p.ends_with("current-theme.txt")));
     }
 }

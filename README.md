@@ -130,6 +130,7 @@ nuance theme dracula   # …e.g. set + pin dracula
 nuance prompt-style    # ↑↓ selector, or set a name
 nuance look            # list looks; add a name to apply one (theme + style)
 nuance transient on    # collapse finished prompts to a single ❯ (off / toggle)
+nuance icons off       # no Nerd Font glyphs (auto: off on Windows, on elsewhere)
 nuance modules         # list situational segments; enable lang status jobs …
 nuance configure       # guided setup: look → transient prompt → modules
 nuance doctor          # check nu version, truecolor, Nerd Font, install, state
@@ -228,7 +229,11 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   plain prompt instead of leaving you with a broken one.
 - **Any terminal.** Theme colors are truecolor; on terminals without it the
   prompt is rewritten to the nearest 256- or 16-color codes, and `NO_COLOR`
-  turns color off (force a mode with `$env.NUANCE_COLORS`).
+  turns color off (force a mode with `$env.NUANCE_COLORS`). Truecolor is
+  detected from `COLORTERM`, known terminals (Windows Terminal, kitty, Ghostty,
+  WezTerm, iTerm2, VS Code) and Windows consoles, which all do 24-bit.
+  Nerd Font icons are on by default except on Windows, whose stock fonts lack
+  them — `nuance icons on` once your terminal uses a Nerd Font.
 - **Terminal integration** (`nuance integration`): window title, working-directory
   reporting, clickable paths and semantic prompt marks (jump between prompts,
   copy the last command's output in Ghostty / kitty / WezTerm) — on by default,

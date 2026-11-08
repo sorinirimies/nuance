@@ -86,6 +86,7 @@ def "nu-complete nuance modules" [] { module-names }
 def "nu-complete nuance module-actions" [] { ["list" "enable" "disable" "clear"] }
 def "nu-complete nuance terminal" [] { ["on" "full" "off"] }
 def "nu-complete nuance transient" [] { ["on" "dir" "off" "toggle"] }
+def "nu-complete nuance icons" [] { ["on" "off" "auto"] }
 def "nu-complete nuance kinds" [] { ["themes" "styles" "looks" "modules"] }
 def "nu-complete nuance random" [] { ["look" "theme" "style"] }
 def "nu-complete nuance integration" [] { ["on" "off" "status"] }

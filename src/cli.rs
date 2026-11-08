@@ -115,6 +115,11 @@ pub(crate) enum Commands {
         /// on | off | toggle — omit to show the current state
         mode: Option<String>,
     },
+    /// Nerd Font icons in the prompt (on, off or auto — auto is off on Windows)
+    Icons {
+        /// on | off | auto — omit to show the current state
+        mode: Option<String>,
+    },
     /// Also theme the terminal screen: background, foreground, cursor (on | full | off)
     Terminal {
         /// on | full | off — omit to show the current state
@@ -160,6 +165,7 @@ pub(crate) fn usage() -> &'static str {
   nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme
   nuance here [theme [style]]  pin a theme to this directory tree (.nuance)
   nuance transient [on|off]    collapse finished prompts to one glyph
+  nuance icons [on|off|auto]   Nerd Font icons (auto: off on Windows)
   nuance terminal [on|full|off] [--all-windows] also theme terminal bg/fg/cursor (full: ANSI colors)
   nuance modules [enable|disable|list|clear] [name…]
                                situational segments: status jobs ssh root venv nix lang k8s docker cloud pkg battery
@@ -197,6 +203,7 @@ mod tests {
             "import",
             "here",
             "transient",
+            "icons",
             "terminal",
             "modules",
             "sync",
@@ -332,6 +339,15 @@ mod tests {
         }
         assert!(Cli::try_parse_from(["nuance", "completions", "bash"]).is_ok());
         assert!(Cli::try_parse_from(["nuance", "completions", "nushelly"]).is_err());
+    }
+
+    #[test]
+    fn parses_icons_mode() {
+        let cli = Cli::try_parse_from(["nuance", "icons", "off"]).unwrap();
+        match cli.command {
+            Some(Commands::Icons { mode }) => assert_eq!(mode.as_deref(), Some("off")),
+            _ => panic!("expected icons"),
+        }
     }
 
     #[test]

@@ -107,8 +107,10 @@ def style-def [name: string] {
 # which wants the real ESC byte).
 def escape-esc [s: string] { $s | str replace --all (char --unicode "1b") '\u001b' }
 
-# Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
-$env.PROMPT_NERD = true
+# Nerd Font glyphs (branch icon, powerline separators): `nuance icons on|off|auto`
+# (auto = on, except on Windows whose stock fonts lack them). An explicit
+# $env.PROMPT_NERD set before the prompt loads (env.nu) still wins.
+$env.PROMPT_NERD = ($env.PROMPT_NERD? | default (icons-resolve (icons-mode) $nu.os-info.name))
 
 # Load saved layout (default: full).
 let saved_style = (try { open (prompt-style-path) | str trim } catch { "full" })

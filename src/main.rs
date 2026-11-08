@@ -137,6 +137,10 @@ fn main() -> ExitCode {
             let args: Vec<String> = mode.into_iter().collect();
             with_nu(|target| nu::run_nu(target, &format!("nuance transient {}", nu::quote(&args))))
         }
+        Some(Commands::Icons { mode }) => {
+            let args: Vec<String> = mode.into_iter().collect();
+            with_nu(|target| nu::run_nu(target, &format!("nuance icons {}", nu::quote(&args))))
+        }
         Some(Commands::Terminal {
             mode,
             all_windows,

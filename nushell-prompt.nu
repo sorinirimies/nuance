@@ -818,6 +818,7 @@ def "nu-complete nuance modules" [] { module-names }
 def "nu-complete nuance module-actions" [] { ["list" "enable" "disable" "clear"] }
 def "nu-complete nuance terminal" [] { ["on" "full" "off"] }
 def "nu-complete nuance transient" [] { ["on" "dir" "off" "toggle"] }
+def "nu-complete nuance icons" [] { ["on" "off" "auto"] }
 def "nu-complete nuance kinds" [] { ["themes" "styles" "looks" "modules"] }
 def "nu-complete nuance random" [] { ["look" "theme" "style"] }
 def "nu-complete nuance integration" [] { ["on" "off" "status"] }
@@ -1393,6 +1394,7 @@ def "nuance help" [] {
     print "  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme"
     print "  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)"
     print "  nuance transient [on|off]    collapse finished prompts to one glyph"
+    print "  nuance icons [on|off|auto]   Nerd Font icons (auto: off on Windows)"
     print "  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)"
     print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
@@ -1452,6 +1454,20 @@ def --env "nuance transient" [mode?: string@"nu-complete nuance transient"] {
     transient-apply $next
     $next | save -f (transient-state-path)
     print $"(ansi green_bold)✓(ansi reset) transient prompt (ansi attr_bold)($next)(ansi reset)"
+}
+
+# `nuance icons [on|off|auto]` — Nerd Font glyphs in the prompt.
+def --env "nuance icons" [mode?: string@"nu-complete nuance icons"] {
+    let m = ($mode | default "")
+    if $m == "" {
+        print $"icons: (ansi attr_bold)(icons-mode)(ansi reset) → (if $env.PROMPT_NERD { 'Nerd Font glyphs' } else { 'plain glyphs' })  \(nuance icons on|off|auto\)"
+        return
+    }
+    if $m not-in ["on" "off" "auto"] { print $"(ansi red)unknown mode:(ansi reset) ($m)  — use on, off or auto"; return }
+    mkdir (icons-state-path | path dirname)
+    $m | save -f (icons-state-path)
+    $env.PROMPT_NERD = (icons-resolve $m $nu.os-info.name)
+    print $"(ansi green_bold)✓(ansi reset) icons (ansi attr_bold)($m)(ansi reset) → (if $env.PROMPT_NERD { 'Nerd Font glyphs' } else { 'plain glyphs' })"
 }
 
 # `nuance here [theme [style]] | clear` — pin a theme/style to this directory tree.
@@ -1548,8 +1564,8 @@ def "nuance doctor" [--clear-errors] {
     let err_row = (if ($le | path exists) { { check: "last prompt error", status: "warn", detail: (open --raw $le | str trim) } } else { { check: "last prompt error", status: "ok", detail: "none" } })
     [
         { check: "nushell version", status: (if $minor >= 100 { "ok" } else { "warn" }), detail: $"($nu_ver)(if $minor < 100 { ' — transient prompt needs 0.100+' } else { '' })" }
-        { check: "truecolor", status: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "ok" } else { "warn" }), detail: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "COLORTERM is set" } else { "COLORTERM not truecolor/24bit — theme colors may be approximated" }) }
-        { check: "nerd font", status: "info", detail: $"glyph sample: ($glyphs)  — boxes? install a Nerd Font or set $env.PROMPT_NERD = false" }
+        { check: "truecolor", status: (if (color-mode) == "truecolor" { "ok" } else { "warn" }), detail: $"(color-mode) — (color-mode-reason)" }
+        { check: "nerd font", status: "info", detail: (if $env.PROMPT_NERD { $"on \(icons (icons-mode)\) — glyph sample: ($glyphs)  — boxes? install a Nerd Font or run `nuance icons off`" } else { $"off \(icons (icons-mode)\) — `nuance icons on` once a Nerd Font is set in your terminal" }) }
         (doctor-autoload $autoload)
         { check: "git", status: (if (which git | is-empty) { "warn" } else { "ok" }), detail: (if (which git | is-empty) { "git not found — git segment disabled" } else { "found" }) }
         { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }
@@ -2169,8 +2185,10 @@ def style-def [name: string] {
 # which wants the real ESC byte).
 def escape-esc [s: string] { $s | str replace --all (char --unicode "1b") '\u001b' }
 
-# Use Nerd Font glyphs (branch icon). Set to false for plain ASCII.
-$env.PROMPT_NERD = true
+# Nerd Font glyphs (branch icon, powerline separators): `nuance icons on|off|auto`
+# (auto = on, except on Windows whose stock fonts lack them). An explicit
+# $env.PROMPT_NERD set before the prompt loads (env.nu) still wins.
+$env.PROMPT_NERD = ($env.PROMPT_NERD? | default (icons-resolve (icons-mode) $nu.os-info.name))
 
 # Load saved layout (default: full).
 let saved_style = (try { open (prompt-style-path) | str trim } catch { "full" })
@@ -3231,12 +3249,31 @@ def indicator-core [] {
 # prompt string is rewritten: 24-bit SGR codes become the nearest 256- or
 # 16-color ones, and NO_COLOR strips color entirely.
 # Force a mode with $env.NUANCE_COLORS = truecolor | 256 | 16 | none.
-def color-mode [] {
+def color-mode [] { color-mode-for $nu.os-info.name }
+# Why `color-mode` picked what it did (for `nuance doctor`).
+def color-mode-reason [] {
+    let m = (color-mode)
+    if (($env.NO_COLOR? | default "") | is-not-empty) { return "NO_COLOR is set" }
+    if (($env.NUANCE_COLORS? | default "auto") != "auto") { return $"forced by $env.NUANCE_COLORS" }
+    if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { return "COLORTERM" }
+    if $nu.os-info.name == "windows" { return "Windows console (24-bit since Windows 10)" }
+    if $m == "truecolor" { return $"TERM_PROGRAM=($env.TERM_PROGRAM? | default '')" }
+    $"no truecolor hint \(TERM=($env.TERM? | default ''), COLORTERM unset) — set $env.NUANCE_COLORS = 'truecolor' if your terminal supports it"
+}
+# The color depth to render for, on `os`. Windows sets neither COLORTERM nor
+# TERM, but both conhost (Windows 10 1703+) and Windows Terminal do 24-bit, so
+# without this every theme was squashed to the 16 basic colors in PowerShell.
+def color-mode-for [os: string] {
     if (($env.NO_COLOR? | default "") | is-not-empty) { return "none" }
     let o = ($env.NUANCE_COLORS? | default "auto")
     if $o in ["truecolor" "256" "16" "none"] { return $o }
     if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { return "truecolor" }
-    if (($env.TERM? | default "") | str contains "256") { "256" } else { "16" }
+    if $os == "windows" { return "truecolor" }
+    if ($env.WT_SESSION? | default "" | is-not-empty) { return "truecolor" }
+    if (($env.TERM_PROGRAM? | default "") in ["vscode" "iTerm.app" "WezTerm" "ghostty" "Hyper" "Tabby"]) { return "truecolor" }
+    let term = ($env.TERM? | default "")
+    if ($term | str contains "direct") or ($term in ["xterm-kitty" "xterm-ghostty" "wezterm" "alacritty" "foot"]) { return "truecolor" }
+    if ($term | str contains "256") { "256" } else { "16" }
 }
 def rgb-256 [r: int, g: int, b: int] {
     if (($r - $g | math abs) < 10) and (($g - $b | math abs) < 10) {
@@ -3519,12 +3556,20 @@ integration-apply (try { open (integration-state-path) | str trim } catch { "on"
 def nuance-state-paths [] {
     [
         (theme-state-path) (prompt-style-path) (transient-state-path) (terminal-state-path)
-        (modules-state-path) (integration-state-path) (appearance-path)
+        (modules-state-path) (integration-state-path) (appearance-path) (icons-state-path)
         ((nuance-config-dir) | path join "nuance") (nuance-cache-dir)
     ]
 }
 
 def transient-state-path [] { (nuance-config-dir) | path join "transient.txt" }
+def icons-state-path [] { (nuance-config-dir) | path join "icons.txt" }
+# Nerd Font icons on `os` for mode on|off|auto. `auto` is off on Windows: the
+# stock console fonts (Consolas, Cascadia Mono) have no Nerd Font glyphs, so
+# the branch icon and powerline separators showed up as boxes in PowerShell.
+def icons-resolve [mode: string, os: string] {
+    match $mode { "on" => true, "off" => false, _ => ($os != "windows") }
+}
+def icons-mode [] { try { open (icons-state-path) | str trim } catch { "auto" } }
 # Mirror a style's indicator glyph for Vi normal mode (❯ → ❮).
 def vi-glyph [g: string] {
     let m = { "❯": "❮", "▶": "◀", "»": "«", ">": "<", "▸": "◂", "❧": "☙", "▮▮": "▮▮", "▶▶▶": "◀◀◀" }

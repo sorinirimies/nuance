@@ -494,8 +494,22 @@ if ((rgb-16 255 85 85) != 9) or ((rgb-16 0 0 0) != 0) { $errors = ($errors | app
 let cm_nc = (with-env { NO_COLOR: "1" } { color-mode })
 let cm_force = (with-env { NUANCE_COLORS: "256", COLORTERM: "truecolor" } { color-mode })
 let cm_true = (with-env { COLORTERM: "truecolor" } { color-mode })
-let cm_256 = (with-env { COLORTERM: "", TERM: "xterm-256color" } { color-mode })
-let cm_16 = (with-env { COLORTERM: "", TERM: "linux" } { color-mode })
+let cm_256 = (with-env { COLORTERM: "", TERM: "xterm-256color", TERM_PROGRAM: "", WT_SESSION: "" } { color-mode-for linux })
+let cm_16 = (with-env { COLORTERM: "", TERM: "linux", TERM_PROGRAM: "", WT_SESSION: "" } { color-mode-for linux })
+# regression: PowerShell/conhost/Windows Terminal set neither COLORTERM nor TERM
+# and every theme was downgraded to 16 colors on Windows
+let cm_win = (with-env { COLORTERM: "", TERM: "", TERM_PROGRAM: "", WT_SESSION: "" } { color-mode-for windows })
+if $cm_win != "truecolor" { $errors = ($errors | append $"color-mode on a bare Windows console must be truecolor, got ($cm_win)") }
+let cm_wt = (with-env { COLORTERM: "", TERM: "", TERM_PROGRAM: "", WT_SESSION: "abc" } { color-mode-for linux })
+let cm_kitty = (with-env { COLORTERM: "", TERM: "xterm-kitty", TERM_PROGRAM: "", WT_SESSION: "" } { color-mode-for macos })
+let cm_vsc = (with-env { COLORTERM: "", TERM: "xterm-256color", TERM_PROGRAM: "vscode", WT_SESSION: "" } { color-mode-for linux })
+let cm_apple = (with-env { COLORTERM: "", TERM: "xterm-256color", TERM_PROGRAM: "Apple_Terminal", WT_SESSION: "" } { color-mode-for macos })
+if ([$cm_wt $cm_kitty $cm_vsc $cm_apple] != ["truecolor" "truecolor" "truecolor" "256"]) { $errors = ($errors | append $"color-mode terminal hints wrong: ([$cm_wt $cm_kitty $cm_vsc $cm_apple] | to nuon)") }
+# regression: the stock Windows console fonts have no Nerd Font glyphs, so the
+# branch icon / separators were boxes in PowerShell — auto is off there
+if (icons-resolve auto windows) or not (icons-resolve auto linux) or not (icons-resolve auto macos) { $errors = ($errors | append "icons auto must be off on Windows only") }
+if not (icons-resolve on windows) or (icons-resolve off linux) { $errors = ($errors | append "icons on/off must override the OS default") }
+if (with-env { NUANCE_COLORS: "16" } { color-mode-for windows }) != "16" { $errors = ($errors | append "NUANCE_COLORS must override the Windows default") }
 if ([$cm_nc $cm_force $cm_true $cm_256 $cm_16] != ["none" "256" "truecolor" "256" "16"]) { $errors = ($errors | append $"color-mode wrong: ([$cm_nc $cm_force $cm_true $cm_256 $cm_16] | to nuon)") }
 let fin = (with-env { NUANCE_COLORS: "256", NUANCE_GIT: { present: false }, PROMPT_STYLE: "powerline", NUANCE_DIR: "~/x" } { create_left_prompt })
 if ($fin | str contains "38;2;") or not ($fin | str contains "38;5;") { $errors = ($errors | append "create_left_prompt ignores NUANCE_COLORS") }
@@ -854,7 +868,7 @@ if (battery-parse-cache "12 none") != {at: 12, pct: null} or (battery-parse-cach
 
 # ── State paths for `nuance uninstall --purge` all live under the config/cache dirs ──
 let sp = (nuance-state-paths)
-if ($sp | length) != 9 or ($sp | any {|p| not (($p | str starts-with (nuance-config-dir)) or ($p | str starts-with (nuance-cache-dir))) }) { $errors = ($errors | append $"nuance-state-paths must list 9 paths under the config/cache dirs: ($sp)") }
+if ($sp | length) != 10 or ($sp | any {|p| not (($p | str starts-with (nuance-config-dir)) or ($p | str starts-with (nuance-cache-dir))) }) { $errors = ($errors | append $"nuance-state-paths must list 10 paths under the config/cache dirs: ($sp)") }
 
 # ── Ghostty overlay: apply writes it, off restores the original (temp dir only) ──
 let gdir = (ghostty-dir)

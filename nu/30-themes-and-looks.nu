@@ -405,6 +405,7 @@ def "nuance help" [] {
     print "  nuance import <file|name>    import a ghostty/kitty/alacritty/base16 theme"
     print "  nuance here [theme [style]]  pin a theme to this directory tree (.nuance)"
     print "  nuance transient [on|off]    collapse finished prompts to one glyph"
+    print "  nuance icons [on|off|auto]   Nerd Font icons (auto: off on Windows)"
     print "  nuance terminal [on|full|off] also theme terminal bg/fg/cursor (full: ANSI colors)"
     print "  nuance modules [enable|disable|list|clear] [name…]   situational segments (git is always on)"
     print "  nuance update                pull the latest, then: exec nu"
@@ -464,6 +465,20 @@ def --env "nuance transient" [mode?: string@"nu-complete nuance transient"] {
     transient-apply $next
     $next | save -f (transient-state-path)
     print $"(ansi green_bold)✓(ansi reset) transient prompt (ansi attr_bold)($next)(ansi reset)"
+}
+
+# `nuance icons [on|off|auto]` — Nerd Font glyphs in the prompt.
+def --env "nuance icons" [mode?: string@"nu-complete nuance icons"] {
+    let m = ($mode | default "")
+    if $m == "" {
+        print $"icons: (ansi attr_bold)(icons-mode)(ansi reset) → (if $env.PROMPT_NERD { 'Nerd Font glyphs' } else { 'plain glyphs' })  \(nuance icons on|off|auto\)"
+        return
+    }
+    if $m not-in ["on" "off" "auto"] { print $"(ansi red)unknown mode:(ansi reset) ($m)  — use on, off or auto"; return }
+    mkdir (icons-state-path | path dirname)
+    $m | save -f (icons-state-path)
+    $env.PROMPT_NERD = (icons-resolve $m $nu.os-info.name)
+    print $"(ansi green_bold)✓(ansi reset) icons (ansi attr_bold)($m)(ansi reset) → (if $env.PROMPT_NERD { 'Nerd Font glyphs' } else { 'plain glyphs' })"
 }
 
 # `nuance here [theme [style]] | clear` — pin a theme/style to this directory tree.
@@ -560,8 +575,8 @@ def "nuance doctor" [--clear-errors] {
     let err_row = (if ($le | path exists) { { check: "last prompt error", status: "warn", detail: (open --raw $le | str trim) } } else { { check: "last prompt error", status: "ok", detail: "none" } })
     [
         { check: "nushell version", status: (if $minor >= 100 { "ok" } else { "warn" }), detail: $"($nu_ver)(if $minor < 100 { ' — transient prompt needs 0.100+' } else { '' })" }
-        { check: "truecolor", status: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "ok" } else { "warn" }), detail: (if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { "COLORTERM is set" } else { "COLORTERM not truecolor/24bit — theme colors may be approximated" }) }
-        { check: "nerd font", status: "info", detail: $"glyph sample: ($glyphs)  — boxes? install a Nerd Font or set $env.PROMPT_NERD = false" }
+        { check: "truecolor", status: (if (color-mode) == "truecolor" { "ok" } else { "warn" }), detail: $"(color-mode) — (color-mode-reason)" }
+        { check: "nerd font", status: "info", detail: (if $env.PROMPT_NERD { $"on \(icons (icons-mode)\) — glyph sample: ($glyphs)  — boxes? install a Nerd Font or run `nuance icons off`" } else { $"off \(icons (icons-mode)\) — `nuance icons on` once a Nerd Font is set in your terminal" }) }
         (doctor-autoload $autoload)
         { check: "git", status: (if (which git | is-empty) { "warn" } else { "ok" }), detail: (if (which git | is-empty) { "git not found — git segment disabled" } else { "found" }) }
         { check: "nuance cli", status: (if (nuance-cli-available) { "ok" } else { "info" }), detail: (if (nuance-cli-available) { "on PATH (ratatui pickers)" } else { "not on PATH — pickers fall back to `input list` (cargo install nuance-cli)" }) }

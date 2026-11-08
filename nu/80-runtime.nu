@@ -3,12 +3,31 @@
 # prompt string is rewritten: 24-bit SGR codes become the nearest 256- or
 # 16-color ones, and NO_COLOR strips color entirely.
 # Force a mode with $env.NUANCE_COLORS = truecolor | 256 | 16 | none.
-def color-mode [] {
+def color-mode [] { color-mode-for $nu.os-info.name }
+# Why `color-mode` picked what it did (for `nuance doctor`).
+def color-mode-reason [] {
+    let m = (color-mode)
+    if (($env.NO_COLOR? | default "") | is-not-empty) { return "NO_COLOR is set" }
+    if (($env.NUANCE_COLORS? | default "auto") != "auto") { return $"forced by $env.NUANCE_COLORS" }
+    if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { return "COLORTERM" }
+    if $nu.os-info.name == "windows" { return "Windows console (24-bit since Windows 10)" }
+    if $m == "truecolor" { return $"TERM_PROGRAM=($env.TERM_PROGRAM? | default '')" }
+    $"no truecolor hint \(TERM=($env.TERM? | default ''), COLORTERM unset) — set $env.NUANCE_COLORS = 'truecolor' if your terminal supports it"
+}
+# The color depth to render for, on `os`. Windows sets neither COLORTERM nor
+# TERM, but both conhost (Windows 10 1703+) and Windows Terminal do 24-bit, so
+# without this every theme was squashed to the 16 basic colors in PowerShell.
+def color-mode-for [os: string] {
     if (($env.NO_COLOR? | default "") | is-not-empty) { return "none" }
     let o = ($env.NUANCE_COLORS? | default "auto")
     if $o in ["truecolor" "256" "16" "none"] { return $o }
     if (($env.COLORTERM? | default "") in ["truecolor" "24bit"]) { return "truecolor" }
-    if (($env.TERM? | default "") | str contains "256") { "256" } else { "16" }
+    if $os == "windows" { return "truecolor" }
+    if ($env.WT_SESSION? | default "" | is-not-empty) { return "truecolor" }
+    if (($env.TERM_PROGRAM? | default "") in ["vscode" "iTerm.app" "WezTerm" "ghostty" "Hyper" "Tabby"]) { return "truecolor" }
+    let term = ($env.TERM? | default "")
+    if ($term | str contains "direct") or ($term in ["xterm-kitty" "xterm-ghostty" "wezterm" "alacritty" "foot"]) { return "truecolor" }
+    if ($term | str contains "256") { "256" } else { "16" }
 }
 def rgb-256 [r: int, g: int, b: int] {
     if (($r - $g | math abs) < 10) and (($g - $b | math abs) < 10) {
@@ -291,12 +310,20 @@ integration-apply (try { open (integration-state-path) | str trim } catch { "on"
 def nuance-state-paths [] {
     [
         (theme-state-path) (prompt-style-path) (transient-state-path) (terminal-state-path)
-        (modules-state-path) (integration-state-path) (appearance-path)
+        (modules-state-path) (integration-state-path) (appearance-path) (icons-state-path)
         ((nuance-config-dir) | path join "nuance") (nuance-cache-dir)
     ]
 }
 
 def transient-state-path [] { (nuance-config-dir) | path join "transient.txt" }
+def icons-state-path [] { (nuance-config-dir) | path join "icons.txt" }
+# Nerd Font icons on `os` for mode on|off|auto. `auto` is off on Windows: the
+# stock console fonts (Consolas, Cascadia Mono) have no Nerd Font glyphs, so
+# the branch icon and powerline separators showed up as boxes in PowerShell.
+def icons-resolve [mode: string, os: string] {
+    match $mode { "on" => true, "off" => false, _ => ($os != "windows") }
+}
+def icons-mode [] { try { open (icons-state-path) | str trim } catch { "auto" } }
 # Mirror a style's indicator glyph for Vi normal mode (❯ → ❮).
 def vi-glyph [g: string] {
     let m = { "❯": "❮", "▶": "◀", "»": "«", ">": "<", "▸": "◂", "❧": "☙", "▮▮": "▮▮", "▶▶▶": "◀◀◀" }

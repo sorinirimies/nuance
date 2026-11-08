@@ -183,6 +183,28 @@ fn transient_persists_and_reports_state() {
 }
 
 #[test]
+fn icons_persists_and_rejects_unknown() {
+    if !have_nu() {
+        eprintln!("skip: nushell not installed");
+        return;
+    }
+    let home = tempfile::tempdir().unwrap();
+    let out = run(home.path(), &["icons", "off"]);
+    assert!(out.status.success());
+    let cfg = config_dir(home.path());
+    let saved = std::fs::read_to_string(format!("{cfg}/icons.txt")).unwrap();
+    assert_eq!(saved.trim(), "off");
+    let out = run(home.path(), &["icons"]);
+    let shown = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        shown.contains("icons: ") && shown.contains("plain glyphs"),
+        "{shown}"
+    );
+    let out = run(home.path(), &["icons", "sideways"]);
+    assert!(String::from_utf8_lossy(&out.stdout).contains("unknown mode"));
+}
+
+#[test]
 fn modules_enable_persists_and_rejects_unknown() {
     if !have_nu() {
         eprintln!("skip: nushell not installed");
