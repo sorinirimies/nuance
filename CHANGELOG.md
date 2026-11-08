@@ -4,6 +4,12 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.11.0](https://github.com/sorinirimies/nuance/compare/v0.10.0...v0.11.0) — 2026-11-08
+
+### ✨ Features
+
+- **release:** Ship a Windows binary; run the CLI integration tests on Windows ([`135cd8e`](https://github.com/sorinirimies/nuance/commit/135cd8ef6ce226d7e68dd4b06e20be43ada9a6f0))
+
 ## [0.10.0](https://github.com/sorinirimies/nuance/compare/v0.9.1...v0.10.0) — 2026-11-08
 
 ### ✨ Features
