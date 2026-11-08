@@ -528,7 +528,11 @@ def tilde [path: string, home?: string] {
     let strip = {|x| (if $win { $x | str replace --all '\' '/' } else { $x }) | str replace --regex '^/private(/|$)' '$1' }
     let h = (do $strip ($home | default $nu.home-dir))
     let q = (do $strip $path)
-    if ($q == $h) { "~" } else if ($q | str starts-with $"($h)/") { $"~($q | str replace $h '')" } else { $path }
+    # Windows paths are case-insensitive: C:\users\x is under C:\Users\x.
+    let fold = {|x| if $win { lower $x } else { $x } }
+    let hk = (do $fold $h)
+    let qk = (do $fold $q)
+    if ($qk == $hk) { "~" } else if ($qk | str starts-with $"($hk)/") { $"~($q | split chars | skip ($h | split chars | length) | str join)" } else { $path }
 }
 def doctor-autoload [path: string] {
     if ($path | path exists) {
@@ -749,13 +753,37 @@ def --env "nuance modules" [action?: string@"nu-complete nuance module-actions",
 
 # Read Ghostty's active theme and map it to a nushell theme name.
 # Returns null when it can't be determined.
-# Detect OS dark mode (macOS `defaults`, GNOME `gsettings`); default dark.
+# Detect OS dark mode; default dark. $env.NUANCE_OS_APPEARANCE ("dark" or
+# "light") overrides it. macOS: `defaults` (the key is absent = light mode, and
+# then `defaults` exits 1). Windows: the AppsUseLightTheme registry value.
+# Linux: GNOME `gsettings`, then KDE's kdeglobals color scheme name.
 def os-dark-mode [] {
-    let mac = (ext defaults read -g AppleInterfaceStyle)
-    if $mac.exit_code == 0 { return ($mac.stdout | str contains --ignore-case "dark") }
-    let gnome = (ext gsettings get org.gnome.desktop.interface color-scheme)
-    if $gnome.exit_code == 0 { return ($gnome.stdout | str contains --ignore-case "dark") }
-    true
+    let forced = ($env.NUANCE_OS_APPEARANCE? | default "")
+    if $forced in ["dark" "light"] { return ($forced == "dark") }
+    match $nu.os-info.name {
+        "macos" => {
+            let r = (ext defaults read -g AppleInterfaceStyle)
+            ($r.exit_code == 0 and ($r.stdout | str contains --ignore-case "dark"))
+        }
+        "windows" => {
+            let r = (ext reg query 'HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' /v AppsUseLightTheme)
+            if $r.exit_code != 0 { return true }
+            ($r.stdout | str contains "0x0")
+        }
+        _ => {
+            let gnome = (ext gsettings get org.gnome.desktop.interface color-scheme)
+            if $gnome.exit_code == 0 and ($gnome.stdout | str trim) != "'default'" {
+                return ($gnome.stdout | str contains --ignore-case "dark")
+            }
+            let kde = ($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config") | path join "kdeglobals")
+            if ($kde | path exists) {
+                let scheme = (open --raw $kde | lines | where ($it | str starts-with "ColorScheme=") | get 0? | default "")
+                if ($scheme | is-not-empty) { return ($scheme | str contains --ignore-case "dark") }
+            }
+            if $gnome.exit_code == 0 { return false }
+            true
+        }
+    }
 }
 
 # Map a raw theme name (from Ghostty or anywhere) to a nuance theme, or null.

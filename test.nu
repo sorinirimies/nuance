@@ -677,6 +677,7 @@ let ext_ok = (ext "git" "--version")
 if $ext_missing.exit_code != 127 or ($ext_ok.exit_code != 0) or not ($ext_ok.stdout | str contains "git") { $errors = ($errors | append "ext helper wrong for missing/present commands") }
 let dark_mode = (try { os-dark-mode } catch {|e| $"error: ($e.msg)" })
 if ($dark_mode | describe) != "bool" { $errors = ($errors | append $"os-dark-mode must return a bool on every OS, got: ($dark_mode)") }
+if (with-env {NUANCE_OS_APPEARANCE: "light"} { os-dark-mode }) or not (with-env {NUANCE_OS_APPEARANCE: "dark"} { os-dark-mode }) { $errors = ($errors | append "NUANCE_OS_APPEARANCE must override os-dark-mode") }
 
 # ── helpers ──
 if ((prompt-user) | is-empty) { $errors = ($errors | append "prompt-user returned empty") }

@@ -146,16 +146,90 @@ pub(crate) fn ensure_installed() -> Result<PathBuf, String> {
             .to_string()
     })?;
     let target = dir.join(FILE);
-    if target.exists() || is_symlink(&target) {
-        return Ok(target);
+    match vendor(&target, NUSHELL_PROMPT)? {
+        Vendored::Installed => eprintln!(
+            "\x1b[1;32m==>\x1b[0m installed nuance -> {}",
+            target.display()
+        ),
+        Vendored::Refreshed => eprintln!(
+            "\x1b[1;32m==>\x1b[0m updated nuance -> {}",
+            target.display()
+        ),
+        Vendored::Current | Vendored::UserOwned => {}
     }
-    fs::create_dir_all(&dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
-    write_atomic(&target, NUSHELL_PROMPT.as_bytes())?;
-    eprintln!(
-        "\x1b[1;32m==>\x1b[0m installed nuance -> {}",
-        target.display()
-    );
     Ok(target)
+}
+
+/// What [`vendor`] did with the autoload file.
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum Vendored {
+    /// There was none; the embedded script was written.
+    Installed,
+    /// An older copy this binary wrote earlier was replaced by the embedded one.
+    Refreshed,
+    /// Already identical to the embedded script.
+    Current,
+    /// A symlink or a copy the user changed: left alone.
+    UserOwned,
+}
+
+/// Sidecar that records the hash of the copy we last wrote. Not a `.nu` file,
+/// so Nushell's autoload ignores it.
+fn stamp_path(target: &Path) -> PathBuf {
+    target.with_extension("nu.vendored")
+}
+
+/// FNV-1a: stable across Rust versions and platforms (unlike `DefaultHasher`).
+fn fnv1a(bytes: &[u8]) -> String {
+    let h = bytes.iter().fold(0xcbf2_9ce4_8422_2325_u64, |h, b| {
+        (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3)
+    });
+    format!("{h:016x}")
+}
+
+/// Keep `target` in sync with `script`. A copy written by an older nuance
+/// (its hash matches the stamp) is refreshed after `cargo install --force`;
+/// a symlinked checkout or a hand-edited copy is never touched.
+pub(crate) fn vendor(target: &Path, script: &str) -> Result<Vendored, String> {
+    if is_symlink(target) {
+        return Ok(Vendored::UserOwned);
+    }
+    let stamp = stamp_path(target);
+    let write = |what| -> Result<Vendored, String> {
+        if let Some(dir) = target.parent() {
+            fs::create_dir_all(dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
+        }
+        write_atomic(target, script.as_bytes())?;
+        // Best effort: without a stamp the next upgrade just leaves the file alone.
+        let _ = fs::write(&stamp, fnv1a(script.as_bytes()));
+        Ok(what)
+    };
+    let Ok(current) = fs::read(target) else {
+        return write(Vendored::Installed);
+    };
+    if current == script.as_bytes() {
+        if !stamp.exists() {
+            let _ = fs::write(&stamp, fnv1a(script.as_bytes()));
+        }
+        return Ok(Vendored::Current);
+    }
+    let ours = fs::read_to_string(&stamp).is_ok_and(|s| s.trim() == fnv1a(&current));
+    if ours {
+        write(Vendored::Refreshed)
+    } else {
+        Ok(Vendored::UserOwned)
+    }
+}
+
+/// `source <file>` as Nushell source. A raw string (`r#'…'#`) takes the path
+/// verbatim: Windows backslashes, spaces, quotes and backticks included.
+pub(crate) fn source_cmd(file: &Path) -> String {
+    let p = file.display().to_string();
+    let mut hashes = String::from("#");
+    while p.contains(&format!("'{hashes}")) {
+        hashes.push('#');
+    }
+    format!("source r{hashes}'{p}'{hashes}")
 }
 
 /// Resolve the git checkout backing the autoload file, if any (so `update`
@@ -176,7 +250,7 @@ pub(crate) fn repo_dir(target: &Path) -> Option<PathBuf> {
 /// Run a nuance command inside a throwaway Nushell, inheriting stdio
 /// (persists any state files it writes, e.g. current-theme.txt).
 pub(crate) fn run_nu(file: &Path, script: &str) -> ExitCode {
-    let full = format!("source `{}`; {script}", file.display());
+    let full = format!("{}; {script}", source_cmd(file));
     match Command::new("nu").arg("-n").arg("-c").arg(&full).status() {
         Ok(status) if status.success() => ExitCode::SUCCESS,
         Ok(_) => ExitCode::FAILURE,
@@ -202,8 +276,8 @@ pub(crate) fn run_nu(file: &Path, script: &str) -> ExitCode {
 /// serializing, and un-escaped again here after parsing.
 pub(crate) fn fetch_picker_items(file: &Path, nu_expr: &str) -> Result<Vec<PickerItem>, String> {
     let script = format!(
-        "source `{}`; ({nu_expr}) | each {{|r| {{key: $r.key, label: (escape-esc $r.label)}}}} | to json",
-        file.display()
+        "{}; ({nu_expr}) | each {{|r| {{key: $r.key, label: (escape-esc $r.label)}}}} | to json",
+        source_cmd(file)
     );
     let out = Command::new("nu")
         .arg("-n")
@@ -235,8 +309,9 @@ pub(crate) fn uninstall(purge: bool) -> ExitCode {
     if let Some(dir) = autoload_dir() {
         let target = dir.join(FILE);
         if (target.exists() || is_symlink(&target)) && fs::remove_file(&target).is_ok() {
-            removed.push(target);
+            removed.push(target.clone());
         }
+        let _ = fs::remove_file(stamp_path(&target));
     }
     if purge && let Some(cfg) = nu_capture("$nu.default-config-dir").map(PathBuf::from) {
         for f in [
@@ -452,5 +527,113 @@ mod tests {
         let items = items.unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].key, "k1");
+    }
+
+    fn scratch(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("nuance-vendor-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn vendor_installs_when_missing() {
+        let d = scratch("missing");
+        let t = d.join("sub").join(FILE);
+        assert_eq!(vendor(&t, "v1").unwrap(), Vendored::Installed);
+        assert_eq!(fs::read_to_string(&t).unwrap(), "v1");
+        assert!(stamp_path(&t).exists());
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn vendor_is_noop_when_current() {
+        let d = scratch("current");
+        let t = d.join(FILE);
+        vendor(&t, "v1").unwrap();
+        assert_eq!(vendor(&t, "v1").unwrap(), Vendored::Current);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    /// Regression: `cargo install --force nuance-cli` left the old prompt
+    /// script in the autoload dir forever.
+    #[test]
+    fn vendor_refreshes_copy_it_wrote_earlier() {
+        let d = scratch("refresh");
+        let t = d.join(FILE);
+        vendor(&t, "v1").unwrap();
+        assert_eq!(vendor(&t, "v2").unwrap(), Vendored::Refreshed);
+        assert_eq!(fs::read_to_string(&t).unwrap(), "v2");
+        assert_eq!(vendor(&t, "v2").unwrap(), Vendored::Current);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn vendor_keeps_user_edited_copy() {
+        let d = scratch("edited");
+        let t = d.join(FILE);
+        vendor(&t, "v1").unwrap();
+        fs::write(&t, "mine").unwrap();
+        assert_eq!(vendor(&t, "v2").unwrap(), Vendored::UserOwned);
+        assert_eq!(fs::read_to_string(&t).unwrap(), "mine");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn vendor_keeps_unstamped_copy() {
+        let d = scratch("unstamped");
+        let t = d.join(FILE);
+        fs::write(&t, "clone").unwrap();
+        assert_eq!(vendor(&t, "v2").unwrap(), Vendored::UserOwned);
+        assert_eq!(fs::read_to_string(&t).unwrap(), "clone");
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    #[test]
+    fn fnv1a_is_stable() {
+        assert_eq!(fnv1a(b""), "cbf29ce484222325");
+        assert_eq!(fnv1a(b"a"), "af63dc4c8601ec8c");
+    }
+
+    #[test]
+    fn source_cmd_uses_raw_string() {
+        let p = Path::new(r"C:\Users\Maya Nadia\AppData\x.nu");
+        assert_eq!(
+            source_cmd(p),
+            r"source r#'C:\Users\Maya Nadia\AppData\x.nu'#"
+        );
+    }
+
+    #[test]
+    fn source_cmd_grows_hashes_past_quote_hash() {
+        let p = Path::new("/tmp/a'#b'##c.nu");
+        assert_eq!(source_cmd(p), "source r###'/tmp/a'#b'##c.nu'###");
+    }
+
+    /// Paths with quotes and backticks must source too (not only spaces).
+    #[test]
+    fn run_through_nu_with_hostile_path() {
+        if Command::new("nu").arg("--version").output().is_err() {
+            eprintln!("skipped: nu not installed");
+            return;
+        }
+        let d = scratch("hostile");
+        // `"`, `` ` `` and `*` are not valid in Windows file names.
+        let name = if cfg!(windows) {
+            "it's #1 & co"
+        } else {
+            "it's \"#1\" `x`"
+        };
+        let dir = d.join(name);
+        fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("p.nu");
+        fs::write(
+            &file,
+            "def escape-esc [s] { $s }\ndef items [] { [{key: k, label: l}] }\n",
+        )
+        .unwrap();
+        let items = fetch_picker_items(&file, "items");
+        let _ = fs::remove_dir_all(&d);
+        assert_eq!(items.unwrap()[0].key, "k");
     }
 }

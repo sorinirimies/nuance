@@ -57,7 +57,7 @@ def tmux-passthrough? [] {
 def ghostty-dir [] { ($env.XDG_CONFIG_HOME? | default ($nu.home-dir | path join ".config")) | path join "ghostty" }
 
 def ghostty-reload [] {
-    if ($env.NUANCE_NO_RELOAD? | default "" | is-empty) { ^pkill -USR2 -x ghostty | complete | ignore }
+    if ($env.NUANCE_NO_RELOAD? | default "" | is-empty) { ext pkill -USR2 -x ghostty | ignore }
 }
 
 def terminal-ghostty-conf [mode: string, p: record] {

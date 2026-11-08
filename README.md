@@ -230,7 +230,9 @@ Running `nuance theme` / `nuance prompt-style` (or the short `theme` /
   known status for that repo), then a background job computes the full `git status`
   and repaints it in place — big repos never block. Disable with
   `$env.NUANCE_ASYNC = "off"`.
-- **Light/dark switching** (`nuance appearance <dark> <light>`) and **shareable
+- **Light/dark switching** (`nuance appearance <dark> <light>`) follows the OS
+  appearance on macOS, Windows and Linux (GNOME, KDE); force it with
+  `$env.NUANCE_OS_APPEARANCE = "light"` (or `"dark"`). And **shareable
   looks** (`nuance export` / `nuance import "nuance:1:…"`).
 
   ![the toolbox: preview, custom styles, sharing](docs/toolbox.gif)

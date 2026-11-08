@@ -109,7 +109,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         nu: ["0.115.0", "0.116.1"]
     steps:
       - uses: actions/checkout@v7
@@ -135,18 +135,5 @@ jobs:
         uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
         with:
           version: nightly
-      - name: Prompt suite
-        run: nu test.nu
-
-  prompt-windows:
-    name: prompt (windows, experimental)
-    runs-on: windows-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install Nushell
-        uses: hustcer/setup-nu@eacad52a4634c4f8d17a94916f93be6856861b9c # v3
-        with:
-          version: "0.116.1"
       - name: Prompt suite
         run: nu test.nu

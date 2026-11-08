@@ -85,19 +85,25 @@ pub(crate) fn pick(items: Vec<PickerItem>, title: &str) -> io::Result<Option<Str
     }
 
     enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    // From here on the guard restores the terminal on every exit path —
+    // `?` errors and panics included — so a failure never leaves the user's
+    // shell in raw mode on the alternate screen.
+    let _guard = RawGuard;
+    execute!(io::stdout(), EnterAlternateScreen)?;
+    let mut terminal = Terminal::new(CrosstermBackend::new(io::stdout()))?;
 
     let mut state = PickerState::new(items);
-    let result = run_loop(&mut terminal, &mut state, title);
+    run_loop(&mut terminal, &mut state, title)
+}
 
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+/// Leaves the alternate screen, shows the cursor and disables raw mode on drop.
+struct RawGuard;
 
-    result
+impl Drop for RawGuard {
+    fn drop(&mut self) {
+        let _ = execute!(io::stdout(), LeaveAlternateScreen, crossterm::cursor::Show);
+        let _ = disable_raw_mode();
+    }
 }
 
 fn run_loop(
