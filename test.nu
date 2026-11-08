@@ -575,7 +575,7 @@ nuance style new generated | ignore
 let gen_ok = ("generated" in (prompt-styles))
 let gen_dup = (nuance style new generated | ignore; "ok")
 theme-apply "gruvbox"
-let user_render = (with-env { PROMPT_STYLE: "my-slant", NUANCE_GIT: { present: false }, NUANCE_DIR: "~/proj", PROMPT_USER: "sorin" } { left-prompt-core | ansi strip })
+let user_render = (with-env { PROMPT_STYLE: "my-slant", PROMPT_NERD: true, NUANCE_GIT: { present: false }, NUANCE_DIR: "~/proj", PROMPT_USER: "sorin" } { left-prompt-core | ansi strip })
 let user_ind = (with-env { PROMPT_STYLE: "my-slant" } { indicator-core | ansi strip })
 hide-env NUANCE_STYLES_DIR
 rm -rf $usd
