@@ -4,6 +4,16 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.11.3](https://github.com/sorinirimies/nuance/compare/v0.11.2...v0.11.3) — 2026-11-09
+
+### 🐛 Bug fixes
+
+- **windows:** Truecolor in PowerShell consoles and no Nerd Font glyphs by default ([`611f76a`](https://github.com/sorinirimies/nuance/commit/611f76a30d2d43618ee1d1994f84bfbbd5350c17))
+
+### 🧪 Tests
+
+- Pin Nerd Font glyphs in the user-style render check (off by default on Windows) ([`3cea8bb`](https://github.com/sorinirimies/nuance/commit/3cea8bb89b723114f9d4a7425a33e0466d6220cf))
+
 ## [0.11.1](https://github.com/sorinirimies/nuance/compare/v0.11.0...v0.11.1) — 2026-11-08
 
 ### 📦 Build
